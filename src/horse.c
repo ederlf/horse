@@ -4,12 +4,13 @@
 #include <unistd.h>
 
 static void 
-display_help_message(void){
-  printf("horse: SDN simulator\n");  
-  printf("Usage: horse [OPTIONS]\n");
-  printf("\n");
-  printf("  -h             display help message.\n");
-  printf("\n");
+display_help_message(void)
+{
+    printf("horse: SDN simulator\n");
+    printf("Usage: horse [OPTIONS]\n");
+    printf("\n");
+    printf("  -h             display help message.\n");
+    printf("\n");
 }
 
 int 
