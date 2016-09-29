@@ -3,6 +3,10 @@ ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS = -Wstrict-prototypes -Werror -Wall -Wextra
 
+bin_PROGRAMS = horse
+
+horse_SOURCES = src/horse.c
+
 TESTS = simple_test
 
 # Unit tests
