@@ -1,7 +1,19 @@
+/* Copyright (c) 2016-2017, Eder Leao Fernandes
+ * All rights reserved.
+ *
+ * The contents of this file are subject to the license defined in
+ * file 'doc/LICENSE', which is part of this source code package.
+ *
+ *
+ * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
+ */
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "net/datapath.h"
+#include "net/topology.h"
 
 static void 
 display_help_message(void)
@@ -9,7 +21,7 @@ display_help_message(void)
     printf("horse: SDN simulator\n");
     printf("Usage: horse [OPTIONS]\n");
     printf("\n");
-    printf("  -h             display help message.\n");
+    printf(" -h             display help message.\n");
     printf("\n");
 }
 
@@ -18,7 +30,7 @@ display_horse(void)
 {
     printf("     >>\\.\n");
     printf("    /_  )`.\n");
-    printf("   /  _)`^)`.   _.---. _\n");
+    printf("   /  _)`^)`.   _.---. _hjw\n");
     printf("  (_,' \\  `^-)""      `.\\\n");
     printf("        |              | \\\n");
     printf("        \\              / |\n");
@@ -26,17 +38,24 @@ display_horse(void)
     printf("      < ,\"||     \\ |`. \\`-'\n");
     printf("       \\\\ ()      )|  )/\n");
     printf("        |_>|>     /_] //\n");
-    printf("         /_]  hjw    /_]\n");
+    printf("         /_]         /_]\n");
 }
 
 int 
 main(int argc, char *argv[]){
     int c;
-    display_horse();
-    while ((c = getopt (argc, argv, "h")) != -1){
+    while ((c = getopt (argc, argv, "ha")) != -1){
         switch (c){
             case 'h':{
+                display_horse();
                 display_help_message();
+                break;
+            }
+            case 'a':{
+                struct topology *topo = malloc(sizeof(topo));
+                struct datapath *dp =  dp_new(0x000000000001);
+                add_switch(topo, dp);
+                destroy_topology(topo);
                 break;
             }
             case '?':{
