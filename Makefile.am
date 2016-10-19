@@ -1,18 +1,21 @@
 AUTOMAKE_OPTIONS = foreign -Wno-syntax subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I./src -I./third-party \
-        -Wstrict-prototypes  -Wall -Wextra -Werror     
+AM_CFLAGS = -I./src -I./third-party -Wstrict-prototypes  -Wall -Wextra -Werror     
 
 bin_PROGRAMS = horse
 
-horse_SOURCES = src/net/topology.h \
-		src/net/topology.c \
+horse_SOURCES = src/lib/flow.h \
+		src/lib/flow.c \
 		src/net/datapath.h \
-        src/net/datapath.c \
+		src/net/datapath.c \
+		src/net/flow_table.h \ 
+		src/net/flow_table.c \
 		src/net/port.h \
 		src/net/port.c \
-        src/horse.c
+		src/net/topology.h \
+		src/net/topology.c \
+		src/horse.c
 
 TESTS = simple_test
 

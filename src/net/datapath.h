@@ -15,10 +15,15 @@
 #include <inttypes.h>
 #include <uthash/uthash.h>
 
-#define MAX_PORT_NUM 65536 /* 2 ^ 16 ports */
+/* Total number of possible ports
+*  UINT16_MAX == 2 ^ 16 datapaths 
+*/
+#define MAX_PORT_NUM UINT16_MAX /* 2 ^ 16 ports */
 
+/* Definition of a switch of the network */
 struct datapath {
-    uint64_t dp_id; /*Unique identification number of a switch */ 
+    uint32_t uuid; /* Sequential identification value in the simulator  */
+    uint64_t dp_id; /* Unique identification number of a switch in network*/ 
     struct port dp_ports[MAX_PORT_NUM]; /* Array of switch interfaces */
     uint16_t ports_num; /* Total number of ports */
     /*struct flow_table Flow table */
@@ -27,4 +32,4 @@ struct datapath {
 
 struct datapath* dp_new(uint64_t dp_id);
 
-#endif
+#endif /*DATAPATH_H */

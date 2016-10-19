@@ -13,21 +13,27 @@
 
 #include "datapath.h"
 
+/* Total number of possible datapaths
+*  UINT32_MAX == 2 ^ 32 datapaths 
+*/
+#define DP_MAX UINT32_MAX 
+
 /* Representation of a link of the network. 
 *   
 */
 struct link {
     uint32_t latency;   /* Latency of the link in ms */
     uint32_t bandwidth; /* Maximum bandwidth of the link */
-    struct *link next;  /* Next link in a list */
+    struct link* next;  /* Next link in a list */
 };
 
 /* Represents the network topology */
  struct topology {
-    struct datapath *dps; /* Hash map of switches. 
-                           The datapath id is the key */
+    struct datapath *dps;           /* Hash map of switches. 
+                                     * The datapath id is the key */
 
-
+    struct link* links[DP_MAX];     /* List of link edges of the topology */
+    uint32_t ndatapaths; 
 
  };
 
