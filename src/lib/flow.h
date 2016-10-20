@@ -41,8 +41,7 @@ struct flow {
 };
 
 struct flow* new_flow(void);
-
-// bool match(struct flow* , struct flow* );
+bool flow_key_cmp(struct flow_key* a, struct flow_key* b);
 
 /* Set field functions */
 void set_in_port(struct flow* f, uint32_t in_port);
@@ -62,6 +61,7 @@ void set_ipv4_dst(struct flow *f, uint32_t ipv4_dst);
 void set_ipv4_src(struct flow *f, uint32_t ipv4_src);
 void set_tp_dst(struct flow *f, uint16_t tp_dst);
 void set_tp_src(struct flow *f, uint16_t tp_src);
+void set_arp_op(struct flow *f, uint16_t arp_op);
 void set_arp_spa(struct flow *f, uint32_t arp_spa);
 void set_arp_tpa(struct flow *f, uint32_t arp_tpa);
 void set_arp_sha(struct flow *f, uint8_t arp_sha[6]);
