@@ -30,11 +30,11 @@ struct link {
 /* Represents the network topology */
  struct topology {
     struct datapath *dps;           /* Hash map of switches. 
-                                     * The datapath id is the key */
+                                     * The datapath id is the key. */
 
-    struct link* links[DP_MAX];     /* List of link edges of the topology */
-    uint32_t ndatapaths; 
-
+    struct link* links[DP_MAX];     /* List of link edges of the topology. */
+    uint32_t ndatapaths;            /* Total number of datapaths 
+                                     * of the topology. */
  };
 
 void add_switch(struct topology *topo, struct datapath* dp);

@@ -4,8 +4,11 @@
 #include "lib/flow.h"
 #include <inttypes.h>
 
+/* Total number of tables per datapath */
+#define MAX_TABLES 128
+
 struct flow_table {
-    struct flow *flows;
+    struct flow *flows[MAX_TABLES];
 };
 
 
