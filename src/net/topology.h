@@ -16,7 +16,7 @@
 /* Total number of possible datapaths
 *  UINT32_MAX == 2 ^ 32 datapaths 
 */
-#define DP_MAX UINT32_MAX 
+#define MAX_DPS UINT32_MAX 
 
 /* Representation of a link of the network. 
 *   
@@ -32,10 +32,12 @@ struct link {
     struct datapath *dps;           /* Hash map of switches. 
                                      * The datapath id is the key. */
 
-    struct link* links[DP_MAX];     /* List of link edges of the topology. */
-    uint32_t ndatapaths;            /* Total number of datapaths 
-                                     * of the topology. */
+    // struct link* links[MAX_DPS];     /* List of link edges of the topology. */
+    uint32_t ndatapaths;             /*Total number of datapaths 
+                                      of the topology. */
  };
+
+struct topology* new_topology(void);
 
 void add_switch(struct topology *topo, struct datapath* dp);
 

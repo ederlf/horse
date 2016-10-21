@@ -3,11 +3,13 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <uthash/uthash.h>
 
 struct flow_key {
     uint32_t in_port;
     uint64_t metadata;
     uint64_t tunnel_id;
+    uint16_t eth_type;
     uint8_t eth_dst[6]; /* TODO: Use ETH_LEN */
     uint8_t eth_src[6];
     uint16_t vlan_id;
@@ -35,10 +37,17 @@ struct flow_key {
 };
 
 struct flow {
-    uint32_t priority;
     struct flow_key key;
     struct flow_key mask;
+    uint32_t priority;
+    uint64_t pkt_cnt;
+    uint64_t byte_cnt;
+    uint64_t created; 
+    uint64_t remove_at; 
+    uint64_t last_used;
+    UT_hash_handle hh;
 };
+
 
 struct flow* new_flow(void);
 bool flow_key_cmp(struct flow_key* a, struct flow_key* b);
@@ -47,6 +56,7 @@ bool flow_key_cmp(struct flow_key* a, struct flow_key* b);
 void set_in_port(struct flow* f, uint32_t in_port);
 void set_metadata(struct flow* f, uint64_t metadata);
 void set_tunnel_id(struct flow* f, uint64_t tunnel_id);
+void set_eth_type(struct flow* f, uint16_t eth_type);
 void set_eth_dst(struct flow* f, uint8_t eth_dst[6]);
 void set_eth_src(struct flow* f, uint8_t eth_src[6]);
 void set_vlan_id(struct flow* f, uint16_t vlan_id);

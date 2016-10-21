@@ -24,8 +24,9 @@ flow_key_cmp(struct flow_key* a, struct flow_key* b)
     return  (a->in_port == b->in_port) &&
             (a->metadata == b->metadata) &&
             (a->tunnel_id == b->tunnel_id) &&
-            (memcmp(a->eth_dst, b->eth_dst, 6)) &&
-            (memcmp(a->eth_src, b->eth_src, 6)) &&
+            (a->eth_type == b->eth_type) &&
+            (memcmp(a->eth_dst, b->eth_dst, 6) == 0) &&
+            (memcmp(a->eth_src, b->eth_src, 6) == 0) &&
             (a->vlan_id == b->vlan_id) &&
             (a->vlan_pcp == b->vlan_pcp) &&
             (a->mpls_label == b->mpls_label) &&
@@ -41,14 +42,14 @@ flow_key_cmp(struct flow_key* a, struct flow_key* b)
             (a->arp_op == b->arp_op) &&
             (a->arp_spa == b->arp_spa) &&
             (a->arp_tpa == b->arp_tpa) &&
-            (memcmp(a->arp_sha, b->arp_sha, 6)) &&
-            (memcmp(a->arp_tha, b->arp_tha, 6)) &&
-            (memcmp(a->ipv6_dst, b->ipv6_dst, 16)) &&
-            (memcmp(a->ipv6_src, b->ipv6_src, 16)) &&
-            (memcmp(a->ipv6_nd_target, b->ipv6_nd_target, 16)) &&
-            (memcmp(a->ipv6_nd_sll, b->ipv6_nd_sll, 6)) &&
-            (memcmp(a->ipv6_nd_tll, b->ipv6_nd_tll, 6));
-}   
+            (memcmp(a->arp_sha, b->arp_sha, 6) == 0) &&
+            (memcmp(a->arp_tha, b->arp_tha, 6) == 0) &&
+            (memcmp(a->ipv6_dst, b->ipv6_dst, 16) == 0) &&
+            (memcmp(a->ipv6_src, b->ipv6_src, 16) == 0) &&
+            (memcmp(a->ipv6_nd_target, b->ipv6_nd_target, 16) == 0) &&
+            (memcmp(a->ipv6_nd_sll, b->ipv6_nd_sll, 6) == 0) &&
+            (memcmp(a->ipv6_nd_tll, b->ipv6_nd_tll, 6) == 0);
+}  
 
 void 
 set_in_port(struct flow* f, uint32_t in_port)
@@ -69,6 +70,13 @@ set_tunnel_id(struct flow* f, uint64_t tunnel_id)
 {
     f->key.tunnel_id = tunnel_id;
     f->mask.tunnel_id = ALL_UINT64_MASK;
+}
+
+void 
+set_eth_type(struct flow* f, uint16_t eth_type)
+{
+    f->key.eth_type = eth_type;
+    f->mask.eth_type = ALL_UINT16_MASK;
 }
 
 void 

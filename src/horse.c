@@ -14,7 +14,8 @@
 #include <unistd.h>
 #include "net/datapath.h"
 #include "net/topology.h"
-
+#include "net/flow_table.h"
+#include <uthash/utlist.h>
 static void 
 display_help_message(void)
 {
@@ -52,10 +53,10 @@ main(int argc, char *argv[]){
                 break;
             }
             case 'a':{
-                struct topology *topo = malloc(sizeof(topo));
-                struct datapath *dp =  dp_new(0x000000000001);
-                add_switch(topo, dp);
-                destroy_topology(topo);
+                // struct topology *topo = new_topology();
+                // struct datapath *dp =  dp_new(0x000000000001);
+                // add_switch(topo, dp);
+                // destroy_topology(topo);
                 break;
             }
             case '?':{
