@@ -45,6 +45,7 @@ struct flow {
     uint64_t created; 
     uint64_t remove_at; 
     uint64_t last_used;
+    uint8_t action;
     UT_hash_handle hh;
 };
 
@@ -100,4 +101,6 @@ void set_masked_ipv6_src(struct flow *f, uint8_t ipv6_src[16], uint8_t mask[16])
 void set_masked_ipv6_nd_target(struct flow *f, uint8_t ipv6_nd_target[16], uint8_t mask[16]);
 void set_masked_ipv6_nd_sll(struct flow *f, uint8_t ipv6_nd_sll[6], uint8_t mask[6]);
 void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask[6]);
+
+void apply_all_mask(struct flow *flow, struct flow_key *mask);
 #endif /* FLOW_H */

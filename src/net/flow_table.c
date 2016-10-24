@@ -63,6 +63,122 @@ add_flow(struct flow_table* ft, struct flow* f)
 *          if flow in the hash table and equal priority
 *               modify flow
 */
+static 
+void
+mod_flow_strict(struct flow_table *ft, struct flow* f)
+{
+    struct mini_flow_table* nxt_mft;
+    DL_FOREACH(ft->flows, nxt_mft){
+        if (flow_key_cmp(&f->mask, &nxt_mft->mask)){
+            struct flow *flow_found;
+            HASH_FIND(hh, nxt_mft->flows, &f->key, sizeof(struct flow_key), flow_found);
+            /*If the flow exists, replaces its actions*/ 
+            if (flow_found && flow_found->priority == f->priority){
+                /*TODO: flow_found->actions = f->actions*/
+                flow_found->action = f->action;    
+            }
+            /* Break the loop, the match cannot exist in another flow*/ 
+            break;
+        }
+    }
+}
+
+static 
+void
+mod_flow_non_strict(struct flow_table *ft, struct flow* f)
+{
+    struct mini_flow_table* nxt_mft;
+    DL_FOREACH(ft->flows, nxt_mft){
+        struct flow tmp_flow;
+        memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct flow_key));
+        /* Apply modifying flow mask to temporary flow */
+        apply_all_mask(&tmp_flow, &f->mask);
+        /* Check if the flow can be found in a mini table */
+        if (flow_key_cmp(&tmp_flow.mask, &f->mask)){
+            struct flow *cur_flow;
+            for(cur_flow=nxt_mft->flows; cur_flow != NULL; cur_flow=cur_flow->hh.next) {
+                /* Copy table flow key */
+                memcpy(&tmp_flow.key, &cur_flow->key, sizeof(struct flow_key));
+                /* Apply modifying flow mask to table flow */
+                apply_all_mask(&tmp_flow, &f->mask);
+                if (flow_key_cmp(&tmp_flow.key, &f->key)){
+                    /*TODO: Modify flow s*/
+                    cur_flow->action = f->action;
+                }
+            }
+        }
+    }
+}
+
+void modify_flow(struct flow_table *ft, struct flow* f, bool strict)
+{
+    if (strict){
+        mod_flow_strict(ft, f);
+    }
+    else {
+        mod_flow_non_strict(ft, f);
+    }
+}
+
+static 
+void
+del_flow_strict(struct flow_table *ft, struct flow* f)
+{
+    struct mini_flow_table* nxt_mft;
+    DL_FOREACH(ft->flows, nxt_mft){
+        if (flow_key_cmp(&f->mask, &nxt_mft->mask)){
+            struct flow *flow_found;
+            HASH_FIND(hh, nxt_mft->flows, &f->key, sizeof(struct flow_key), flow_found);
+            /*If the flow exists, delete it*/ 
+            if (flow_found && flow_found->priority == f->priority){
+                HASH_DEL(nxt_mft->flows, flow_found);
+                free(flow_found);   
+            }
+            /* Break the loop, the match cannot exist in another flow*/ 
+            break;
+        }
+    }
+}
+
+static 
+void
+del_flow_non_strict(struct flow_table *ft, struct flow* f)
+{
+    struct mini_flow_table* nxt_mft;
+    DL_FOREACH(ft->flows, nxt_mft){
+        struct flow tmp_flow;
+        memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct flow_key));
+        /* Apply modifying flow mask to temporary flow */
+        apply_all_mask(&tmp_flow, &f->mask);
+        /* Check if the flow can be found in a mini table */
+        if (flow_key_cmp(&tmp_flow.mask, &f->mask)){
+            struct flow *cur_flow, *tmp;
+            HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
+                /* Copy table flow key */
+                memcpy(&tmp_flow.key, &cur_flow->key, sizeof(struct flow_key));
+                /* Apply modifying flow mask to table flow */
+                apply_all_mask(&tmp_flow, &f->mask);
+                if (flow_key_cmp(&tmp_flow.key, &f->key)){
+                    /* Modify flow s*/
+                    HASH_DEL(nxt_mft->flows, cur_flow);
+                    free(cur_flow);
+                }
+            }
+        }
+    }
+}
+
+void delete_flow(struct flow_table *ft, struct flow* f, bool strict)
+{
+    if (strict){
+        del_flow_strict(ft, f);
+    }
+    else {
+        del_flow_non_strict(ft, f);
+    }
+}
+
+
 
 /* Delete flow strict:
 *   found = 0
