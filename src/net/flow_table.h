@@ -30,8 +30,10 @@ struct flow_table {
 };
 
 struct flow_table* flow_table_new(void);
+struct flow* flow_table_lookup(struct flow_table* ft, struct flow *flow);
 void add_flow(struct flow_table* ft, struct flow* f);
 void modify_flow(struct flow_table* ft, struct flow* f, bool strict);
 void delete_flow(struct flow_table* ft, struct flow* f, bool strict);
+
 
 #endif /* FLOW_TABLE_H */ 

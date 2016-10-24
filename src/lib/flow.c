@@ -394,7 +394,7 @@ void apply_all_mask(struct flow *flow, struct flow_key *mask)
     flow->key.ip_ecn &= mask->ip_ecn;
     flow->key.ip_proto &= mask->ip_proto;
     set_masked_ipv4_dst(flow, flow->key.ipv4_dst, mask->ipv4_dst);
-    set_masked_ipv4_dst(flow, flow->key.ipv4_src, mask->ipv4_src);
+    set_masked_ipv4_src(flow, flow->key.ipv4_src, mask->ipv4_src);
     flow->key.tp_dst &= mask->tp_dst;
     flow->key.tp_src &= mask->tp_src;
     flow->key.arp_op &= mask->arp_op;

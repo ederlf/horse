@@ -28,6 +28,28 @@ flow_table_new(void){
     return ft;
 }
 
+struct flow* 
+flow_table_lookup(struct flow_table* ft, struct flow *flow)
+{
+    struct flow *ret_flow = NULL;
+    struct mini_flow_table* nxt_mft;
+    long int cur_priority = -1;
+    DL_FOREACH(ft->flows, nxt_mft){
+        struct flow tmp_flow;
+        struct flow *flow_found;
+        memcpy(&tmp_flow.key, &flow->key, sizeof(struct flow_key));      
+        apply_all_mask(&tmp_flow, &nxt_mft->mask);
+        HASH_FIND(hh, nxt_mft->flows, &tmp_flow.key, sizeof(struct flow_key), flow_found);
+        if (flow_found){
+            if (flow_found->priority > cur_priority){
+                cur_priority = flow_found->priority;
+                ret_flow = flow_found;
+            }
+        }
+    }
+    return ret_flow;
+}
+
 /* Insert flow:
 *  added = False  
 *  for each flow hash table
