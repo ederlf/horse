@@ -17,14 +17,26 @@ horse_SOURCES = src/lib/flow.h \
 		src/net/topology.c \
 		src/horse.c
 
-TESTS = simple_test
+noinst_LIBRARIES = libhorse.a
+libhorse_a_SOURCES = src/lib/flow.h \
+		src/lib/flow.c \
+		src/net/datapath.h \
+		src/net/datapath.c \
+		src/net/flow_table.h \ 
+		src/net/flow_table.c \
+		src/net/port.h \
+		src/net/port.c \
+		src/net/topology.h \
+		src/net/topology.c
+
+TESTS = flow_table_test
 
 # Unit tests
 
-unit_test_CFLAGS = -DUNIT_TESTING=1
+unit_test_CFLAGS = -DUNIT_TESTING=1 -I./src -I./third-party
 
-noinst_PROGRAMS = simple_test
+noinst_PROGRAMS = flow_table_test
 
-simple_test_SOURCES = tests/simple_test.c
-simple_test_CFLAGS = $(unit_test_CFLAGS)
-simple_test_LDADD = -lcmockery
+flow_table_test_SOURCES = tests/flow_table_test.c
+flow_table_test_CFLAGS = $(unit_test_CFLAGS)
+flow_table_test_LDADD = -lcmockery libhorse.a

@@ -28,6 +28,21 @@ flow_table_new(void){
     return ft;
 }
 
+void flow_table_destroy(struct flow_table *ft)
+{
+    struct mini_flow_table* nxt_mft, *tmp;
+    DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
+        struct flow *cur_flow, *tmp;
+        HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
+            HASH_DEL(nxt_mft->flows, cur_flow);
+            free(cur_flow);    
+        }
+        DL_DELETE(ft->flows, nxt_mft);
+        free(nxt_mft);
+    }
+    free(ft);
+}
+
 struct flow* 
 flow_table_lookup(struct flow_table* ft, struct flow *flow)
 {
@@ -201,7 +216,6 @@ void delete_flow(struct flow_table *ft, struct flow* f, bool strict)
 }
 
 
-
 /* Delete flow strict:
 *   found = 0
 *   for each flow hash table   
@@ -213,21 +227,3 @@ void delete_flow(struct flow_table *ft, struct flow* f, bool strict)
 *      return error
 */
 
-/* For non strict match, we need to apply the table mask, 
-    similarly to packet matching (flow do not have natural mask, it goes through every table applying the table mask and checking if the match happens)*/
-
-/* Modify flow non strict(mod_flow):
-*   
-*   for each flow hash table   
-*       apply flow hash table mask to mod_flow  
-*          if flow in the hash table 
-*               modify flow
-*/
-
-/* Delete flow non strict(mod_flow):
-*   
-*   for each flow hash table   
-*       apply flow hash table mask to del_flow  
-*          if flow in the hash table 
-*               delete flow
-*/
