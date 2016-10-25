@@ -49,14 +49,20 @@ flow_table_lookup(struct flow_table* ft, struct flow *flow)
     struct flow *ret_flow = NULL;
     struct mini_flow_table* nxt_mft;
     long int cur_priority = -1;
+    /* Check all the mini flow tables */
     DL_FOREACH(ft->flows, nxt_mft){
         struct flow tmp_flow;
         struct flow *flow_found;
+        /* CSannot modify the flow key, so copy it to a temporary struct. */ 
         memcpy(&tmp_flow.key, &flow->key, sizeof(struct flow_key));      
+        /* Apply mini flow table mask to the temporary flow key fields. */
         apply_all_mask(&tmp_flow, &nxt_mft->mask);
+        /* Search for a match in the mini flow table*/
         HASH_FIND(hh, nxt_mft->flows, &tmp_flow.key, sizeof(struct flow_key), flow_found);
         if (flow_found){
             if (flow_found->priority > cur_priority){
+                /* Take the flow found if priority is 
+                 *  higher than the last one found. */
                 cur_priority = flow_found->priority;
                 ret_flow = flow_found;
             }
@@ -81,7 +87,9 @@ add_flow(struct flow_table* ft, struct flow* f)
 {
     bool added = false;
     struct mini_flow_table* nxt_mft;
+    /* Check if a mini flow table for the flow exists.*/
     DL_FOREACH(ft->flows, nxt_mft){
+        /* Masks are equal if a mini flow table exists */
         if (flow_key_cmp(&f->mask, &nxt_mft->mask)){
             mini_flow_table_add_flow(nxt_mft, f);
             added = true;    
