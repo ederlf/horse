@@ -12,6 +12,7 @@
 #define TOPOLOGY_H 1
 
 #include "datapath.h"
+#include "lib/util.h"
 
 /* Total number of possible datapaths
 *  UINT32_MAX == 2 ^ 32 datapaths 

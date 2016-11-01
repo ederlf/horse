@@ -9,6 +9,7 @@
  */
 
 #include "datapath.h"
+#include "lib/util.h" 
 
 static uint32_t current_uuid = 0;
 
@@ -18,7 +19,7 @@ static uint32_t current_uuid = 0;
 */
 struct datapath* 
 dp_new(uint64_t dp_id){
-    struct datapath * dp = malloc(sizeof(struct datapath));
+    struct datapath * dp = xmalloc(sizeof(struct datapath));
     dp->uuid = current_uuid;
     dp->dp_id = dp_id;
     dp->ports_num = 0;

@@ -10,7 +10,7 @@
 
 
 #include "flow.h"
-#include <stdlib.h>
+#include "util.h"
 #include <string.h>
 
 #define ALL_UINT8_MASK 0xff
@@ -22,7 +22,7 @@
 struct flow* 
 new_flow(void)
 {
-    struct flow *f = malloc(sizeof(struct flow));
+    struct flow *f = xmalloc(sizeof(struct flow));
     f->priority = 0;
     memset(&f->key, 0x0, sizeof(struct flow_key));
     memset(&f->mask, 0x0, sizeof(struct flow_key));

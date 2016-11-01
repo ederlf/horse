@@ -12,7 +12,7 @@
 #include "topology.h"
 
 struct topology* new_topology(void){
-    struct topology* topo = malloc(sizeof(struct topology));
+    struct topology* topo = xmalloc(sizeof(struct topology));
     topo->dps = NULL;
     topo->ndatapaths = 0;
     return topo;

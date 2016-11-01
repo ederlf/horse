@@ -10,8 +10,8 @@
 
 
 #include "flow_table.h"
+#include "lib/util.h"
 #include <uthash/utlist.h>
-#include <stdio.h>
 /* Creates a new mini flow table. 
 *   
 *  A mini flow table needs a flow
@@ -20,7 +20,7 @@
 static void
 mini_flow_table_new(struct flow_table *ft, struct flow *f)
 {
-    struct mini_flow_table *mft = malloc(sizeof(struct mini_flow_table));
+    struct mini_flow_table *mft = xmalloc(sizeof(struct mini_flow_table));
     mft->flows = NULL;
     memcpy(&mft->mask, &f->mask, sizeof(mft->mask));
     HASH_ADD(hh, mft->flows , key, sizeof(struct flow_key), f);
@@ -34,7 +34,7 @@ mini_flow_table_add_flow(struct mini_flow_table* mft,  struct flow *f){
 
 struct flow_table* 
 flow_table_new(void){
-    struct flow_table * ft = malloc(sizeof(struct flow_table));
+    struct flow_table * ft = xmalloc(sizeof(struct flow_table));
     ft->flows = NULL;
     return ft;
 }

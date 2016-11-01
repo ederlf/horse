@@ -7,6 +7,8 @@ bin_PROGRAMS = horse
 
 horse_SOURCES = src/lib/flow.h \
 		src/lib/flow.c \
+		src/lib/util.h \
+		src/lib/util.c \
 		src/net/datapath.h \
 		src/net/datapath.c \
 		src/net/flow_table.h \ 
@@ -18,8 +20,12 @@ horse_SOURCES = src/lib/flow.h \
 		src/horse.c
 
 noinst_LIBRARIES = libhorse.a
-libhorse_a_SOURCES = src/lib/flow.h \
+libhorse_a_SOURCES = src/lib/action.h \
+		src/lib/action.c \
+		src/lib/flow.h \
 		src/lib/flow.c \
+		src/lib/util.h \
+		src/lib/util.c \
 		src/net/datapath.h \
 		src/net/datapath.c \
 		src/net/flow_table.h \ 
