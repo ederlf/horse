@@ -56,12 +56,13 @@ struct flow {
     uint64_t created; 
     uint64_t remove_at; 
     uint64_t last_used;
-    uint8_t action;
+    uint8_t action; /*TODO: it is going to be a list of actions */
     UT_hash_handle hh;
 };
 
 
 struct flow* new_flow(void);
+void free_flow(struct flow* f);
 bool flow_key_cmp(struct flow_key* a, struct flow_key* b);
 
 /* Set field functions */

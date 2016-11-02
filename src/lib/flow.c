@@ -29,6 +29,10 @@ new_flow(void)
     return f;
 }
 
+void free_flow(struct flow* f){
+    free(f);
+}
+
 bool 
 flow_key_cmp(struct flow_key* a, struct flow_key* b)
 {

@@ -46,7 +46,7 @@ void flow_table_destroy(struct flow_table *ft)
         struct flow *cur_flow, *tmp;
         HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
             HASH_DEL(nxt_mft->flows, cur_flow);
-            free(cur_flow);    
+            free_flow(cur_flow);    
         }
         DL_DELETE(ft->flows, nxt_mft);
         free(nxt_mft);
@@ -176,6 +176,17 @@ void modify_flow(struct flow_table *ft, struct flow* f, bool strict)
     }
 }
 
+
+/* Delete flow strict:
+*   found = 0
+*   for each flow hash table   
+*       if table mask == flow_mask 
+*          if flow in the hash table and equal priority
+*               delete flow
+                found = 1
+*   if not found
+*      return error
+*/
 static 
 void
 del_flow_strict(struct flow_table *ft, struct flow* f)
@@ -247,16 +258,3 @@ void delete_flow(struct flow_table *ft, struct flow* f, bool strict)
         del_flow_non_strict(ft, f);
     }
 }
-
-
-/* Delete flow strict:
-*   found = 0
-*   for each flow hash table   
-*       if table mask == flow_mask 
-*          if flow in the hash table and equal priority
-*               delete flow
-                found = 1
-*   if not found
-*      return error
-*/
-
