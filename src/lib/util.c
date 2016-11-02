@@ -1,6 +1,4 @@
 #include "util.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 void out_of_memory()
 {
