@@ -19,6 +19,10 @@ horse_SOURCES = src/lib/flow.h \
 		src/net/port.c \
 		src/net/topology.h \
 		src/net/topology.c \
+		src/sim/event.h \
+		src/sim/event.c \
+		src/sim/scheduler.h \
+		src/sim/scheduler.c \
 		src/sim/sim.h \
 		src/sim/sim.c \
 		src/horse.c
@@ -40,6 +44,10 @@ libhorse_a_SOURCES = src/lib/action.h \
 		src/net/port.c \
 		src/net/topology.h \
 		src/net/topology.c \
+		src/sim/event.h \
+		src/sim/event.c \
+		src/sim/scheduler.h \
+		src/sim/scheduler.c \
 		src/sim/sim.h \
 		src/sim/sim.c
 
