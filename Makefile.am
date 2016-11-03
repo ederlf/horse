@@ -19,6 +19,8 @@ horse_SOURCES = src/lib/flow.h \
 		src/net/port.c \
 		src/net/topology.h \
 		src/net/topology.c \
+		src/sim/sim.h \
+		src/sim/sim.c \
 		src/horse.c
 
 noinst_LIBRARIES = libhorse.a
@@ -37,7 +39,9 @@ libhorse_a_SOURCES = src/lib/action.h \
 		src/net/port.h \
 		src/net/port.c \
 		src/net/topology.h \
-		src/net/topology.c
+		src/net/topology.c \
+		src/sim/sim.h \
+		src/sim/sim.c
 
 TESTS = flow_table_test
 
