@@ -2,13 +2,14 @@
 #include <uthash/utlist.h>
 #include "cmockery_horse.h"
 
+
 /* Test succeed if flow can be found in the table */
 void add_single_flow(void **state)
 {
     struct flow * ret;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new();
-    struct flow *fl = new_flow();
+    struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
     add_flow(ft, fl);
     DL_FOREACH(ft->flows, elt) {
@@ -30,10 +31,10 @@ void add_flows_same_field_type(void **state)
     struct flow * ret;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new();
-    struct flow *fl = new_flow();
+    struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
     add_flow(ft, fl);
-    struct flow *fl2 = new_flow();
+    struct flow *fl2 = flow_new();
     set_eth_type(fl2, 0x806);
     add_flow(ft, fl2);
     int count;
@@ -55,11 +56,11 @@ void add_flows_diff_field_type(void **state)
     struct flow * ret;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new();
-    struct flow *fl = new_flow();
+    struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
     set_ip_proto(fl, 17);
     add_flow(ft, fl);
-    struct flow *fl2 = new_flow();
+    struct flow *fl2 = flow_new();
     set_eth_type(fl2, 0x806);
     add_flow(ft, fl2);
     int count;
@@ -78,18 +79,18 @@ void modify_strict(void **state)
 {
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new();
-    struct flow *fl = new_flow();
+    struct flow *fl = flow_new();
     set_ip_proto(fl, 7);
     set_eth_type(fl, 0x800);
     fl->action = 1;
     add_flow(ft, fl);
-    struct flow *fl2 = new_flow();
+    struct flow *fl2 = flow_new();
     set_ipv4_dst(fl2, 21);
     set_eth_type(fl2, 0x800);
     set_ip_proto(fl2, 7);
     add_flow(ft, fl2);
     fl2->action = 2;
-    struct flow *fl3 = new_flow();
+    struct flow *fl3 = flow_new();
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
     fl3->action = 3;
@@ -116,18 +117,18 @@ void modify_non_strict(void **state)
 {
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new();
-    struct flow *fl = new_flow();
+    struct flow *fl = flow_new();
     set_ip_proto(fl, 7);
     set_eth_type(fl, 0x800);
     fl->action = 1;
     add_flow(ft, fl);
-    struct flow *fl2 = new_flow();
+    struct flow *fl2 = flow_new();
     set_ipv4_dst(fl2, 21);
     set_eth_type(fl2, 0x800);
     set_ip_proto(fl2, 7);
     add_flow(ft, fl2);
     fl2->action = 2;
-    struct flow *fl3 = new_flow();
+    struct flow *fl3 = flow_new();
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
     fl3->action = 3;
@@ -153,13 +154,13 @@ void modify_non_strict(void **state)
 
 // Lookup
 // struct flow_table *ft = flow_table_new();
-//                 struct flow *fl = new_flow();
+//                 struct flow *fl = flow_new();
 //                 set_ip_proto(fl, 7);
 //                 set_eth_type(fl, 0x800);
 //                 fl->priority = 1;
 //                 fl->action = 1;
 //                 add_flow(ft, fl);
-//                 struct flow *fl2 = new_flow();
+//                 struct flow *fl2 = flow_new();
 //                 set_ipv4_dst(fl2, 21);
 //                 set_eth_type(fl2, 0x800);
 //                 set_ip_proto(fl2, 7);
@@ -167,12 +168,12 @@ void modify_non_strict(void **state)
 //                 fl2->priority = 10;
 //                 fl2->action = 2;
 //                 add_flow(ft, fl2);
-//                 struct flow *fl3 = new_flow();
+//                 struct flow *fl3 = flow_new();
 //                 set_ip_proto(fl3, 7);
 //                 set_eth_type(fl3, 0x806);
 //                 fl3->action = 3;
 //                 add_flow(ft, fl3);
-//                 struct flow *fl4 = new_flow();
+//                 struct flow *fl4 = flow_new();
 //                 set_ipv4_dst(fl4, 21);
 //                 set_ip_proto(fl4, 7);
 //                 set_eth_type(fl4, 0x800);

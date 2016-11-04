@@ -46,7 +46,7 @@ void flow_table_destroy(struct flow_table *ft)
         struct flow *cur_flow, *tmp;
         HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
             HASH_DEL(nxt_mft->flows, cur_flow);
-            free_flow(cur_flow);    
+            flow_destroy(cur_flow);    
         }
         DL_DELETE(ft->flows, nxt_mft);
         free(nxt_mft);

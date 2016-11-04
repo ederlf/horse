@@ -61,8 +61,8 @@ struct flow {
 };
 
 
-struct flow* new_flow(void);
-void free_flow(struct flow* f);
+struct flow* flow_new(void);
+void flow_destroy(struct flow* f);
 bool flow_key_cmp(struct flow_key* a, struct flow_key* b);
 
 /* Set field functions */

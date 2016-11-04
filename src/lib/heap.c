@@ -82,32 +82,32 @@ heap_delete(struct heap *h)
     return removed;
 }
 
-static
-void heap_display(struct heap *h) {
-    size_t i;
-    for(i=1; i <= h->size; ++i) {
-        printf("|%ld|", h->array[i]->priority);
-    }
-    printf("\n");
-}
+// static
+// void heap_display(struct heap *h) {
+//     size_t i;
+//     for(i=1; i <= h->size; ++i) {
+//         printf("|%ld|", h->array[i]->priority);
+//     }
+//     printf("\n");
+// }
 
-int main(int argc, char const *argv[])
-{
-    struct heap *h = xmalloc(sizeof(struct heap));
-    int i;
-    for (i = 1; i < 10; ++i){
-        struct heap_node *node = xmalloc(sizeof(struct heap_node));
-        heap_insert(h, node, i);
-    }
-    // heap_display(h);
-    size_t s = h->size;
-    for (i = 1; i < s; ++i){
-        free(heap_delete(h));
-        heap_display(h);
-    }
-    printf("%lu\n", h->size);
+// int main(int argc, char const *argv[])
+// {
+//     struct heap *h = xmalloc(sizeof(struct heap));
+//     int i;
+//     for (i = 1; i < 10; ++i){
+//         struct heap_node *node = xmalloc(sizeof(struct heap_node));
+//         heap_insert(h, node, i);
+//     }
+//     // heap_display(h);
+//     size_t s = h->size;
+//     for (i = 1; i < s; ++i){
+//         free(heap_delete(h));
+//         heap_display(h);
+//     }
+//     printf("%lu\n", h->size);
     
-    // heap_delete(h);
-    // heap_display(h);
-    return 0;
-}
+//     // heap_delete(h);
+//     // heap_display(h);
+//     return 0;
+// }

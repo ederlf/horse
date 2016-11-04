@@ -20,7 +20,7 @@
 
 /* Allocates a new flow and sets all fields to 0 */
 struct flow* 
-new_flow(void)
+flow_new(void)
 {
     struct flow *f = xmalloc(sizeof(struct flow));
     f->priority = 0;
@@ -29,7 +29,9 @@ new_flow(void)
     return f;
 }
 
-void free_flow(struct flow* f){
+void 
+flow_destroy(struct flow* f)
+{
     free(f);
 }
 
@@ -392,7 +394,8 @@ void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask
     }
 }
 
-void apply_all_mask(struct flow *flow, struct flow_key *mask)
+void 
+apply_all_mask(struct flow *flow, struct flow_key *mask)
 {
     flow->key.in_port &= mask->in_port;
     set_masked_metadata(flow, flow->key.metadata, mask->metadata);

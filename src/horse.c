@@ -15,7 +15,7 @@
 #include "net/datapath.h"
 #include "net/topology.h"
 #include "net/flow_table.h"
-#include <uthash/utlist.h>
+#include "sim/sim.h"
 static void 
 display_help_message(void)
 {
@@ -42,6 +42,15 @@ display_horse(void)
     printf("         /_]         /_]\n");
 }
 
+void heap_display(struct heap *h) {
+    size_t i;
+    for(i=1; i <= h->size; ++i) {
+        printf("|%ld|", h->array[i]->priority);
+    }
+    printf("\n");
+}
+
+
 int 
 main(int argc, char *argv[]){
     int c;
@@ -53,10 +62,23 @@ main(int argc, char *argv[]){
                 break;
             }
             case 'a':{ 
-                // struct topology *topo = new_topology();
-                // struct datapath *dp =  dp_new(0x000000000001);
-                // add_switch(topo, dp);
-                // destroy_topology(topo);
+                // struct scheduler *sch = scheduler_create();
+                // size_t i;
+                // for (i = 1; i <= 100000000; ++i){
+                //     struct event *ev = xmalloc(sizeof(struct event));
+                //     ev->ev_node = xmalloc(sizeof(struct heap_node));
+                //     ev->time = i;
+                //     ev->type = 0;
+                //     scheduler_insert(sch, ev, i);
+                // }
+                // size_t s = sch->ev_queue->size;
+                // for (i = 1; i < s; ++i){
+                //     scheduler_dispatch(sch);
+                // }
+                struct topology *topo = topology_new();
+                struct datapath *dp =  dp_new(0x000000000001);
+                topology_add_switch(topo, dp);
+                start(topo);
                 break;
             }
             case '?':{

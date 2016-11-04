@@ -38,10 +38,10 @@ struct link {
                                       of the topology. */
  };
 
-struct topology* new_topology(void);
+struct topology* topology_new(void);
 
-void add_switch(struct topology *topo, struct datapath* dp);
+void topology_add_switch(struct topology *topo, struct datapath* dp);
 
-void destroy_topology(struct topology* topo);
+void topology_destroy(struct topology* topo);
 
 #endif /* TOPOLOGY_H */
