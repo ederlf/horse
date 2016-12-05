@@ -13,8 +13,7 @@ enum events {
     EVENT_LINK_UP = 4,
 };
 
-/*  The initial field of events is a
-*   pointer to a heap node which so 
+/*  The initial field of event heap node so 
 *   it can be stored into the simulator's
 *   event queue. 
 *
@@ -28,16 +27,22 @@ struct event {
     uint64_t id;                /* Retrieve it in hash table of events.  */  
 };
 
+/* Common header for all events */
+struct event_hdr {
+    UT_hash_handle hh;          /* Make the struct hashable.            */
+    uint64_t id;                /* Event key.                           */ 
+    uint8_t type;               /* Type of the event.                   */
+};
+
 /*  A flow event represents 
 *   traffic arriving in a switch.
 */
 struct event_flow{
-    uint64_t id;                /* Event key.                           */ 
+    struct event_hdr hdr;       
     uint64_t dpid;              /* The switch to process the event.     */
     uint64_t pkt_cnt;           /* Number of packets in the flow.       */
     uint64_t byte_cnt;          /* Total number of packets in the flow. */ 
     struct flow_key match;      /* The fields belonging to a flow.      */
-    UT_hash_handle hh;          /* Make the struct hashable.            */
 };
 
 void init_event(struct event *ev, uint8_t type, uint64_t time, uint64_t id);
