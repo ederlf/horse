@@ -28,20 +28,20 @@ mini_flow_table_new(struct flow_table *ft, struct flow *f)
 }
 
 static void
-mini_flow_table_add_flow(struct mini_flow_table* mft,  struct flow *f){
+mini_flow_table_add_flow(struct mini_flow_table *mft,  struct flow *f){
     HASH_ADD(hh, mft->flows , key, sizeof(struct flow_key), f);
 }
 
 struct flow_table* 
 flow_table_new(void){
-    struct flow_table * ft = xmalloc(sizeof(struct flow_table));
+    struct flow_table *ft = xmalloc(sizeof(struct flow_table));
     ft->flows = NULL;
     return ft;
 }
 
 void flow_table_destroy(struct flow_table *ft)
 {
-    struct mini_flow_table* nxt_mft, *tmp;
+    struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
         struct flow *cur_flow, *tmp;
         HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
@@ -55,10 +55,10 @@ void flow_table_destroy(struct flow_table *ft)
 }
 
 struct flow* 
-flow_table_lookup(struct flow_table* ft, struct flow *flow)
+flow_table_lookup(struct flow_table *ft, struct flow *flow)
 {
     struct flow *ret_flow = NULL;
-    struct mini_flow_table* nxt_mft;
+    struct mini_flow_table *nxt_mft;
     long int cur_priority = -1;
     /* Check all the mini flow tables */
     DL_FOREACH(ft->flows, nxt_mft){
@@ -94,10 +94,10 @@ flow_table_lookup(struct flow_table* ft, struct flow *flow)
 *      Insert the flow in the hash table
 */
 void 
-add_flow(struct flow_table* ft, struct flow* f)
+add_flow(struct flow_table *ft, struct flow *f)
 {
     bool added = false;
-    struct mini_flow_table* nxt_mft;
+    struct mini_flow_table *nxt_mft;
     /* Check if a mini flow table for the flow exists.*/
     DL_FOREACH(ft->flows, nxt_mft){
         /* Masks are equal if a mini flow table exists */
@@ -121,9 +121,9 @@ add_flow(struct flow_table* ft, struct flow* f)
 */
 static 
 void
-mod_flow_strict(struct flow_table *ft, struct flow* f)
+mod_flow_strict(struct flow_table *ft, struct flow *f)
 {
-    struct mini_flow_table* nxt_mft;
+    struct mini_flow_table *nxt_mft;
     DL_FOREACH(ft->flows, nxt_mft){
         if (flow_key_cmp(&f->mask, &nxt_mft->mask)){
             struct flow *flow_found;
@@ -141,9 +141,9 @@ mod_flow_strict(struct flow_table *ft, struct flow* f)
 
 static 
 void
-mod_flow_non_strict(struct flow_table *ft, struct flow* f)
+mod_flow_non_strict(struct flow_table *ft, struct flow *f)
 {
-    struct mini_flow_table* nxt_mft;
+    struct mini_flow_table *nxt_mft;
     DL_FOREACH(ft->flows, nxt_mft){
         struct flow tmp_flow;
         memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct flow_key));
@@ -166,7 +166,7 @@ mod_flow_non_strict(struct flow_table *ft, struct flow* f)
     }
 }
 
-void modify_flow(struct flow_table *ft, struct flow* f, bool strict)
+void modify_flow(struct flow_table *ft, struct flow *f, bool strict)
 {
     if (strict){
         mod_flow_strict(ft, f);
@@ -189,7 +189,7 @@ void modify_flow(struct flow_table *ft, struct flow* f, bool strict)
 */
 static 
 void
-del_flow_strict(struct flow_table *ft, struct flow* f)
+del_flow_strict(struct flow_table *ft, struct flow *f)
 {
     struct mini_flow_table* nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
@@ -216,9 +216,9 @@ del_flow_strict(struct flow_table *ft, struct flow* f)
 
 static 
 void
-del_flow_non_strict(struct flow_table *ft, struct flow* f)
+del_flow_non_strict(struct flow_table *ft, struct flow *f)
 {
-    struct mini_flow_table* nxt_mft, *tmp;
+    struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
         struct flow tmp_flow;
         memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct flow_key));
@@ -249,7 +249,7 @@ del_flow_non_strict(struct flow_table *ft, struct flow* f)
     }
 }
 
-void delete_flow(struct flow_table *ft, struct flow* f, bool strict)
+void delete_flow(struct flow_table *ft, struct flow *f, bool strict)
 {
     if (strict){
         del_flow_strict(ft, f);

@@ -30,13 +30,13 @@ flow_new(void)
 }
 
 void 
-flow_destroy(struct flow* f)
+flow_destroy(struct flow *f)
 {
     free(f);
 }
 
 bool 
-flow_key_cmp(struct flow_key* a, struct flow_key* b)
+flow_key_cmp(struct flow_key *a, struct flow_key *b)
 {
     return  (a->in_port == b->in_port) &&
             (a->metadata == b->metadata) &&
@@ -69,98 +69,98 @@ flow_key_cmp(struct flow_key* a, struct flow_key* b)
 }  
 
 void 
-set_in_port(struct flow* f, uint32_t in_port)
+set_in_port(struct flow *f, uint32_t in_port)
 {
     f->key.in_port = in_port;
     f->mask.in_port = ALL_UINT32_MASK;
 }
 
 void 
-set_metadata(struct flow* f, uint64_t metadata)
+set_metadata(struct flow *f, uint64_t metadata)
 {
     f->key.metadata = metadata;
     f->mask.metadata = ALL_UINT64_MASK;
 }
 
 void 
-set_tunnel_id(struct flow* f, uint64_t tunnel_id)
+set_tunnel_id(struct flow *f, uint64_t tunnel_id)
 {
     f->key.tunnel_id = tunnel_id;
     f->mask.tunnel_id = ALL_UINT64_MASK;
 }
 
 void 
-set_eth_type(struct flow* f, uint16_t eth_type)
+set_eth_type(struct flow *f, uint16_t eth_type)
 {
     f->key.eth_type = eth_type;
     f->mask.eth_type = ALL_UINT16_MASK;
 }
 
 void 
-set_eth_dst(struct flow* f, uint8_t eth_dst[6])
+set_eth_dst(struct flow *f, uint8_t eth_dst[6])
 {
     memcpy(f->key.eth_dst, eth_dst, 6);
     memset(f->mask.eth_dst, 0xff, 6);
 }
 
 void
-set_eth_src(struct flow* f, uint8_t eth_src[6])
+set_eth_src(struct flow *f, uint8_t eth_src[6])
 {
     memcpy(f->key.eth_src, eth_src, 6);
     memset(f->mask.eth_src, 0xff, 6);
 }
 
 void 
-set_vlan_id(struct flow* f, uint16_t vlan_id)
+set_vlan_id(struct flow *f, uint16_t vlan_id)
 {
     f->key.vlan_id = vlan_id;
     f->mask.vlan_id = ALL_UINT16_MASK;
 }
 
 void 
-set_vlan_pcp(struct flow* f, uint8_t vlan_pcp)
+set_vlan_pcp(struct flow *f, uint8_t vlan_pcp)
 {
     f->key.vlan_pcp = vlan_pcp;
     f->mask.vlan_pcp = ALL_UINT8_MASK;
 }
 
 void 
-set_mpls_label(struct flow* f, uint32_t mpls_label)
+set_mpls_label(struct flow *f, uint32_t mpls_label)
 {
     f->key.mpls_label = mpls_label;
     f->mask.mpls_label = ALL_UINT32_MASK;
 }
 
 void 
-set_mpls_tc(struct flow* f, uint8_t mpls_tc)
+set_mpls_tc(struct flow *f, uint8_t mpls_tc)
 {
     f->key.mpls_tc = mpls_tc;
     f->mask.mpls_tc = ALL_UINT8_MASK;
 }
 
 void 
-set_mpls_bos(struct flow* f, uint8_t mpls_bos)
+set_mpls_bos(struct flow *f, uint8_t mpls_bos)
 {
     f->key.mpls_bos = mpls_bos;
     f->mask.mpls_bos = ALL_UINT8_MASK;
 }
 
 void 
-set_ip_dscp(struct flow* f, uint8_t ip_dscp)
+set_ip_dscp(struct flow *f, uint8_t ip_dscp)
 {
     f->key.ip_dscp = ip_dscp;
     f->mask.ip_dscp = ALL_UINT8_MASK;
 }
 
 void 
-set_ip_ecn(struct flow* f, uint8_t ip_ecn)
+set_ip_ecn(struct flow *f, uint8_t ip_ecn)
 {
     f->key.ip_ecn = ip_ecn;
     f->mask.ip_ecn = ALL_UINT8_MASK;
 }
 
 void 
-set_ip_proto(struct flow* f, uint8_t ip_proto)
+set_ip_proto(struct flow *f, uint8_t ip_proto)
 {
     f->key.ip_proto = ip_proto;
     f->mask.ip_proto = ALL_UINT8_MASK;
@@ -265,19 +265,19 @@ set_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6])
 
 /* Start of set masked functions */
 
-void set_masked_metadata(struct flow* f, uint64_t metadata, uint64_t mask)
+void set_masked_metadata(struct flow *f, uint64_t metadata, uint64_t mask)
 {
     f->key.metadata = metadata & mask;
     f->mask.in_port = mask;
 }
 
-void set_masked_tunnel_id(struct flow* f, uint64_t tunnel_id, uint64_t mask)
+void set_masked_tunnel_id(struct flow *f, uint64_t tunnel_id, uint64_t mask)
 {
     f->key.tunnel_id = tunnel_id & mask;
     f->mask.tunnel_id = mask;
 }
 
-void set_masked_eth_dst(struct flow* f, uint8_t eth_dst[6], uint8_t mask[6])
+void set_masked_eth_dst(struct flow *f, uint8_t eth_dst[6], uint8_t mask[6])
 {
     int i;
     for (i = 0; i < 6; ++i){
@@ -286,7 +286,7 @@ void set_masked_eth_dst(struct flow* f, uint8_t eth_dst[6], uint8_t mask[6])
     }
 }
 
-void set_masked_eth_src(struct flow* f, uint8_t eth_src[6], uint8_t mask[6])
+void set_masked_eth_src(struct flow *f, uint8_t eth_src[6], uint8_t mask[6])
 {
     int i;
     for (i = 0; i < 6; ++i){
@@ -295,13 +295,13 @@ void set_masked_eth_src(struct flow* f, uint8_t eth_src[6], uint8_t mask[6])
     }
 }
 
-void set_masked_vlan_id(struct flow* f, uint16_t vlan_id, uint16_t mask)
+void set_masked_vlan_id(struct flow *f, uint16_t vlan_id, uint16_t mask)
 {
     f->key.vlan_id = vlan_id & mask;
     f->mask.vlan_id = mask;
 }
 
-void set_masked_mpls_label(struct flow* f, uint32_t mpls_label, uint32_t mask)
+void set_masked_mpls_label(struct flow *f, uint32_t mpls_label, uint32_t mask)
 {
     f->key.mpls_label = mpls_label & mask;
     f->mask.mpls_label = mask;

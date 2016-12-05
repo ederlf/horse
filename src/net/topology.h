@@ -40,8 +40,8 @@ struct link {
 
 struct topology* topology_new(void);
 
-void topology_add_switch(struct topology *topo, struct datapath* dp);
+void topology_add_switch(struct topology *topo, struct datapath *dp);
 
-void topology_destroy(struct topology* topo);
+void topology_destroy(struct topology *topo);
 
 #endif /* TOPOLOGY_H */

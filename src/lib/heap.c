@@ -1,13 +1,13 @@
 #include "heap.h"
 
 void
-heap_init(struct heap* h){
+heap_init(struct heap *h){
     h->array = NULL;
     h->size = 0;
     h->allocated = 0;
 }
 
-void heap_destroy(struct heap* h){
+void heap_destroy(struct heap *h){
     if (h){
         free(h->array);
     }

@@ -24,7 +24,7 @@ topology_add_switch(struct topology *topo, struct datapath* dp){
 }
 
 void 
-topology_destroy(struct topology* topo){
+topology_destroy(struct topology *topo){
     struct datapath *current_dp, *tmp;
     HASH_ITER(hh, topo->dps, current_dp, tmp) {
         HASH_DEL(topo->dps, current_dp);  

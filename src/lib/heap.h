@@ -14,9 +14,9 @@ struct heap {
     size_t allocated;
 };
 
-void heap_init(struct heap* h);
-void heap_destroy(struct heap* h);
-void heap_insert(struct heap* h, struct heap_node *node, uint64_t priority);
+void heap_init(struct heap *h);
+void heap_destroy(struct heap *h);
+void heap_insert(struct heap *h, struct heap_node *node, uint64_t priority);
 struct heap_node* heap_delete(struct heap *h);
 
 
