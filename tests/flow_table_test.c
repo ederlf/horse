@@ -48,7 +48,7 @@ void add_flows_same_field_type(void **state)
     flow_table_destroy(ft);
 }
 
-/*  Test succeeds if there are TWO mini flow table 
+/*  Test succeeds if there are TWO mini flow tables 
 *   and ONE flow in each mini table. 
 */
 void add_flows_diff_field_type(void **state)
@@ -108,7 +108,7 @@ void modify_strict(void **state)
             assert_int_equal(ret->action, fl2->action);
         }  
     }
-    free_flow(fl3);
+    flow_destroy(fl3);
     flow_table_destroy(ft);
 }
 
@@ -146,11 +146,9 @@ void modify_non_strict(void **state)
             assert_int_equal(ret->action, 3);
         }  
     }
-    free_flow(fl3);
+    flow_destroy(fl3);
     flow_table_destroy(ft);
 }
-
-            
 
 // Lookup
 // struct flow_table *ft = flow_table_new();
