@@ -40,7 +40,8 @@ void heap_insert(struct heap *h, struct heap_node *node, uint64_t priority)
 static void 
 min_heapify(struct heap *h, size_t idx, size_t size) 
 {
-    size_t left, right, min; 
+    size_t left, right, min;
+    min = 0; 
     struct heap_node **arr = h->array;
     while (min != idx) {
         min = idx;
@@ -78,6 +79,7 @@ heap_delete(struct heap *h)
     // }
     removed = h->array[1];
     h->array[1] = temp;
+    printf("HA %p\n", removed);
     min_heapify(h, 1, h->size);
     return removed;
 }
