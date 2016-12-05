@@ -3,7 +3,7 @@
 struct scheduler* 
 scheduler_new()
 {
-    struct scheduler* sch = xmalloc(sizeof(struct scheduler));
+    struct scheduler *sch = xmalloc(sizeof(struct scheduler));
     sch->clock = 0; /* Use time == now()? */
     sch->ev_queue = xmalloc(sizeof(struct heap));
     heap_init(sch->ev_queue);
@@ -19,7 +19,7 @@ scheduler_destroy(struct scheduler *sch)
 };
 
 void 
-scheduler_insert(struct scheduler *sch, struct event* ev)
+scheduler_insert(struct scheduler *sch, struct event *ev)
 {
     /* TODO: Return error if event time is smaller than clock */
     if (ev->time < sch->clock){
