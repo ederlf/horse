@@ -51,14 +51,18 @@ libhorse_a_SOURCES = src/lib/action.h \
 		src/sim/sim.h \
 		src/sim/sim.c
 
-TESTS = flow_table_test
+TESTS = flow_table_test scheduler_test
 
 # Unit tests
 
 unit_test_CFLAGS = -DUNIT_TESTING=1 -I./src -I./third-party
 
-noinst_PROGRAMS = flow_table_test
+noinst_PROGRAMS = flow_table_test scheduler_test
 
 flow_table_test_SOURCES = tests/flow_table_test.c
 flow_table_test_CFLAGS = $(unit_test_CFLAGS)
 flow_table_test_LDADD = -lcmockery libhorse.a
+
+scheduler_test_SOURCES = tests/scheduler_test.c
+scheduler_test_CFLAGS = $(unit_test_CFLAGS)
+scheduler_test_LDADD = -lcmockery libhorse.a

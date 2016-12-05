@@ -79,7 +79,6 @@ heap_delete(struct heap *h)
     // }
     removed = h->array[1];
     h->array[1] = temp;
-    printf("HA %p\n", removed);
     min_heapify(h, 1, h->size);
     return removed;
 }
@@ -97,18 +96,21 @@ heap_delete(struct heap *h)
 // {
 //     struct heap *h = xmalloc(sizeof(struct heap));
 //     int i;
-//     for (i = 1; i < 10; ++i){
+//     for (i = 2; i < 10; ++i){
 //         struct heap_node *node = xmalloc(sizeof(struct heap_node));
 //         heap_insert(h, node, i);
 //     }
-//     // heap_display(h);
-//     size_t s = h->size;
-//     for (i = 1; i < s; ++i){
-//         free(heap_delete(h));
-//         heap_display(h);
-//     }
-//     printf("%lu\n", h->size);
-    
+//     struct heap_node *node = xmalloc(sizeof(struct heap_node));
+//     heap_insert(h, node, 1);
+//     heap_display(h);
+//     // size_t s = h->size;
+//     // for (i = 1; i < s; ++i){
+//     //     free(heap_delete(h));
+//     //     heap_display(h);
+//     // }
+//     // printf("%lu\n", h->size);
+
+
 //     // heap_delete(h);
 //     // heap_display(h);
 //     return 0;
