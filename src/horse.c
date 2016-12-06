@@ -42,15 +42,6 @@ display_horse(void)
     printf("         /_]         /_]\n");
 }
 
-void heap_display(struct heap *h) {
-    size_t i;
-    for(i=1; i <= h->size; ++i) {
-        printf("|%ld|", h->array[i]->priority);
-    }
-    printf("\n");
-}
-
-
 int 
 main(int argc, char *argv[]){
     int c;

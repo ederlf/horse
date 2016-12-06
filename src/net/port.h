@@ -32,17 +32,19 @@ struct port_stats{
  *  
  */
 struct port {
-    uint32_t id; /* Identification number*/
-    uint8_t eth_address[ETH_LEN]; /* Ethernet hardware address*/
-    uint8_t state; /* Interface up or down */ 
-    uint32_t speed; /* Total speed */
-    uint32_t curr_speed; /* Current speed */
-    struct port_stats stats; /* Current port statistics */
+    uint32_t id;                   /* Identification number.     */
+    uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address. */
+    uint8_t state;                 /* Interface up or down.      */ 
+    uint32_t speed;                /* Total speed.               */
+    uint32_t curr_speed;           /* Current speed.             */
+    struct port_stats stats;       /* Current port statistics.   */
     char name[MAX_PORT_NAME];
 };
 
 /*Port operations: create, send, receive, update counters */
-
+void port_init(struct port *p);
+void port_send(struct port p);
+void port_receive(struct port p);
 // struct port * create_port(){
 
 
