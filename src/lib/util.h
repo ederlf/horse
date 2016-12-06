@@ -16,7 +16,7 @@
 #include <inttypes.h>
 
 void out_of_memory(void);
-void *xmalloc(int size);
+void *xmalloc(size_t size);
 void *xrealloc(void *v, int size);
 
 

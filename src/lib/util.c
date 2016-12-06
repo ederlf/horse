@@ -17,7 +17,7 @@ void out_of_memory()
 }
 
 void *
-xmalloc(int size)
+xmalloc(size_t size)
 {
     void *v = malloc(size? size : 1);
     if (v == NULL){
