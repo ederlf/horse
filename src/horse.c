@@ -66,10 +66,12 @@ main(int argc, char *argv[]){
                 // for (i = 1; i < s; ++i){
                 //     scheduler_dispatch(sch);
                 // }
-                struct topology *topo = topology_new();
+                struct topology topo; //= topology_new();
+                topology_init(&topo);
                 struct datapath *dp =  dp_new(0x000000000001);
-                topology_add_switch(topo, dp);
-                start(topo);
+                topology_add_switch(&topo, dp);
+                printf("%d %lx\n", UINT8_MAX, dp->dp_id);
+                start(&topo);
                 break;
             }
             case '?':{

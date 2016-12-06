@@ -15,33 +15,34 @@
 #include "lib/util.h"
 
 /* Total number of possible datapaths
-*  UINT32_MAX == 2 ^ 32 datapaths 
+*  UINT32_MAX == 2 ^ 16 datapaths 
 */
-#define MAX_DPS UINT32_MAX 
+#define MAX_DPS UINT16_MAX 
 
 /* Representation of a link of the network. 
 *   
 */
 struct link {
-    uint32_t latency;   /* Latency of the link in ms */
-    uint32_t bandwidth; /* Maximum bandwidth of the link */
-    struct link* next;  /* Next link in a list */
+    uint32_t conn_dp;   /* Id of the datapath connected.  */
+    uint32_t latency;   /* Latency of the link in ms.     */
+    uint32_t bandwidth; /* Maximum bandwidth of the link. */
+    struct link* next;  /* Next link in a list.           */
 };
 
 /* Represents the network topology */
- struct topology {
+struct topology {
     struct datapath *dps;           /* Hash map of switches. 
                                      * The datapath id is the key. */
+    struct link* links[MAX_DPS];    /* List of link edges of the topology. */
+    uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
+    uint32_t ndatapaths;             /* Number of datapaths. */
+    uint32_t nlinks;                 /* Number of links. */
+};
 
-    // struct link* links[MAX_DPS];     /* List of link edges of the topology. */
-    uint32_t ndatapaths;             /*Total number of datapaths 
-                                      of the topology. */
- };
-
-struct topology* topology_new(void);
-
+void topology_add_link(struct topology *t, uint64_t dpidA, uint64_t dpidB, uint32_t bw, uint32_t latency);
+void topology_init(struct topology* topo);
 void topology_add_switch(struct topology *topo, struct datapath *dp);
-
 void topology_destroy(struct topology *topo);
+
 
 #endif /* TOPOLOGY_H */

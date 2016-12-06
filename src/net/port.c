@@ -8,6 +8,7 @@
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
 
+#include <string.h>
 #include "port.h"
 
 void 
