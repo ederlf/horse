@@ -12,6 +12,7 @@
 #define DATAPATH_H 1
 
 #include "port.h"
+#include "flow_table.h"
 #include <inttypes.h>
 #include <uthash/uthash.h>
 
@@ -26,7 +27,7 @@ struct datapath {
     uint64_t dp_id; /* Unique identification number of a switch in network*/ 
     struct port dp_ports[MAX_PORT_NUM]; /* Array of switch interfaces */
     uint16_t ports_num; /* Total number of ports */
-    /*struct flow_table Flow table */
+    struct flow_table ft; 
     UT_hash_handle hh; /* Make the struct hashable */
 };
 

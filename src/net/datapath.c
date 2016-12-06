@@ -23,7 +23,7 @@ dp_new(uint64_t dp_id){
     dp->uuid = current_uuid;
     dp->dp_id = dp_id;
     dp->ports_num = 0;
-    /*TODO: Create/init flow table */
+    flow_table_init(&dp->ft);
     ++current_uuid;
     return dp;
 }
