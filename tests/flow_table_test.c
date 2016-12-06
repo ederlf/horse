@@ -8,11 +8,12 @@ void add_single_flow(void **state)
 {
     struct flow * ret;
     struct mini_flow_table *elt;
-    struct flow_table *ft = flow_table_new();
+    struct flow_table ft;
+    flow_table_init(&ft);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
-    add_flow(ft, fl);
-    DL_FOREACH(ft->flows, elt) {
+    add_flow(&ft, fl);
+    DL_FOREACH(ft.flows, elt) {
         struct flow *hash = elt->flows;
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 1);
@@ -22,7 +23,7 @@ void add_single_flow(void **state)
             assert_int_equal(ret->key.eth_type, 0x800);
         }  
     }
-    flow_table_destroy(ft);
+    flow_table_clean(&ft);
 }
 
 /* Test succeeds if there is ONE mini flow table and TWO flows */
@@ -30,22 +31,23 @@ void add_flows_same_field_type(void **state)
 {
     struct flow * ret;
     struct mini_flow_table *elt;
-    struct flow_table *ft = flow_table_new();
+    struct flow_table ft;
+    flow_table_init(&ft);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
-    add_flow(ft, fl);
+    add_flow(&ft, fl);
     struct flow *fl2 = flow_new();
     set_eth_type(fl2, 0x806);
-    add_flow(ft, fl2);
+    add_flow(&ft, fl2);
     int count;
-    DL_COUNT(ft->flows, elt, count);
+    DL_COUNT(ft.flows, elt, count);
     assert_int_equal(count, 1);
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft.flows, elt) {
         struct flow *hash = elt->flows;
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 2);
     }
-    flow_table_destroy(ft);
+    flow_table_clean(&ft);
 }
 
 /*  Test succeeds if there are TWO mini flow tables 
@@ -55,48 +57,50 @@ void add_flows_diff_field_type(void **state)
 {
     struct flow * ret;
     struct mini_flow_table *elt;
-    struct flow_table *ft = flow_table_new();
+    struct flow_table ft;
+    flow_table_init(&ft);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
     set_ip_proto(fl, 17);
-    add_flow(ft, fl);
+    add_flow(&ft, fl);
     struct flow *fl2 = flow_new();
     set_eth_type(fl2, 0x806);
-    add_flow(ft, fl2);
+    add_flow(&ft, fl2);
     int count;
-    DL_COUNT(ft->flows, elt, count);
+    DL_COUNT(ft.flows, elt, count);
     assert_int_equal(count, 2);
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft.flows, elt) {
         struct flow *hash = elt->flows;
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 1);
     }
-    flow_table_destroy(ft);
+    flow_table_clean(&ft);
 }
 
 /* Succeed if action for two flows is modified */
 void modify_strict(void **state)
 {
     struct mini_flow_table *elt;
-    struct flow_table *ft = flow_table_new();
+    struct flow_table ft;
+    flow_table_init(&ft);
     struct flow *fl = flow_new();
     set_ip_proto(fl, 7);
     set_eth_type(fl, 0x800);
     fl->action = 1;
-    add_flow(ft, fl);
+    add_flow(&ft, fl);
     struct flow *fl2 = flow_new();
     set_ipv4_dst(fl2, 21);
     set_eth_type(fl2, 0x800);
     set_ip_proto(fl2, 7);
-    add_flow(ft, fl2);
+    add_flow(&ft, fl2);
     fl2->action = 2;
     struct flow *fl3 = flow_new();
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
     fl3->action = 3;
-    modify_flow(ft, fl3, true);
+    modify_flow(&ft, fl3, true);
     /* Check if only the first flow is modified*/
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft.flows, elt) {
         struct flow *hash = elt->flows;
         struct flow* ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct flow_key), ret);
@@ -109,32 +113,33 @@ void modify_strict(void **state)
         }  
     }
     flow_destroy(fl3);
-    flow_table_destroy(ft);
+    flow_table_clean(&ft);
 }
 
 /* Succeed if action for two flows is modified */
 void modify_non_strict(void **state)
 {
     struct mini_flow_table *elt;
-    struct flow_table *ft = flow_table_new();
+    struct flow_table ft;
+    flow_table_init(&ft);
     struct flow *fl = flow_new();
     set_ip_proto(fl, 7);
     set_eth_type(fl, 0x800);
     fl->action = 1;
-    add_flow(ft, fl);
+    add_flow(&ft, fl);
     struct flow *fl2 = flow_new();
     set_ipv4_dst(fl2, 21);
     set_eth_type(fl2, 0x800);
     set_ip_proto(fl2, 7);
-    add_flow(ft, fl2);
+    add_flow(&ft, fl2);
     fl2->action = 2;
     struct flow *fl3 = flow_new();
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
     fl3->action = 3;
-    modify_flow(ft, fl3, false);
+    modify_flow(&ft, fl3, false);
     /* Check if both flows were modified*/
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft.flows, elt) {
         struct flow *hash = elt->flows;
         struct flow* ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct flow_key), ret);
@@ -147,7 +152,7 @@ void modify_non_strict(void **state)
         }  
     }
     flow_destroy(fl3);
-    flow_table_destroy(ft);
+    flow_table_clean(&ft);
 }
 
 // Lookup
