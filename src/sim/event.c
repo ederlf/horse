@@ -7,8 +7,9 @@
  *
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
- 
+
 #include "event.h"
+
 
 void 
 init_event(struct event *ev, uint8_t type, uint64_t time, uint64_t id){

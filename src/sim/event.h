@@ -7,7 +7,7 @@
  *
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
- 
+
 #ifndef EVENT_H
 #define EVENT_H 1
 
@@ -18,7 +18,7 @@
 enum events {
     EVENT_FLOW = 0, 
     EVENT_PACKET = 1,     /* For the future case of hybrid simulation. */
-    EVENT_CONTROLLER = 2, /* Instructions from the control plane.      */
+    EVENT_INSTRUCTION = 2, /* Instructions from the control plane.      */
     EVENT_LINK_DOWN = 3,
     EVENT_LINK_UP = 4,
 };
@@ -47,12 +47,20 @@ struct event_hdr {
 /*  A flow event represents 
 *   traffic arriving in a switch.
 */
-struct event_flow{
+struct event_flow {
     struct event_hdr hdr;       
     uint64_t dpid;              /* The switch to process the event.     */
     uint64_t pkt_cnt;           /* Number of packets in the flow.       */
     uint64_t byte_cnt;          /* Total number of packets in the flow. */ 
     struct flow_key match;      /* The fields belonging to a flow.      */
+};
+
+/* A instruction from the control plane. */
+struct event_instruction {
+    struct event_hdr hdr;       
+    uint64_t dpid;              /* The switch to process the event.     */
+    //struct instruction
+
 };
 
 void init_event(struct event *ev, uint8_t type, uint64_t time, uint64_t id);
