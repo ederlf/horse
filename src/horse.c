@@ -70,8 +70,7 @@ main(int argc, char *argv[]){
                 topology_init(&topo);
                 struct datapath *dp =  dp_new(0x000000000001);
                 topology_add_switch(&topo, dp);
-                printf("%d %lx\n", UINT8_MAX, dp->dp_id);
-                start(&topo);
+                start(topo);
                 break;
             }
             case '?':{

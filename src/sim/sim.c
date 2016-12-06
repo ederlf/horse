@@ -11,7 +11,7 @@
 #include "sim.h"
 
 static void
-sim_init(struct sim *s, struct topology *topo) {
+sim_init(struct sim *s, struct topology topo) {
     s->topo = topo;
     s->events = NULL;
     s->sch = scheduler_new();
@@ -30,11 +30,11 @@ static void
 sim_close(struct sim *s){
     sim_clean_ev(s->events);
     scheduler_destroy(s->sch);
-    topology_destroy(s->topo);
+    topology_destroy(&s->topo);
 }
 
 void 
-start(struct topology *topo) {
+start(struct topology topo) {
     struct sim s;
     sim_init(&s, topo);
     sim_close(&s);    

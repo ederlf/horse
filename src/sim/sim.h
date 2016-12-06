@@ -15,11 +15,11 @@
 #include "net/topology.h"
 
 struct sim {
-    struct topology *topo;   /* Topology of the simulation. */
-    struct event_hdr *events;   /* Hash table of events.       */
-    struct scheduler *sch;   /* Event scheduler.            */
+    struct topology topo;     /* Topology of the simulation. */
+    struct event_hdr *events; /* Hash table of events.       */
+    struct scheduler *sch;    /* Event scheduler.            */
 };
 
-void start(struct topology *topo);
+void start(struct topology topo);
 
 #endif
