@@ -24,6 +24,7 @@ flow_new(void)
 {
     struct flow *f = xmalloc(sizeof(struct flow));
     f->priority = 0;
+    f->cookie = 0;
     memset(&f->key, 0x0, sizeof(struct flow_key));
     memset(&f->mask, 0x0, sizeof(struct flow_key));
     return f;

@@ -51,6 +51,7 @@ struct flow {
     struct flow_key key;
     struct flow_key mask;
     uint32_t priority;
+    uint64_t cookie;       /* Flow identification. */
     uint64_t pkt_cnt;
     uint64_t byte_cnt;
     uint64_t created; 
