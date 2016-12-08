@@ -1,68 +1,29 @@
 AUTOMAKE_OPTIONS = foreign -Wno-syntax subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I./src -I./third-party -Wstrict-prototypes  -Wall -Wextra -Werror     
+AM_CFLAGS = -I./src -I./vendor -Wstrict-prototypes -Wall -Wextra -Werror     
+
+noinst_LIBRARIES =
+
+include vendor/json/automake.mk
+include src/automake.mk
 
 bin_PROGRAMS = horse
+horse_SOURCES = src/horse.c
+horse_LDADD = src/libhorse.a
 
-horse_SOURCES = src/lib/flow.h \
-		src/lib/flow.c \
-		src/lib/heap.h \
-		src/lib/heap.c \
-		src/lib/util.h \
-		src/lib/util.c \
-		src/net/datapath.h \
-		src/net/datapath.c \
-		src/net/flow_table.h \ 
-		src/net/flow_table.c \
-		src/net/port.h \
-		src/net/port.c \
-		src/net/topology.h \
-		src/net/topology.c \
-		src/sim/event.h \
-		src/sim/event.c \
-		src/sim/scheduler.h \
-		src/sim/scheduler.c \
-		src/sim/sim.h \
-		src/sim/sim.c \
-		src/horse.c
-
-noinst_LIBRARIES = libhorse.a
-libhorse_a_SOURCES = src/lib/action.h \
-		src/lib/action.c \
-		src/lib/flow.h \
-		src/lib/flow.c \
-		src/lib/heap.h \
-		src/lib/heap.c \
-		src/lib/util.h \
-		src/lib/util.c \
-		src/net/datapath.h \
-		src/net/datapath.c \
-		src/net/flow_table.h \ 
-		src/net/flow_table.c \
-		src/net/port.h \
-		src/net/port.c \
-		src/net/topology.h \
-		src/net/topology.c \
-		src/sim/event.h \
-		src/sim/event.c \
-		src/sim/scheduler.h \
-		src/sim/scheduler.c \
-		src/sim/sim.h \
-		src/sim/sim.c
-
-TESTS = flow_table_test scheduler_test
 
 # Unit tests
-
-unit_test_CFLAGS = -DUNIT_TESTING=1 -I./src -I./third-party
+TESTS = flow_table_test scheduler_test
+unit_test_CFLAGS = -DUNIT_TESTING=1 -I./src -I./vendor
 
 noinst_PROGRAMS = flow_table_test scheduler_test
 
 flow_table_test_SOURCES = tests/flow_table_test.c
 flow_table_test_CFLAGS = $(unit_test_CFLAGS)
-flow_table_test_LDADD = -lcmockery libhorse.a
+flow_table_test_LDADD = -lcmockery src/libhorse.a
 
 scheduler_test_SOURCES = tests/scheduler_test.c
 scheduler_test_CFLAGS = $(unit_test_CFLAGS)
-scheduler_test_LDADD = -lcmockery libhorse.a
+scheduler_test_LDADD = -lcmockery src/libhorse.a
+
