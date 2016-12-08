@@ -16,6 +16,11 @@ void out_of_memory()
     abort();
 }
 
+void file_read_error(){
+    fprintf(stderr, "Failed to read the file. Aborting.\n");
+    abort();
+}
+
 void *
 xmalloc(size_t size)
 {
@@ -34,4 +39,26 @@ xrealloc(void *v, int size)
         out_of_memory();
     }    
     return v;
+}
+
+/* Return the size of the string for reuse */
+char* file_to_string(const char * file_name, size_t *size){
+    FILE *fh = fopen(file_name, "r");
+    char *str_file = NULL; 
+    if ( fh != NULL ){
+        size_t s;
+        fseek(fh, 0L, SEEK_END);
+        s = ftell(fh);
+        rewind(fh);
+        str_file = malloc(s);
+        if (str_file != NULL){
+            if (fread(str_file, s, 1, fh) < 1){
+                /* Abort in case of failure */
+                file_read_error();
+            }
+        }
+        fclose(fh);
+        *size = s;
+    }
+    return str_file;
 }
