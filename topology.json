@@ -1,0 +1,20 @@
+{
+    "dps":[1, 2, 3],
+    "links": [{
+        "switchX":1,
+        "switchY": 2,
+        "portX": 1,
+        "portY": 2,
+        "delay": 10,
+        "bw": 100
+        },
+        {
+        "switchX": 2,
+        "switchY": 3,
+        "portX": 2,
+        "portY": 1,
+        "delay": 10,
+        "bw": 100
+        }
+    ]
+}
