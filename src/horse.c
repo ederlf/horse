@@ -45,31 +45,15 @@ display_horse(void)
 int 
 main(int argc, char *argv[]){
     int c;
-    while ((c = getopt (argc, argv, "ha")) != -1){
+    while ((c = getopt (argc, argv, "ht")) != -1){
         switch (c){
             case 'h':{
                 display_horse();
                 display_help_message();
                 break;
             }
-            case 'a':{ 
-                // struct scheduler *sch = scheduler_create();
-                // size_t i;
-                // for (i = 1; i <= 100000000; ++i){
-                //     struct event *ev = xmalloc(sizeof(struct event));
-                //     ev->ev_node = xmalloc(sizeof(struct heap_node));
-                //     ev->time = i;
-                //     ev->type = 0;
-                //     scheduler_insert(sch, ev, i);
-                // }
-                // size_t s = sch->ev_queue->size;
-                // for (i = 1; i < s; ++i){
-                //     scheduler_dispatch(sch);
-                // }
-                struct topology topo; //= topology_new();
-                topology_init(&topo);
-                struct datapath *dp =  dp_new(0x000000000001);
-                topology_add_switch(&topo, dp);
+            case 't':{ 
+                struct topology topo = from_json(argv[optind]);
                 start(topo);
                 break;
             }

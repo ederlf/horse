@@ -23,10 +23,12 @@
 *   
 */
 struct link {
-    uint32_t conn_dp;   /* Id of the datapath connected.  */
-    uint32_t latency;   /* Latency of the link in ms.     */
-    uint32_t bandwidth; /* Maximum bandwidth of the link. */
-    struct link* next;  /* Next link in a list.           */
+    uint32_t conn_dp;   /* Id of the datapath connected.          */
+    uint32_t orig_port; /* Port number of the datapath.           */
+    uint32_t end_port;  /* Port number of the datapath connected. */
+    uint32_t latency;   /* Latency of the link in ms.             */
+    uint32_t bandwidth; /* Maximum bandwidth of the link.         */
+    struct link* next;  /* Next link in a list.                   */
 };
 
 /* Represents the network topology */
@@ -39,10 +41,11 @@ struct topology {
     uint32_t nlinks;                 /* Number of links. */
 };
 
-void topology_add_link(struct topology *t, uint64_t dpidA, uint64_t dpidB, uint32_t bw, uint32_t latency);
 void topology_init(struct topology* topo);
 void topology_add_switch(struct topology *topo, struct datapath *dp);
+void topology_add_link(struct topology *t, uint64_t dpidA, uint64_t dpidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed);
 void topology_destroy(struct topology *topo);
 
+struct topology from_json(char *json_file);
 
 #endif /* TOPOLOGY_H */
