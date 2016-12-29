@@ -14,6 +14,9 @@
 #define DELAY "delay"
 #define BW    "bw"
 
+#define DP_LIMIT UINT16_MAX
+#define LINK_LIMIT 10000
+
 struct link_spec {
     uint64_t switchX;
     uint64_t switchY;
@@ -24,9 +27,9 @@ struct link_spec {
 };
 
 struct parsed_topology {
-    uint64_t dps[10000];
+    uint64_t dps[DP_LIMIT];
     size_t ndps;
-    struct link_spec links[10000];
+    struct link_spec links[LINK_LIMIT];
     size_t nlinks;
 };
 
