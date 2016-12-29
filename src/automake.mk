@@ -25,5 +25,4 @@ src_libhorse_a_SOURCES = src/lib/action.h \
                 src/sim/sim.h \
                 src/sim/sim.c
 
-src_libhorse_a_DEPENDENCIES = vendor/json/libjson.a
-src_libhorse_a_LIBADD = vendor/json/libjson.a
+src_libhorse_a_LIBADD = vendor/json/json.o
