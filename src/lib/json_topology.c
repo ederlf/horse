@@ -13,7 +13,6 @@ struct json_error_info {
 static int 
 cmpfunc(const void * a, const void * b){
    return ( *(uint64_t*) a - *(uint64_t*) b );
-
 }
 
 static void 
@@ -159,6 +158,7 @@ parse_topology(char *json, size_t s, struct parsed_topology *ptopo){
             sscanf((char*) value->number, "%"PRIx32"", &ptopo->links[i].bw);
             arr_elem = arr_elem->next;
         }
+        ptopo->nlinks = i;
     }
     free(root);
     free(json); 
