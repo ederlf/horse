@@ -1,0 +1,23 @@
+- Simulation time advance
+    How to advance time after the execution of a flow event.
+    The initial idea is to take the link latency and multiply per the flow packets. However it brings the problem of other flows starting before the conclusion of the initial flow.
+
+    Idea?
+
+    "time" is only a measurement to delimit the  end and beginning of a new event.
+    
+    so in the case of the event, a flow would be forwarded, then a new event which is the flow arriving in another switch would have the "time" after sending all packets. 
+
+    The only concern about this approach is that might sound bad or inaccurate the feeling you have packets waiting to be transfered because they belong to a flow.
+
+    wait time is calculated as:
+
+    wait = link_delay(latency) + flow.npackets / dp.port.bw
+
+
+    How to deal with a transmission of  5s (5000ms)?
+        - It might depend on the type of transference.
+        - Imagine TCP, with packets lost there will be retransmission events.
+        - Flow generation must respect the application or is it just mindless traffic going through a network?
+        - chicken/egg problem, some traffic patterns might depend on the network state, so not sure if it is valid to replay all the traffic from an IPFIX capture
+
