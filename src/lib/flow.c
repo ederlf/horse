@@ -18,6 +18,14 @@
 #define ALL_UINT32_MASK 0xffffffff
 #define ALL_UINT64_MASK 0xffffffffffffffff
 
+static
+void init_instructions(struct flow *f){
+    int i;
+    for (i = 0; i < INST_MAX; ++i){
+        f->instructions[i] = NULL;
+    }
+}
+
 /* Allocates a new flow and sets all fields to 0 */
 struct flow* 
 flow_new(void)
@@ -80,14 +88,7 @@ flow_key_cmp(struct flow_key *a, struct flow_key *b)
             (memcmp(a->ipv6_nd_target, b->ipv6_nd_target, 16) == 0) &&
             (memcmp(a->ipv6_nd_sll, b->ipv6_nd_sll, 6) == 0) &&
             (memcmp(a->ipv6_nd_tll, b->ipv6_nd_tll, 6) == 0);
-}  
-
-void init_instructions(struct flow *f){
-    int i;
-    for (i = 0; i < INST_MAX; ++i){
-        f->instructions[i] = NULL;
-    }
-}
+} 
 
 void 
 flow_add_instruction(struct flow *f, struct inst_header *inst)
@@ -98,10 +99,23 @@ flow_add_instruction(struct flow *f, struct inst_header *inst)
 void 
 flow_replace_instructions(struct flow *f, struct inst_header *insts[INST_MAX])
 {
-    int i;
     flow_clean_instructions(f);
-    for (i = 0; i < INST_MAX; ++i){
-        f->instructions[i] = insts[i];
+    if (insts[INSTRUCTION_APPLY_ACTIONS] != NULL){
+        f->instructions[INSTRUCTION_APPLY_ACTIONS] = (struct inst_header*)inst_new_apply_actions();
+    }       
+    if (insts[INSTRUCTION_CLEAR_ACTIONS] != NULL){
+        f->instructions[INSTRUCTION_CLEAR_ACTIONS] = (struct inst_header*) inst_new_clear_actions();
+    }
+    if (insts[INSTRUCTION_WRITE_ACTIONS] != NULL){
+        f->instructions[INSTRUCTION_WRITE_ACTIONS] = (struct inst_header*) inst_new_write_actions();
+    }
+    if (insts[INSTRUCTION_WRITE_METADATA] != NULL){
+        struct write_metadata* wm = (struct write_metadata*) insts[INSTRUCTION_WRITE_METADATA];
+        f->instructions[INSTRUCTION_WRITE_METADATA] = (struct inst_header*) inst_new_write_metadata(wm->metadata);
+    }
+    if (insts[INSTRUCTION_GOTO_TABLE] != NULL){
+        struct goto_table* gt = (struct goto_table*) insts[INSTRUCTION_GOTO_TABLE];
+        f->instructions[INSTRUCTION_GOTO_TABLE] = (struct inst_header*) inst_new_goto_table(gt->table_id);
     }
 }
 

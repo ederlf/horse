@@ -79,7 +79,6 @@ void flow_destroy(struct flow *f);
 bool flow_key_cmp(struct flow_key *a, struct flow_key *b);
 void flow_add_instruction(struct flow *f, struct inst_header *inst);
 void flow_replace_instructions(struct flow *f, struct inst_header *insts[INST_MAX]);
-void init_instructions(struct flow *f);
 
 /* Set field functions */
 void set_in_port(struct flow *f, uint32_t in_port);

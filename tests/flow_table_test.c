@@ -164,6 +164,56 @@ void modify_non_strict(void **state)
     flow_table_clean(ft);
 }
 
+void stress_modify_non_strict(void **state)
+{
+    struct mini_flow_table *elt;
+    struct flow_table *ft = flow_table_new(0);
+    struct flow_key *keys = malloc(sizeof(struct flow_key) * 1000000);
+    int i;
+    for (i = 0; i < 1000000; ++i){
+        struct flow *fl = flow_new();
+        struct goto_table *gt = inst_new_goto_table(1);
+        struct write_metadata *wm = inst_new_write_metadata(0xbeef); 
+        set_ip_proto(fl, 7);
+        set_eth_type(fl, 0x800);
+        set_ipv4_dst(fl, i);
+        memset(&keys[i],0x0, sizeof(struct flow_key));
+        keys[i].ip_proto = 7;
+        keys[i].eth_type = 0x800;
+        keys[i].ipv4_dst = i;
+        flow_add_instruction(fl, (struct inst_header*) gt);
+        flow_add_instruction(fl, (struct inst_header*) wm);
+        add_flow(ft, fl);
+    }
+
+    /* Flow to be modified */
+    struct flow *fl3 = flow_new();
+    struct inst_header *clean = inst_new_clear_actions();
+    struct apply_actions *apply = inst_new_apply_actions();
+    set_ip_proto(fl3, 7);
+    set_eth_type(fl3, 0x800);
+    flow_add_instruction(fl3, clean);
+    flow_add_instruction(fl3, (struct inst_header*) apply);
+    modify_flow(ft, fl3, false);
+    /* Check if all flows were modified*/
+    i = 0;
+    DL_FOREACH(ft->flows, elt) {
+        struct flow *hash = elt->flows;
+        struct flow* ret;
+        HASH_FIND(hh, hash, &keys[i], sizeof(struct flow_key), ret);
+        if (ret){
+            assert_int_equal(ret->instructions[INSTRUCTION_GOTO_TABLE], NULL);
+            assert_int_equal(ret->instructions[INSTRUCTION_WRITE_METADATA], NULL);
+            assert_int_equal(ret->instructions[INSTRUCTION_CLEAR_ACTIONS]->type, INSTRUCTION_CLEAR_ACTIONS);
+            assert_int_equal(ret->instructions[INSTRUCTION_APPLY_ACTIONS]->type, INSTRUCTION_APPLY_ACTIONS);
+        }
+        i++; 
+    }
+    free(keys);
+    flow_destroy(fl3);
+    flow_table_clean(ft);
+}
+
 /* Succeed if instruction two flows are gone */
 void delete_non_strict(void **state)
 {
@@ -206,8 +256,9 @@ int main(int argc, char* argv[]) {
         unit_test(add_flows_same_field_type),
         unit_test(add_flows_diff_field_type),
         unit_test(modify_strict),
-        // unit_test(modify_non_strict),
+        unit_test(modify_non_strict),
         unit_test(delete_non_strict),
+        unit_test(stress_modify_non_strict),
     };
     return run_tests(tests);
 }

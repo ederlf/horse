@@ -131,9 +131,7 @@ mod_flow_strict(struct flow_table *ft, struct flow *f)
             HASH_FIND(hh, nxt_mft->flows, &f->key, sizeof(struct flow_key), flow_found);
             /* If the flow exists, replaces its instructions. */ 
             if (flow_found && flow_found->priority == f->priority){
-                flow_replace_instructions(flow_found, f->instructions);
-                /* Instructions are owned by the flows in the table*/
-                init_instructions(f);    
+                flow_replace_instructions(flow_found, f->instructions);   
             }
             /* Break the loop, the match cannot exist in another flow. */ 
             break;
@@ -146,7 +144,6 @@ void
 mod_flow_non_strict(struct flow_table *ft, struct flow *f)
 {
     struct mini_flow_table *nxt_mft;
-    bool keep_inst = true;
     DL_FOREACH(ft->flows, nxt_mft){
         struct flow tmp_flow;
         memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct flow_key));
@@ -163,16 +160,10 @@ mod_flow_non_strict(struct flow_table *ft, struct flow *f)
                 if (flow_key_cmp(&tmp_flow.key, &f->key)){
                     /* Replace instructions. */
                     flow_replace_instructions(cur_flow, f->instructions);
-                    keep_inst = false;
                 }
             
             }
         }
-    }
-    /* If the there is a change flows take ownership
-    *  so f can be deleted safely.                   */
-    if (keep_inst == false) {
-        init_instructions(f);
     }
 }
 
