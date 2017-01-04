@@ -1,5 +1,4 @@
 #include "action.h"
-#include "util.h"
 
 void 
 action_set_init(struct action_set *as)
@@ -10,13 +9,24 @@ action_set_init(struct action_set *as)
     }
 }
 
+void 
+action_list_init(struct action_list *al)
+{
+    al->actions = NULL;
+    al->act_num = 0;
+}
+
 // static void action_cast
 
-void action_set_add(struct action_set *as, struct action_header *act, uint8_t type){
+void 
+action_set_add(struct action_set *as, struct action_header *act, uint8_t type)
+{
     as->actions[type] = act;
 };
 
-struct output* action_new_output(uint32_t port){
+struct output* 
+action_new_output(uint32_t port)
+{
     struct output *out = xmalloc(sizeof(struct output));
     out->header.type = ACT_OUTPUT;
     out->port = port;

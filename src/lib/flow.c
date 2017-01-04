@@ -27,12 +27,25 @@ flow_new(void)
     f->cookie = 0;
     memset(&f->key, 0x0, sizeof(struct flow_key));
     memset(&f->mask, 0x0, sizeof(struct flow_key));
+    init_instructions(f);
     return f;
+}
+
+void 
+flow_clean_instructions(struct flow *f)
+{
+    free((struct write_actions*) f->instructions[INSTRUCTION_APPLY_ACTIONS]);
+    free(f->instructions[INSTRUCTION_CLEAR_ACTIONS]);
+    free((struct write_actions*) f->instructions[INSTRUCTION_WRITE_ACTIONS]);
+    free((struct write_metadata*) f->instructions[INSTRUCTION_WRITE_METADATA]);
+    free((struct goto_table*) f->instructions[INSTRUCTION_GOTO_TABLE]);
+    init_instructions(f);
 }
 
 void 
 flow_destroy(struct flow *f)
 {
+    flow_clean_instructions(f);
     free(f);
 }
 
@@ -68,6 +81,29 @@ flow_key_cmp(struct flow_key *a, struct flow_key *b)
             (memcmp(a->ipv6_nd_sll, b->ipv6_nd_sll, 6) == 0) &&
             (memcmp(a->ipv6_nd_tll, b->ipv6_nd_tll, 6) == 0);
 }  
+
+void init_instructions(struct flow *f){
+    int i;
+    for (i = 0; i < INST_MAX; ++i){
+        f->instructions[i] = NULL;
+    }
+}
+
+void 
+flow_add_instruction(struct flow *f, struct inst_header *inst)
+{
+    f->instructions[inst->type] = inst;
+}
+
+void 
+flow_replace_instructions(struct flow *f, struct inst_header *insts[INST_MAX])
+{
+    int i;
+    flow_clean_instructions(f);
+    for (i = 0; i < INST_MAX; ++i){
+        f->instructions[i] = insts[i];
+    }
+}
 
 void 
 set_in_port(struct flow *f, uint32_t in_port)

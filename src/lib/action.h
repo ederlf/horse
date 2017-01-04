@@ -11,6 +11,7 @@
 #define ACTION_H 1
 
 #include <inttypes.h>
+#include "util.h"
 
 #define MAX_ACTION_SET 11
 
@@ -71,6 +72,7 @@ struct action_header {
 /* No limit to size and action types */
 struct action_list {
     struct action_header **actions;
+    size_t act_num;
 };
 
 /* Only one action of each type*/
@@ -148,6 +150,7 @@ struct set_field {
 };
 
 struct output* action_new_output(uint32_t port);
+void action_list_init(struct action_list *al);
 void action_set_init(struct action_set *as);
 void action_set_add(struct action_set *as, struct action_header *act, uint8_t type);
 
