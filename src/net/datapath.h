@@ -21,13 +21,16 @@
 */
 #define MAX_PORT_NUM UINT8_MAX /* 2 ^ 8 ports */
 
+/* Total number of tables per datapath */
+#define MAX_TABLES 128
+
 /* Definition of a switch of the network */
 struct datapath {
     uint32_t uuid; /* Sequential identification value in the simulator  */
     uint64_t dp_id; /* Unique identification number of a switch in network*/ 
     struct port dp_ports[MAX_PORT_NUM + 1]; /* Array of switch interfaces */
     uint16_t ports_num; /* Total number of ports */
-    struct flow_table ft; 
+    struct flow_table *tables[MAX_TABLES]; 
     UT_hash_handle hh; /* Make the struct hashable */
 };
 

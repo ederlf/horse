@@ -32,9 +32,12 @@ mini_flow_table_add_flow(struct mini_flow_table *mft,  struct flow *f){
     HASH_ADD(hh, mft->flows , key, sizeof(struct flow_key), f);
 }
 
-void
-flow_table_init(struct flow_table *ft){
+struct flow_table* 
+flow_table_new(uint8_t table_id){
+    struct flow_table *ft =  xmalloc(sizeof(struct flow_table));
+    ft->table_id = table_id;
     ft->flows = NULL;
+    return ft;
 }
 
 void flow_table_clean(struct flow_table *ft)
@@ -49,6 +52,7 @@ void flow_table_clean(struct flow_table *ft)
         DL_DELETE(ft->flows, nxt_mft);
         free(nxt_mft);
     }
+    free(ft);
 }
 
 struct flow* 

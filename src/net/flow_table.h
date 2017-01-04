@@ -15,8 +15,6 @@
 #include "lib/flow.h"
 #include <inttypes.h>
 
-/* Total number of tables per datapath */
-#define MAX_TABLES 128
 
 /* Mini flow tables are hash maps that 
 *  contain only one combination of match 
@@ -40,7 +38,7 @@ struct flow_table {
     uint8_t table_id;
 };
 
-void flow_table_init(struct flow_table *ft);
+struct flow_table* flow_table_new(uint8_t table_id);
 void flow_table_clean(struct flow_table *ft);
 struct flow* flow_table_lookup(struct flow_table* ft, struct flow *flow);
 void add_flow(struct flow_table *ft, struct flow *f);

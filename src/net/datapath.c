@@ -20,10 +20,14 @@ static uint32_t current_uuid = 0;
 struct datapath* 
 dp_new(uint64_t dp_id){
     struct datapath *dp = xmalloc(sizeof(struct datapath));
+    int i;
     dp->uuid = current_uuid;
     dp->dp_id = dp_id;
     dp->ports_num = 0;
-    flow_table_init(&dp->ft);
+    /* Create flow tables*/
+    for (i = 0; i < MAX_TABLES; ++i){
+        dp->tables[i] = flow_table_new(i);
+    }
     ++current_uuid;
     return dp;
 }
