@@ -13,7 +13,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
+
 
 void out_of_memory(void);
 void file_read_error(void);

@@ -23,6 +23,7 @@
 #define FLOW_H 1
 
 #include "instruction.h"
+#include "instruction_set.h"
 #include <inttypes.h>
 #include <stdbool.h>
 #include <uthash/uthash.h>
@@ -68,7 +69,7 @@ struct flow {
     uint64_t created; 
     uint64_t remove_at; 
     uint64_t last_used;
-    struct inst_header *instructions[INST_MAX];
+    struct instruction_set insts;
     UT_hash_handle hh;
 };
 
@@ -77,8 +78,7 @@ struct flow *flow_new(void);
 void flow_clean_instructions(struct flow *f);
 void flow_destroy(struct flow *f);
 bool flow_key_cmp(struct flow_key *a, struct flow_key *b);
-void flow_add_instruction(struct flow *f, struct inst_header *inst);
-void flow_replace_instructions(struct flow *f, struct inst_header *insts[INST_MAX]);
+void flow_add_instructions(struct flow *f, struct instruction_set is);
 
 /* Set field functions */
 void set_in_port(struct flow *f, uint32_t in_port);

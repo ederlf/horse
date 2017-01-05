@@ -19,11 +19,8 @@
 #define ALL_UINT64_MASK 0xffffffffffffffff
 
 static
-void init_instructions(struct flow *f){
-    int i;
-    for (i = 0; i < INST_MAX; ++i){
-        f->instructions[i] = NULL;
-    }
+void init_instruction_set(struct flow *f){
+    memset(&f->insts, 0x0, sizeof(struct instruction_set));
 }
 
 /* Allocates a new flow and sets all fields to 0 */
@@ -35,25 +32,13 @@ flow_new(void)
     f->cookie = 0;
     memset(&f->key, 0x0, sizeof(struct flow_key));
     memset(&f->mask, 0x0, sizeof(struct flow_key));
-    init_instructions(f);
+    init_instruction_set(f);
     return f;
-}
-
-void 
-flow_clean_instructions(struct flow *f)
-{
-    free((struct write_actions*) f->instructions[INSTRUCTION_APPLY_ACTIONS]);
-    free(f->instructions[INSTRUCTION_CLEAR_ACTIONS]);
-    free((struct write_actions*) f->instructions[INSTRUCTION_WRITE_ACTIONS]);
-    free((struct write_metadata*) f->instructions[INSTRUCTION_WRITE_METADATA]);
-    free((struct goto_table*) f->instructions[INSTRUCTION_GOTO_TABLE]);
-    init_instructions(f);
 }
 
 void 
 flow_destroy(struct flow *f)
 {
-    flow_clean_instructions(f);
     free(f);
 }
 
@@ -91,32 +76,9 @@ flow_key_cmp(struct flow_key *a, struct flow_key *b)
 } 
 
 void 
-flow_add_instruction(struct flow *f, struct inst_header *inst)
+flow_add_instructions(struct flow *f, struct instruction_set insts)
 {
-    f->instructions[inst->type] = inst;
-}
-
-void 
-flow_replace_instructions(struct flow *f, struct inst_header *insts[INST_MAX])
-{
-    flow_clean_instructions(f);
-    if (insts[INSTRUCTION_APPLY_ACTIONS] != NULL){
-        f->instructions[INSTRUCTION_APPLY_ACTIONS] = (struct inst_header*)inst_new_apply_actions();
-    }       
-    if (insts[INSTRUCTION_CLEAR_ACTIONS] != NULL){
-        f->instructions[INSTRUCTION_CLEAR_ACTIONS] = (struct inst_header*) inst_new_clear_actions();
-    }
-    if (insts[INSTRUCTION_WRITE_ACTIONS] != NULL){
-        f->instructions[INSTRUCTION_WRITE_ACTIONS] = (struct inst_header*) inst_new_write_actions();
-    }
-    if (insts[INSTRUCTION_WRITE_METADATA] != NULL){
-        struct write_metadata* wm = (struct write_metadata*) insts[INSTRUCTION_WRITE_METADATA];
-        f->instructions[INSTRUCTION_WRITE_METADATA] = (struct inst_header*) inst_new_write_metadata(wm->metadata);
-    }
-    if (insts[INSTRUCTION_GOTO_TABLE] != NULL){
-        struct goto_table* gt = (struct goto_table*) insts[INSTRUCTION_GOTO_TABLE];
-        f->instructions[INSTRUCTION_GOTO_TABLE] = (struct inst_header*) inst_new_goto_table(gt->table_id);
-    }
+    f->insts = insts;
 }
 
 void 

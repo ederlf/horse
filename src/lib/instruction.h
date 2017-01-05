@@ -6,11 +6,11 @@
 #define INST_MAX 5
 
 enum instruction_type {
-    INSTRUCTION_APPLY_ACTIONS,
-    INSTRUCTION_CLEAR_ACTIONS,
-    INSTRUCTION_WRITE_ACTIONS,
-    INSTRUCTION_WRITE_METADATA,
-    INSTRUCTION_GOTO_TABLE
+    INSTRUCTION_APPLY_ACTIONS  =  1 << 0,
+    INSTRUCTION_CLEAR_ACTIONS  =  1 << 1,
+    INSTRUCTION_WRITE_ACTIONS  =  1 << 2,
+    INSTRUCTION_WRITE_METADATA =  1 << 3,
+    INSTRUCTION_GOTO_TABLE     =  1 << 4,
 };
 
 struct inst_header {
@@ -19,6 +19,10 @@ struct inst_header {
 
 struct apply_actions {
     struct inst_header hdr;
+};
+
+struct clear_actions {
+    struct inst_header hdr;  
 };
 
 struct write_actions {
@@ -36,9 +40,9 @@ struct goto_table {
 };
 
 struct apply_actions* inst_new_apply_actions(void);
-struct inst_header* inst_new_clear_actions(void);
+void set_clear_actions(struct clear_actions *ca);
 struct write_actions* inst_new_write_actions(void);
-struct write_metadata* inst_new_write_metadata(uint64_t metadata);
-struct goto_table* inst_new_goto_table(uint8_t table_id);
+void set_write_metadata(struct write_metadata *wm, uint64_t metadata);
+void set_goto_table(struct goto_table *gt, uint8_t table_id);
 
 #endif

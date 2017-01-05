@@ -8,6 +8,8 @@ src_libhorse_a_SOURCES = src/lib/action.h \
                 src/lib/heap.c \
                 src/lib/instruction.h \
                 src/lib/instruction.c \
+                src/lib/instruction_set.h \
+                src/lib/instruction_set.c \
                 src/lib/json_topology.h \
                 src/lib/json_topology.c \
                 src/lib/util.h \

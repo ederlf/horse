@@ -131,7 +131,7 @@ mod_flow_strict(struct flow_table *ft, struct flow *f)
             HASH_FIND(hh, nxt_mft->flows, &f->key, sizeof(struct flow_key), flow_found);
             /* If the flow exists, replaces its instructions. */ 
             if (flow_found && flow_found->priority == f->priority){
-                flow_replace_instructions(flow_found, f->instructions);   
+                flow_add_instructions(flow_found, f->insts);   
             }
             /* Break the loop, the match cannot exist in another flow. */ 
             break;
@@ -159,7 +159,7 @@ mod_flow_non_strict(struct flow_table *ft, struct flow *f)
                 apply_all_mask(&tmp_flow, &f->mask);
                 if (flow_key_cmp(&tmp_flow.key, &f->key)){
                     /* Replace instructions. */
-                    flow_replace_instructions(cur_flow, f->instructions);
+                    flow_add_instructions(cur_flow, f->insts);
                 }
             
             }
@@ -176,7 +176,6 @@ void modify_flow(struct flow_table *ft, struct flow *f, bool strict)
         mod_flow_non_strict(ft, f);
     }
 }
-
 
 /* Delete flow strict:
 *   found = 0
