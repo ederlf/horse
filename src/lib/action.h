@@ -19,17 +19,20 @@
 *  are included for possible future usage.
 */
 enum action_set_order {
-    ACT_COPY_TTL_INWARDS,
-    ACT_POP,
-    ACT_PUSH_MPLS,
-    ACT_PUSH_PBB,
-    ACT_PUSH_VLAN,
-    ACT_COPY_TTL_OUTWARDS,
-    ACT_DECREMENT_TTL,
-    ACT_SET_FIELD,
-    ACT_QOS,
-    ACT_GROUP,
-    ACT_OUTPUT
+    ACT_METER = 1 << 0,
+    ACT_COPY_TTL_INWARDS = 1 << 1,
+    ACT_POP_VLAN = 1 << 2,
+    ACT_POP_MPLS = 1 << 3,
+    ACT_PUSH_MPLS = 1 << 4,
+    ACT_PUSH_VLAN = 1 << 5,
+    ACT_COPY_TTL_OUTWARDS = 1 << 6,
+    ACT_DECREMENT_TTL = 1 << 7,
+    ACT_SET_MPLS_TTL = 1 << 8,
+    ACT_DECREMENT_MPLS_TTL = 1 << 9,
+    ACT_SET_FIELD = 1 << 10,
+    ACT_QOS = 1 << 11,
+    ACT_GROUP = 1 << 12,
+    ACT_OUTPUT = 1 << 13
 };
 
 enum set_field_type {
@@ -65,93 +68,98 @@ enum set_field_type {
     SET_IPV6_ND_TLL
 };
 
-struct action_header {
-    uint16_t type;
-};
-
 /* No limit to size and action types */
 struct action_list {
     struct action_header **actions;
     size_t act_num;
 };
 
-/* Only one action of each type*/
-struct action_set {
-    struct action_header *actions[MAX_ACTION_SET];
+// /* Only one action of each type*/
+// struct action_set {
+//     struct action_header *actions[MAX_ACTION_SET];
+// };
+
+// struct action_header {
+//     uint16_t type;
+// };
+
+struct meter {
+    uint32_t meter_id;
 };
 
 struct output{
-    struct action_header header;
     uint32_t port;
     //uint16_t max_len; /* Max size to send to controller.*/                  
 };
 
-struct copy_ttl_out{
-    struct action_header header;
-};
+// struct copy_ttl_out{
+//     struct action_header header;
+// };
 
-struct copy_ttl_in{
-    struct action_header header;
-};
+// struct copy_ttl_in{
+//     struct action_header header;
+// };
 
 struct set_mpls_ttl{
-   struct action_header header;
    uint8_t new_ttl;    
 };
 
 struct push {
-    struct action_header header;
     uint16_t eth_type;
 };
 
 struct group {
-    struct action_header header;
     uint32_t group_id;
 };
 
 struct pop_mpls {
-    struct action_header header;
-    uint16_t ethertype;
+    uint16_t eth_type;
 };
 
 struct set_field {
-    struct action_header header;
-    uint8_t type;
+    uint8_t field;
     union {
-        uint32_t in_port;
-        uint64_t metadata;
-        uint64_t tunnel_id;
-        uint16_t eth_type;
-        uint8_t eth_dst[6]; /* TODO: Use ETH_LEN */
-        uint8_t eth_src[6];
-        uint16_t vlan_id;
-        uint8_t vlan_pcp;
-        uint32_t mpls_label;
-        uint8_t mpls_tc;
-        uint8_t mpls_bos;
-        uint8_t ip_dscp;
-        uint8_t ip_ecn;
-        uint8_t ip_proto;
-        uint32_t ipv4_dst;
-        uint32_t ipv4_src;
-        uint16_t tp_dst;
-        uint16_t tp_src;
-        uint16_t arp_op;
-        uint32_t arp_spa;
-        uint32_t arp_tpa;
-        uint8_t arp_sha[6];
-        uint8_t arp_tha[6];
-        uint8_t ipv6_dst[16];
-        uint8_t ipv6_src[16];
-        uint8_t ipv6_nd_target[16];
-        uint8_t ipv6_nd_sll[6];
-        uint8_t ipv6_nd_tll[6];
+        uint16_t u16_field;
+        uint32_t u32_field;
+        uint64_t u64_field;
+        uint8_t  eth_addr[6];  /* TODO: Use ETH_LEN */
+        uint8_t  ipv6_addr[16];
     };
 };
 
-struct output* action_new_output(uint32_t port);
+struct action {
+    uint16_t type;
+    union {
+        struct meter meter;
+        struct output out;
+        struct set_mpls_ttl set_mpls_ttl;
+        struct group grp;
+        struct push psh;
+        struct pop_mpls pop_mpls;
+        struct set_field set;
+    };
+};
+
+void action_meter(struct action *meter, uint32_t meter_id);
+void action_copy_ttl_in(struct action *copy_ttl_in);
+void action_pop_vlan(struct action *pop_vlan);
+void action_pop_mpls(struct action *pop, uint16_t eth_type);
+void action_push_vlan(struct action *psh, uint16_t eth_type);
+void action_push_mpls(struct action *psh, uint16_t eth_type);
+void action_copy_ttl_out(struct action *copy_ttl_in);
+void action_mpls_ttl(struct action *smttl, uint8_t new_ttl);
+void action_dec_ttl(struct action *dec_ttl);
+void action_dec_mpls_ttl(struct action *dec_ttl);
+void action_set_field_u16(struct action *sf, uint8_t field, uint16_t value);
+void action_set_field_u32(struct action *sf, uint8_t field, uint32_t value);
+void action_set_field_u64(struct action *sf, uint8_t field, uint64_t value);
+void action_set_field_eth_addr(struct action *sf, uint8_t field, uint8_t *eth_addr);
+void action_set_field_ipv6_addr(struct action *sf, uint8_t field, uint8_t *ipv6_addr);
+void action_group(struct action *grp, uint32_t group_id);
+void action_output(struct action *output, uint32_t port);
+
+
+
 void action_list_init(struct action_list *al);
-void action_set_init(struct action_set *as);
-void action_set_add(struct action_set *as, struct action_header *act, uint8_t type);
 
 #endif
