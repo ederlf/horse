@@ -1,6 +1,7 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H 1
 
+#include "action_set.h"
 #include <inttypes.h>
 
 #define INST_MAX 5
@@ -19,6 +20,7 @@ struct inst_header {
 
 struct apply_actions {
     struct inst_header hdr;
+    struct action_list actions;
 };
 
 struct clear_actions {
@@ -27,6 +29,7 @@ struct clear_actions {
 
 struct write_actions {
     struct inst_header hdr;
+    struct action_set actions;
 };
 
 struct write_metadata {

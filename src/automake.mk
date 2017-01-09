@@ -2,6 +2,8 @@ noinst_LIBRARIES += src/libhorse.a
 
 src_libhorse_a_SOURCES = src/lib/action.h \
                 src/lib/action.c \
+                src/lib/action_set.h \
+                src/lib/action_set.c \
                 src/lib/flow.h \
                 src/lib/flow.c \
                 src/lib/heap.h \
