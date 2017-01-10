@@ -43,11 +43,11 @@ struct goto_table {
     uint8_t table_id;
 };
 
-void set_apply_actions(struct apply_actions *aa, struct action_list al);
-void set_clear_actions(struct clear_actions *ca);
-void set_write_actions(struct write_actions *wa, struct action_set as);
-void set_write_metadata(struct write_metadata *wm, uint64_t metadata);
-void set_goto_table(struct goto_table *gt, uint8_t table_id);
+void inst_apply_actions(struct apply_actions *aa, struct action_list al);
+void inst_clear_actions(struct clear_actions *ca);
+void inst_write_actions(struct write_actions *wa, struct action_set as);
+void inst_write_metadata(struct write_metadata *wm, uint64_t metadata);
+void inst_goto_table(struct goto_table *gt, uint8_t table_id);
 
 void apply_actions_clean(struct apply_actions *aa);
 void write_actions_clean(struct write_actions *wa);

@@ -87,11 +87,11 @@ void modify_strict(void **state)
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     struct instruction_set is;
-    memset(&is, 0x0, sizeof(struct instruction_set));
+    instruction_set_init(&is);
     struct goto_table gt;
-    set_goto_table(&gt, 1);
+    inst_goto_table(&gt, 1);
     struct write_metadata wm;
-    set_write_metadata(&wm, 0xbeef);
+    inst_write_metadata(&wm, 0xbeef);
     add_goto_table(&is, gt);
     add_write_metadata(&is, wm);
     /* Match */
@@ -108,9 +108,9 @@ void modify_strict(void **state)
     /* Flow to be modified */
     struct flow *fl3 = flow_new();
     struct instruction_set is2;
-    memset(&is2, 0x0, sizeof(struct instruction_set));
+    instruction_set_init(&is2);
     struct clear_actions clear;
-    set_clear_actions(&clear);
+    inst_clear_actions(&clear);
     add_clear_actions(&is2, clear);
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
@@ -140,11 +140,11 @@ void modify_non_strict(void **state)
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     struct instruction_set is;
-    memset(&is, 0x0, sizeof(struct instruction_set));
+    instruction_set_init(&is);
     struct goto_table gt;
-    set_goto_table(&gt, 1);
+    inst_goto_table(&gt, 1);
     struct write_metadata wm;
-    set_write_metadata(&wm, 0xbeef);
+    inst_write_metadata(&wm, 0xbeef);
     add_goto_table(&is, gt);
     add_write_metadata(&is, wm);
     /* Match */
@@ -161,9 +161,9 @@ void modify_non_strict(void **state)
     /* Flow to be modified */
     struct flow *fl3 = flow_new();
     struct instruction_set is2;
-    memset(&is2, 0x0, sizeof(struct instruction_set));
+    instruction_set_init(&is2);
     struct clear_actions clear;
-    set_clear_actions(&clear);
+    inst_clear_actions(&clear);
     add_clear_actions(&is2, clear);
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
@@ -195,11 +195,12 @@ void stress_modify_non_strict(void **state)
     for (i = 0; i < 1000000; ++i){
         struct flow *fl = flow_new();
         struct instruction_set is;
+        instruction_set_init(&is);
         struct goto_table gt;
-        set_goto_table(&gt, 1);
+        inst_goto_table(&gt, 1);
         add_goto_table(&is, gt);
         struct write_metadata wm;
-        set_write_metadata(&wm, 0xbeef);
+        inst_write_metadata(&wm, 0xbeef);
         add_write_metadata(&is, wm);
         set_ip_proto(fl, 7);
         set_eth_type(fl, 0x800);
@@ -215,8 +216,9 @@ void stress_modify_non_strict(void **state)
     /* Flow to be modified */
     struct flow *fl3 = flow_new();
     struct instruction_set is2;
+    instruction_set_init(&is2);
     struct clear_actions clear;
-    set_clear_actions(&clear);
+    inst_clear_actions(&clear);
     add_clear_actions(&is2, clear);
     flow_add_instructions(fl3, is2);
     set_ip_proto(fl3, 7);
@@ -245,9 +247,9 @@ void delete_non_strict(void **state)
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     struct instruction_set is;
+    instruction_set_init(&is);
     struct goto_table gt;
-    memset(&is, 0x0, sizeof(struct instruction_set));
-    set_goto_table(&gt, 1);
+    inst_goto_table(&gt, 1);
     add_goto_table(&is, gt);
     // struct write_metadata *wm = inst_new_write_metadata(0xbeef);
     set_ip_proto(fl, 7);

@@ -39,7 +39,7 @@ flow_new(void)
 void 
 flow_destroy(struct flow *f)
 {
-    instruction_set_clean(&(f->insts));
+    instruction_set_clean(&f->insts);
     free(f);
 }
 
