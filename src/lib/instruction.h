@@ -2,6 +2,7 @@
 #define INSTRUCTION_H 1
 
 #include "action_set.h"
+#include "action_list.h"
 #include <inttypes.h>
 
 #define INST_MAX 5
@@ -42,9 +43,9 @@ struct goto_table {
     uint8_t table_id;
 };
 
-struct apply_actions* inst_new_apply_actions(void);
+void set_apply_actions(struct apply_actions *aa, struct action_list al);
 void set_clear_actions(struct clear_actions *ca);
-struct write_actions* inst_new_write_actions(void);
+void set_write_actions(struct write_actions *wa, struct action_set as);
 void set_write_metadata(struct write_metadata *wm, uint64_t metadata);
 void set_goto_table(struct goto_table *gt, uint8_t table_id);
 

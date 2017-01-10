@@ -68,20 +68,6 @@ enum set_field_type {
     SET_IPV6_ND_TLL
 };
 
-/* No limit to size and action types */
-struct action_list {
-    struct action_header **actions;
-    size_t act_num;
-};
-
-// /* Only one action of each type*/
-// struct action_set {
-//     struct action_header *actions[MAX_ACTION_SET];
-// };
-
-// struct action_header {
-//     uint16_t type;
-// };
 
 struct meter {
     uint32_t meter_id;
@@ -91,14 +77,6 @@ struct output{
     uint32_t port;
     //uint16_t max_len; /* Max size to send to controller.*/                  
 };
-
-// struct copy_ttl_out{
-//     struct action_header header;
-// };
-
-// struct copy_ttl_in{
-//     struct action_header header;
-// };
 
 struct set_mpls_ttl{
    uint8_t new_ttl;    
@@ -157,9 +135,5 @@ void action_set_field_eth_addr(struct action *sf, uint8_t field, uint8_t *eth_ad
 void action_set_field_ipv6_addr(struct action *sf, uint8_t field, uint8_t *ipv6_addr);
 void action_group(struct action *grp, uint32_t group_id);
 void action_output(struct action *output, uint32_t port);
-
-
-
-void action_list_init(struct action_list *al);
 
 #endif

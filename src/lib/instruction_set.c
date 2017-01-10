@@ -1,14 +1,6 @@
 #include "instruction_set.h"
 #include "util.h"
 
-// struct instruction_set* 
-// instruction_set_new(void)
-// {
-//     size_t size  = sizeof(struct instruction_set);
-//     struct instruction_set *is = xmalloc(size);
-//     memset(is, 0x0, size);
-//     return is;
-// }
 
 void 
 add_apply_actions(struct instruction_set *is, struct apply_actions act)

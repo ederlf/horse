@@ -1,12 +1,11 @@
 #include "instruction.h"
 #include "util.h"
 
-struct apply_actions* 
-inst_new_apply_actions(void)
+void 
+set_apply_actions(struct apply_actions *aa, struct action_list al)
 {
-    struct apply_actions *aa = xmalloc(sizeof(struct apply_actions));
     aa->hdr.type = INSTRUCTION_APPLY_ACTIONS;
-    return aa;
+    aa->actions = al;
 }
 
 void
@@ -15,12 +14,11 @@ set_clear_actions(struct clear_actions *ca)
     ca->hdr.type = INSTRUCTION_CLEAR_ACTIONS;
 }
 
-struct write_actions* 
-inst_new_write_actions(void)
+void 
+set_write_actions(struct write_actions *wa, struct action_set as)
 {
-    struct write_actions *wa = xmalloc(sizeof(struct write_actions));
     wa->hdr.type = INSTRUCTION_WRITE_ACTIONS;
-    return wa;
+    wa->actions = as;
 }
 
 void
