@@ -14,6 +14,7 @@ struct action_set {
 };
 
 void action_set_init(struct action_set *as);
+void action_set_clean(struct action_set *as);
 void action_set_add(struct action_set *as, struct action act);
 
 

@@ -33,3 +33,14 @@ set_goto_table(struct goto_table *gt, uint8_t table_id){
     gt->hdr.type = INSTRUCTION_GOTO_TABLE;
     gt->table_id = table_id;
 }
+
+void 
+apply_actions_clean(struct apply_actions *aa){
+    action_list_clean(&aa->actions);
+}
+
+void 
+write_actions_clean(struct write_actions *wa)
+{
+    action_set_clean(&wa->actions);
+}

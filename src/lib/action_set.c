@@ -14,6 +14,15 @@ void action_set_init(struct action_set *as){
     as->active = 0; 
 }
 
+void action_set_clean(struct action_set *as)
+{
+    struct action_set_elem *nxt_elem, *tmp;
+    DL_FOREACH_SAFE(as->actions, nxt_elem, tmp){
+        LL_DELETE(as->actions, nxt_elem);
+        free(nxt_elem);
+    }
+}
+
 void 
 action_set_add(struct action_set *as, struct action act){
     struct action_set_elem *elem;
