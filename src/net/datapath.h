@@ -17,9 +17,9 @@
 #include <uthash/uthash.h>
 
 /* Total number of possible ports
-*  UINT16_MAX == 2 ^ 16 datapaths 
+*  UINT32_MAX == 2 ^ 32 datapaths 
 */
-#define MAX_PORT_NUM UINT8_MAX /* 2 ^ 8 ports */
+#define MAX_PORT_NUM UINT32_MAX /* 2 ^ 8 ports */
 
 /* Total number of tables per datapath */
 #define MAX_TABLES 128
@@ -28,12 +28,14 @@
 struct datapath {
     uint32_t uuid; /* Sequential identification value in the simulator  */
     uint64_t dp_id; /* Unique identification number of a switch in network*/ 
-    struct port dp_ports[MAX_PORT_NUM + 1]; /* Array of switch interfaces */
+    struct port *ports; /* Hash table of ports */
     uint16_t ports_num; /* Total number of ports */
     struct flow_table *tables[MAX_TABLES]; 
     UT_hash_handle hh; /* Make the struct hashable */
 };
 
 struct datapath* dp_new(uint64_t dp_id);
+void dp_destroy(struct datapath *dp);
+void dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
 
 #endif /*DATAPATH_H */

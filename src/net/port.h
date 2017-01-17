@@ -12,21 +12,23 @@
 #define INTERFACE_H value
 
 #include <stdint.h>
+#include <uthash/uthash.h>
 
 /* TODO: Move to a global file? */
 #define ETH_LEN 6
 #define MAX_PORT_NAME 16
 
 enum port_config {
-    PORT_DOWN = 0,     /* Administratively down.   */
-    PORT_NO_RECV = 1,  /* Drop all flows received. */
-    PORT_NO_FWD = 2    /* Drop all flows output.   */
+    PORT_DOWN = 1 << 0,     /* Administratively down.   */
+    PORT_UP = 1 << 1,     /* Administratively up.   */
+    PORT_NO_RECV = 1 << 2,  /* Drop all flows received. */
+    PORT_NO_FWD = 1 << 3    /* Drop all flows output.   */
 };
 
 enum port_state {
-    PORT_LINK_DOWN = 0, /* No connectivity. */
-    PORT_BLOCKED = 1,   
-    PORT_LIVE = 2
+    PORT_LINK_DOWN = 1 << 0, /* No connectivity. */
+    PORT_BLOCKED = 1 << 1,   
+    PORT_LIVE = 1 << 2
 };
 
 /**  
@@ -41,10 +43,11 @@ struct port_stats{
 };
 
 /** Description of a switch port. 
- *  
+ *  speed and name fields will not be considered for 
+ *  the first version of the simulator.
  */
 struct port {
-    uint32_t id;                   /* Identification number.     */
+    uint32_t port_id;                   /* Identification number.     */
     uint32_t speed;                /* Total speed.               */
     uint32_t curr_speed;           /* Current speed.             */
     uint8_t config;                /* Administrative state.      */
@@ -52,10 +55,11 @@ struct port {
     char name[MAX_PORT_NAME];
     struct port_stats stats;       /* Current port statistics.   */
     uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address. */
+    UT_hash_handle hh;             /* Make the struct hashable */
 };
 
-/*Port operations: create, send, receive, update counters */
-void port_init(struct port *p);
+/*Port operations: create, send, receive */
+struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
 void port_send(struct port p);
 void port_receive(struct port p);
 
