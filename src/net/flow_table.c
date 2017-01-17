@@ -40,7 +40,7 @@ flow_table_new(uint8_t table_id){
     return ft;
 }
 
-void flow_table_clean(struct flow_table *ft)
+void flow_table_destroy(struct flow_table *ft)
 {
     struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){

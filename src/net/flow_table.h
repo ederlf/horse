@@ -39,7 +39,7 @@ struct flow_table {
 };
 
 struct flow_table* flow_table_new(uint8_t table_id);
-void flow_table_clean(struct flow_table *ft);
+void flow_table_destroy(struct flow_table *ft);
 struct flow* flow_table_lookup(struct flow_table* ft, struct flow *flow);
 void add_flow(struct flow_table *ft, struct flow *f);
 void modify_flow(struct flow_table *ft, struct flow *f, bool strict);

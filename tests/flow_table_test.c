@@ -28,7 +28,7 @@ void add_single_flow(void **state)
             assert_int_equal(ret->key.eth_type, 0x800);
         }  
     }
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 /* Test succeeds if there is ONE mini flow table and TWO flows */
@@ -51,7 +51,7 @@ void add_flows_same_field_type(void **state)
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 2);
     }
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 /*  Test succeeds if there are TWO mini flow tables 
@@ -77,7 +77,7 @@ void add_flows_diff_field_type(void **state)
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 1);
     }
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 /* Succeed if instruction for a single flow is modified */
@@ -130,7 +130,7 @@ void modify_strict(void **state)
         }  
     }
     flow_destroy(fl3);
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 /* Succeed if instruction for two flows is modified */
@@ -174,6 +174,7 @@ void modify_non_strict(void **state)
         struct flow *hash = elt->flows;
         struct flow* ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct flow_key), ret);
+        /* Check if the instruction active fields are equal to the flow mod */
         if (ret){
             assert_int_equal(ret->insts.active, is2.active);
         }
@@ -183,7 +184,7 @@ void modify_non_strict(void **state)
         }  
     }
     flow_destroy(fl3);
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 void stress_modify_non_strict(void **state)
@@ -237,7 +238,7 @@ void stress_modify_non_strict(void **state)
     }
     free(keys);
     flow_destroy(fl3);
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 /* Succeed if instruction two flows are gone */
@@ -276,7 +277,7 @@ void delete_non_strict(void **state)
         assert_int_equal(ret, NULL);
     }
     flow_destroy(fl3);
-    flow_table_clean(ft);
+    flow_table_destroy(ft);
 }
 
 int main(int argc, char* argv[]) {

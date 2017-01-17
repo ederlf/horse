@@ -93,7 +93,7 @@ topology_destroy(struct topology *topo)
     }
     HASH_ITER(hh, topo->dps, current_dp, tmp) {
         HASH_DEL(topo->dps, current_dp);  
-        free(current_dp);
+        dp_destroy(current_dp);
     }
     // free(topo);
 }
