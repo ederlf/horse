@@ -50,10 +50,26 @@ void dp_destroy(struct datapath *dp)
     free(dp);
 }
 
+static void 
+dp_fwd(struct port *p, uint8_t *buf){
+    struct flow *f = (struct flow*) buf;
+    p->stats.tx_packets = f->pkt_cnt;
+    p->stats.tx_bytes = f->byte_cnt;
+}
+
+static void 
+dp_recv(struct port *p, uint8_t *buf){
+    struct flow *f = (struct flow*) buf;
+    p->stats.rx_packets = f->pkt_cnt;
+    p->stats.rx_bytes = f->byte_cnt;
+}
+
 void 
 dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
 {
     struct port *p = port_new(port_id, eth_addr);
+    p->port_send = &dp_fwd;
+    p->port_recv = &dp_recv;
     HASH_ADD(hh, dp->ports, port_id, sizeof(uint32_t), p);
     dp->ports_num++;
 }

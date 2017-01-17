@@ -56,11 +56,11 @@ struct port {
     struct port_stats stats;       /* Current port statistics.   */
     uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address. */
     UT_hash_handle hh;             /* Make the struct hashable */
+    /* Send and receive functions */
+    void (*port_send) (struct port*, uint8_t*);
+    void (*port_recv) (struct port*, uint8_t*); 
 };
 
-/*Port operations: create, send, receive */
 struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
-void port_send(struct port p);
-void port_receive(struct port p);
 
 #endif

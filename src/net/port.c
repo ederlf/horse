@@ -21,3 +21,4 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]) {
     p->state |= PORT_LIVE;
     return p;
 }
+
