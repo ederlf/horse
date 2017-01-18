@@ -20,6 +20,13 @@ scheduler_new()
     return sch;
 }
 
+/* If size == 0, scheduler is empty */
+bool 
+scheduler_is_empty(struct scheduler *sch)
+{
+    return sch->ev_queue->size? false: true;
+}
+
 void 
 scheduler_destroy(struct scheduler *sch)
 {

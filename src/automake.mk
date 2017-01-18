@@ -28,6 +28,8 @@ src_libhorse_a_SOURCES = src/lib/action.h \
                 src/net/topology.c \
                 src/sim/event.h \
                 src/sim/event.c \
+                src/sim/event_handler.h \
+                src/sim/event_handler.c \
                 src/sim/scheduler.h \
                 src/sim/scheduler.c \
                 src/sim/sim.h \

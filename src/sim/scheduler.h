@@ -21,6 +21,7 @@ struct scheduler {
 };
 
 struct scheduler* scheduler_new(void);
+bool scheduler_is_empty(struct scheduler *sch);
 void scheduler_destroy(struct scheduler *sch);
 void scheduler_insert(struct scheduler *sch, struct event *ev);
 struct event scheduler_dispatch(struct scheduler *sch);

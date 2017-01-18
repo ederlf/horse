@@ -19,8 +19,7 @@ enum events {
     EVENT_FLOW = 0, 
     EVENT_PACKET = 1,     /* For the future case of hybrid simulation. */
     EVENT_INSTRUCTION = 2, /* Instructions from the control plane.      */
-    EVENT_LINK_DOWN = 3,
-    EVENT_LINK_UP = 4,
+    EVENT_PORT = 3,
 };
 
 /*  The initial field of event heap node so 
@@ -61,6 +60,14 @@ struct event_instruction {
     uint64_t dpid;              /* The switch to process the event.     */
     //struct instruction
 
+};
+
+/* Change to port configuration and/or status */
+struct event_port {
+    struct event_hdr hdr;    
+    uint64_t dpid;
+    uint8_t config;
+    uint8_t status;
 };
 
 void init_event(struct event *ev, uint8_t type, uint64_t time, uint64_t id);
