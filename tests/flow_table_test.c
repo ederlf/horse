@@ -2,11 +2,48 @@
 #include <uthash/utlist.h>
 #include "cmockery_horse.h"
 
-void stress_stack(void **state)
+void lookup(void **state)
 {
-    struct flow_table ft[1000000];
-    // memset(ft, 0x0, sizeof(struct flow_table) * 128);
-    printf("%lu\n", sizeof(ft));
+    struct flow *ret;
+    struct mini_flow_table *elt;
+    struct flow_table *ft = flow_table_new(0);
+    struct flow *fl = flow_new();
+    set_eth_type(fl, 0x800);
+    set_in_port(fl, 1);
+    add_flow(ft, fl);
+    struct flow *fl2 = flow_new();
+    set_eth_type(fl2, 0x806);
+    add_flow(ft, fl2);
+    struct flow_key key;
+    memset(&key, 0x0, sizeof(struct flow_key));
+    key.eth_type = 0x806;
+    ret = flow_table_lookup(ft, &key);
+    assert_int_equal(ret->key.eth_type, 0x806);
+}
+
+/* Must return the flow with highest priority */
+void lookup_priority(void **state)
+{
+    struct flow *ret;
+    struct mini_flow_table *elt;
+    struct flow_table *ft = flow_table_new(0);
+    struct flow *fl = flow_new();
+    set_eth_type(fl, 0x800);
+    set_in_port(fl, 1);
+    fl->priority = 10;
+    add_flow(ft, fl);
+    struct flow *fl2 = flow_new();
+    set_eth_type(fl2, 0x800);
+    fl2->priority = 1;
+    add_flow(ft, fl2);
+    struct flow_key key;
+    memset(&key, 0x0, sizeof(struct flow_key));
+    key.eth_type = 0x800;
+    key.in_port = 1;
+    ret = flow_table_lookup(ft, &key);
+    if (ret){
+        assert_int_equal(ret->key.in_port, 1);    
+    }
 }
 
 /* Test succeed if flow can be found in the table */
@@ -282,13 +319,15 @@ void delete_non_strict(void **state)
 
 int main(int argc, char* argv[]) {
     const UnitTest tests[] = {
+        unit_test(lookup),
+        unit_test(lookup_priority),
         unit_test(add_single_flow),
         unit_test(add_flows_same_field_type),
         unit_test(add_flows_diff_field_type),
         unit_test(modify_strict),
         unit_test(modify_non_strict),
         unit_test(delete_non_strict),
-        unit_test(stress_modify_non_strict),
+        // unit_test(stress_modify_non_strict),
     };
     return run_tests(tests);
 }
