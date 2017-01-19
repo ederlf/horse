@@ -98,6 +98,14 @@ topology_destroy(struct topology *topo)
     // free(topo);
 }
 
+struct datapath* 
+topology_datapath(struct topology *topo, uint64_t dpid)
+{
+    struct datapath *dp = NULL;
+    HASH_FIND(hh, topo->dps, &dpid, sizeof(uint64_t), dp);
+    return dp;
+}
+
 static
 void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
 {

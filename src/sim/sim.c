@@ -11,7 +11,7 @@
 #include "sim.h"
 #include "event_handler.h"
 
-#define EV_NUM 10000000 
+#define EV_NUM 10
 
 static void 
 create_random_events(struct sim *s, struct event *ev)

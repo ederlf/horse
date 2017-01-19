@@ -3,8 +3,13 @@
 static void 
 handle_flow(struct topology *topo, struct event_flow *ev)
 {
-    printf("%d\n", topo->ndatapaths);
-    printf("%d\n", ev->hdr.type);
+    /* Datapath to handle the flow */
+    struct datapath *dp = topology_datapath(topo, ev->dpid);
+    if (dp){
+        // uint32_t *out_ports; 
+        // out_ports = dp_handle_flow(dp, ev->pkt_cnt, ev->byte_cnt, ev->match);
+          
+    }
 }
 
 static void 

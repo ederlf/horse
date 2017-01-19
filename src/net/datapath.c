@@ -74,3 +74,33 @@ dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
     dp->ports_num++;
 }
 
+/* Retrieve a datapath port */
+struct port* 
+dp_port(struct datapath *dp, uint32_t port)
+{
+    struct port *p;
+    HASH_FIND(hh, dp->ports, &port, sizeof(uint64_t), p);
+    return p;
+}
+
+/* The match can be modified by an action */
+/* Return is a list of ports/ NULL or -1 */
+void 
+dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct flow_key *match)
+{
+    /* Get the input port and update rx counters*/
+    uint8_t i;
+    struct flow *f;
+    uint32_t in_port = match->in_port;
+    struct port *p = dp_port(dp, in_port);
+    p->stats.rx_packets = byte_cnt;
+    p->stats.rx_bytes = pkt_cnt;
+
+    /* Enter pipeline */
+    for(i = 0; i < MAX_TABLES; ++i){
+        f = flow_table_lookup(dp->tables[i], match);
+        if (f){
+            /* Execute instructions */
+        }
+    }
+}
