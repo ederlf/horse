@@ -56,7 +56,7 @@ void flow_table_destroy(struct flow_table *ft)
 }
 
 struct flow* 
-flow_table_lookup(struct flow_table *ft, struct flow *flow)
+flow_table_lookup(struct flow_table *ft, struct flow_key *key)
 {
     struct flow *ret_flow = NULL;
     struct mini_flow_table *nxt_mft;
@@ -66,7 +66,7 @@ flow_table_lookup(struct flow_table *ft, struct flow *flow)
         struct flow tmp_flow;
         struct flow *flow_found;
         /* Cannot modify the flow key, so copy it to a temporary struct. */ 
-        memcpy(&tmp_flow.key, &flow->key, sizeof(struct flow_key));      
+        memcpy(&tmp_flow.key, key, sizeof(struct flow_key));      
         /* Apply mini flow table mask to the temporary flow key fields. */
         apply_all_mask(&tmp_flow, &nxt_mft->mask);
         /* Search for a match in the mini flow table. */
