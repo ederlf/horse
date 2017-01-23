@@ -23,10 +23,10 @@ struct topology;
 
 void topology_init(struct topology* topo);
 struct topology* topology_new(void);
-void topology_add_switch(struct topology *topo, struct datapath *dp);
-void topology_add_link(struct topology *t, uint64_t dpidA, uint64_t dpidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed);
+void topology_add_datapath(struct topology *topo, struct datapath *dp);
+void topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed);
 void topology_destroy(struct topology *topo);
-struct datapath* topology_datapath(struct topology *topo, uint64_t dpid);
+struct node* topology_node(struct topology *topo, uint64_t uuid);
 struct topology* from_json(char *json_file);
 
 /* Get struct members */

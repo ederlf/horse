@@ -42,12 +42,18 @@ struct port_stats{
     uint64_t rx_bytes;
 };
 
+/* The other side of a port */ 
+struct end_point {
+    uint64_t dp_id;
+    uint32_t port_id;
+};
+
 /** Description of a switch port. 
  *  speed and name fields will not be considered for 
- *  the first version of the simulator.
- */
+ *  the first version of the simulator. */
+ 
 struct port {
-    uint32_t port_id;                   /* Identification number.     */
+    uint32_t port_id;              /* Identification number.     */
     uint32_t speed;                /* Total speed.               */
     uint32_t curr_speed;           /* Current speed.             */
     uint8_t config;                /* Administrative state.      */
@@ -55,10 +61,7 @@ struct port {
     char name[MAX_PORT_NAME];
     struct port_stats stats;       /* Current port statistics.   */
     uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address. */
-    UT_hash_handle hh;             /* Make the struct hashable */
-    /* Send and receive functions */
-    void (*port_send) (struct port*, uint8_t*);
-    void (*port_recv) (struct port*, uint8_t*); 
+    UT_hash_handle hh;             /* Make the struct hashable   */
 };
 
 struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
