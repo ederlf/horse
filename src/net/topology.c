@@ -12,6 +12,29 @@
 #include "topology.h"
 #include "lib/json_topology.h"
 
+/* Representation of a link of the network. 
+*   
+*/
+struct link {
+    uint32_t conn_dp;   /* Id of the datapath connected.          */
+    uint32_t orig_port; /* Port number of the datapath.           */
+    uint32_t end_port;  /* Port number of the datapath connected. */
+    uint32_t latency;   /* Latency of the link in ms.             */
+    uint32_t bandwidth; /* Maximum bandwidth of the link.         */
+    struct link* next;  /* Next link in a list.                   */
+};
+
+
+/* Represents the network topology */
+struct topology {
+    struct datapath *dps;           /* Hash map of switches. 
+                                     * The datapath id is the key. */
+    struct link* links[MAX_DPS];    /* List of link edges of the topology. */
+    uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
+    uint32_t ndatapaths;             /* Number of datapaths. */
+    uint32_t nlinks;                 /* Number of links. */
+};
+
 void
 topology_init(struct topology* topo)
 {
@@ -24,6 +47,13 @@ topology_init(struct topology* topo)
         topo->degree[i] = 0;
         topo->links[i] = NULL;
     }
+}
+
+struct topology* topology_new(void)
+{
+    struct topology *topo = xmalloc(sizeof(struct topology));
+    topology_init(topo);
+    return topo;
 }
 
 void 
@@ -95,7 +125,7 @@ topology_destroy(struct topology *topo)
         HASH_DEL(topo->dps, current_dp);  
         dp_destroy(current_dp);
     }
-    // free(topo);
+    free(topo);
 }
 
 struct datapath* 
@@ -121,16 +151,27 @@ void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
     }
 }
 
-struct topology from_json(char *json_file)
+struct topology* from_json(char *json_file)
 {
     size_t s;
     struct parsed_topology ptopo;
-    struct topology topo;
+    struct topology* topo = topology_new();
     char *json = file_to_string(json_file, &s);
     if (json != NULL) {
         parse_topology(json, s, &ptopo);
-        topology_init(&topo);
-        topology_from_ptopo(&topo, &ptopo);
+        topology_from_ptopo(topo, &ptopo);
     }
     return topo;
+}
+
+/* Get struct members */
+uint32_t 
+topology_dps_num(struct topology *topo)
+{
+    return topo->ndatapaths;
+}
+
+uint32_t topology_links_num(struct topology *topo)
+{
+    return topo->nlinks;
 }

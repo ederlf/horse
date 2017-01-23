@@ -29,7 +29,7 @@ create_random_events(struct sim *s, struct event *ev)
 }
 
 static void
-sim_init(struct sim *s, struct topology topo) 
+sim_init(struct sim *s, struct topology *topo) 
 {
     s->topo = topo;
     s->events = NULL;
@@ -51,7 +51,7 @@ sim_close(struct sim *s)
 {
     sim_clean_ev(s->events);
     scheduler_destroy(s->sch);
-    topology_destroy(&s->topo);
+    topology_destroy(s->topo);
 }
 
 static void
@@ -61,12 +61,12 @@ sim_execute_event(struct sim *s)
 	struct event sch_ev = scheduler_dispatch(s->sch);
 	/* Event MUST exist in the hash */
 	HASH_FIND(hh, s->events, &sch_ev.id, sizeof(uint64_t), ev);
-	handle_event(&s->topo, ev);
+	handle_event(s->topo, ev);
 
 }
 
 void 
-start(struct topology topo) 
+start(struct topology *topo) 
 {
     struct sim s;
     struct event* ev = malloc(sizeof(struct event) * EV_NUM);
@@ -75,6 +75,7 @@ start(struct topology topo)
     while (!scheduler_is_empty(s.sch)) {
     	sim_execute_event(&s);
     }
+    free(ev);
     sim_close(&s);    
 }
 

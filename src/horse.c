@@ -53,7 +53,8 @@ main(int argc, char *argv[]){
                 break;
             }
             case 't':{ 
-                struct topology topo = from_json(argv[optind]);
+                struct topology *topo = from_json(argv[optind]);
+                // struct topology *topo = topology_new();
                 start(topo);
                 break;
             }

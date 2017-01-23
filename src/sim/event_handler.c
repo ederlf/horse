@@ -15,21 +15,21 @@ handle_flow(struct topology *topo, struct event_flow *ev)
 static void 
 handle_instruction(struct topology *topo, struct event_instruction *ev)
 {
-    printf("%d\n", topo->ndatapaths);
+    printf("%d\n", topology_dps_num(topo));
     printf("%d\n", ev->hdr.type);
 }
 
 static void 
 handle_packet(struct topology *topo, struct event_hdr *ev)
 {
-    printf("%d\n", topo->ndatapaths);
+    printf("%d\n", topology_dps_num(topo));
     printf("%d\n", ev->type);
 }
 
 static void 
 handle_port(struct topology *topo, struct event_port *ev)
 {
-    printf("%d\n", topo->ndatapaths);
+    printf("%d\n", topology_dps_num(topo));
     printf("%d\n", ev->hdr.type);
 }
 
