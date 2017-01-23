@@ -19,6 +19,7 @@ void lookup(void **state)
     key.eth_type = 0x806;
     ret = flow_table_lookup(ft, &key);
     assert_int_equal(ret->key.eth_type, 0x806);
+    flow_table_destroy(ft);
 }
 
 /* Must return the flow with highest priority */
@@ -44,6 +45,7 @@ void lookup_priority(void **state)
     if (ret){
         assert_int_equal(ret->key.in_port, 1);    
     }
+    flow_table_destroy(ft);
 }
 
 /* Test succeed if flow can be found in the table */
