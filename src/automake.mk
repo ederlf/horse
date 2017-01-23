@@ -1,6 +1,7 @@
-noinst_LIBRARIES += src/libhorse.a
+#noinst_LIBRARIES += libhorse.a
 
-src_libhorse_a_SOURCES = src/lib/action.h \
+lib_LTLIBRARIES = libhorse.la
+libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/action.c \
                 src/lib/action_list.h \
                 src/lib/action_list.c \
@@ -37,4 +38,4 @@ src_libhorse_a_SOURCES = src/lib/action.h \
                 src/sim/sim.h \
                 src/sim/sim.c
 
-src_libhorse_a_LIBADD = vendor/json/json.o
+libhorse_la_LIBADD = libjson.la
