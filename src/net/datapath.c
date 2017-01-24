@@ -83,3 +83,9 @@ dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct 
         }
     }
 }
+
+uint64_t 
+dp_id(struct datapath* dp)
+{
+    return dp->dp_id;
+}
