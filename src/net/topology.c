@@ -36,7 +36,7 @@ struct topology {
     uint32_t n_links;               /* Number of links. */
 };
 
-void
+static void
 topology_init(struct topology* topo)
 {
     int i;
