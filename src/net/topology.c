@@ -12,24 +12,28 @@
 #include "topology.h"
 #include "lib/json_topology.h"
 
-/* Representation of a link of the network. 
-*   
+/* 
+*   Pair of node uuid and port. 
+*   Key of the hash table of links.
 */
-struct link {
-    uint32_t orig_port; /* Port number of the datapath.           */
-    uint32_t end_uuid;  /* Id of the node connected.              */
-    uint32_t end_port;  /* Port number of the datapath connected. */
-    uint32_t latency;   /* Latency of the link in ms.             */
-    uint32_t bandwidth; /* Maximum bandwidth of the link.         */
-    struct link* next;  /* Next link in a list.                   */
+
+struct node_port_pair {
+    uint64_t uuid;
+    uint32_t port;
 };
 
+struct link {
+    struct node_port_pair node1;
+    struct node_port_pair node2;
+    uint32_t latency;
+    uint32_t bandwidth;
+    UT_hash_handle hh;  
+};
 
 /* Represents the network topology */
 struct topology {
-    struct node *nodes;             /* Hash map of network nodes. 
-                                     * The datapath id is the key. */
-    struct link* links[MAX_DPS];    /* List of link edges of the topology. */
+    struct node *nodes;             /* Hash table of network nodes. */
+    struct link *links;             /* Hash table of links */
     uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
     uint32_t n_datapaths;           /* Number of datapaths. */
     uint32_t n_routers;             /* Number of routers */
@@ -39,15 +43,11 @@ struct topology {
 static void
 topology_init(struct topology* topo)
 {
-    int i;
     topo->nodes = NULL;
     topo->n_datapaths = 0;
     topo->n_routers = 0;
     topo->n_links = 0;
-    for (i = 0; i < MAX_DPS; ++i){
-        topo->degree[i] = 0;
-        topo->links[i] = NULL;
-    }
+    topo->links = NULL;
 }
 
 struct topology* topology_new(void)
@@ -65,7 +65,7 @@ topology_add_datapath(struct topology *topo, struct datapath* dp)
 }
 
 void 
-topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed)
+topology_add_link(struct topology *t, struct node *n1, struct node *n2, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed)
 {
     struct node *dpA, *dpB;
     struct link *l;
@@ -83,15 +83,15 @@ topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t p
     }
     /* Fill link configuration. */
     l = (struct link*) xmalloc(sizeof(struct link));
-    l->bandwidth = bw;
-    l->orig_port = portA;
-    l->end_port = portB;
-    l->latency = latency;
-    l->end_uuid = dpB->uuid;
-    l->next = t->links[dpA->uuid];
+    memset(l, 0x0, sizeof(struct link));
 
-    t->links[dpA->uuid] = l;
-    t->degree[dpA->uuid]++;
+    l->node1.port = portA;
+    l->node1.uuid = dpA->uuid;
+    l->node2.port = portB;
+    l->node2.uuid = dpB->uuid;
+    l->latency = latency;
+    l->bandwidth = bw;
+    HASH_ADD(hh, t->links, node1, sizeof(struct node_port_pair), l);
     /* Insert backwards. */
     if (directed == false){
         topology_add_link(t, uuidB, uuidA, portB, portA, bw, latency, true);
@@ -110,18 +110,14 @@ void
 topology_destroy(struct topology *topo)
 {
     struct node *cur_node, *tmp;
-    struct link *ltmp, *curr;
-    size_t i;
-    for (i = 0; i < topo->n_datapaths + topo->n_routers; ++i){
-        if (topo->degree[i] > 0){
-            curr = topo->links[i];
-            while(curr){
-                ltmp = curr;
-                curr =  ltmp->next;
-                free(ltmp);
-            }
-        }
+    struct link *ltmp, *lcurr;
+
+    /* Clean links */
+    HASH_ITER(hh, topo->links, lcurr, ltmp) {
+        HASH_DEL(topo->links, lcurr);  
+        free(lcurr);
     }
+    /* Clean Datapaths */
     HASH_ITER(hh, topo->nodes, cur_node, tmp) {
         HASH_DEL(topo->nodes, cur_node);  
         if (cur_node->type == DATAPATH){
