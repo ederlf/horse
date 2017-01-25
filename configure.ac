@@ -9,8 +9,8 @@ AM_CONFIG_HEADER([config.h])
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_CXX
+AC_CONFIG_MACRO_DIR([m4])
 AM_CONDITIONAL(GCC, test "$GCC" = yes)   # let the Makefile know if we're gcc
-AC_PROG_RANLIB
 
 # Check for C Standard headers
 AC_HEADER_STDC
