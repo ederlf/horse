@@ -32,6 +32,3 @@ instruction_test_SOURCES = tests/instruction_test.c
 instruction_test_CFLAGS = $(unit_test_CFLAGS)
 instruction_test_LDADD = -lcmockery .libs/libhorse.a
 
-.PHONY: python
-python:
-	python python/setup.py build_ext --inplace
