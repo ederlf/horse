@@ -1,4 +1,5 @@
 #include "node.h"
+#include <stdio.h>
 
 static uint64_t current_uuid = 0;
 
@@ -36,6 +37,6 @@ struct port*
 node_port(struct node *n, uint32_t port)
 {
     struct port *p;
-    HASH_FIND(hh, n->ports, &port, sizeof(uint64_t), p);
+    HASH_FIND(hh, n->ports, &port, sizeof(uint32_t), p);
     return p;
 }
