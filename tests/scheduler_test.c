@@ -59,13 +59,13 @@ void event_table(void **state){
     uint64_t id = 1;
     flow->hdr.id = 1;
     flow->hdr.type = EVENT_FLOW;
-    flow->dpid = 0x9000000000000001;
+    flow->node_id = 0x9000000000000001;
     HASH_ADD(hh, table, id, sizeof(uint64_t), (struct event_hdr*) flow);
 
     HASH_FIND(hh, table, &id, sizeof(uint64_t), p);
     if (p){
         struct event_flow *f = (struct event_flow*)p;
-        assert_int_equal(0x9000000000000001, f->dpid);
+        assert_int_equal(0x9000000000000001, f->node_id);
     }
 
     HASH_ITER(hh, table, p, tmp) {

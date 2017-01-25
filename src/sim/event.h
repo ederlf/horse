@@ -48,7 +48,7 @@ struct event_hdr {
 */
 struct event_flow {
     struct event_hdr hdr;       
-    uint64_t dpid;              /* The switch to process the event.     */
+    uint64_t node_id;              /* The switch to process the event.     */
     uint64_t pkt_cnt;           /* Number of packets in the flow.       */
     uint64_t byte_cnt;          /* Total number of packets in the flow. */ 
     struct flow_key match;      /* The fields belonging to a flow.      */
@@ -57,7 +57,7 @@ struct event_flow {
 /* A instruction from the control plane. */
 struct event_instruction {
     struct event_hdr hdr;       
-    uint64_t dpid;              /* The switch to process the event.     */
+    uint64_t node_id;              /* The node to process the event.     */
     //struct instruction
 
 };
@@ -65,7 +65,7 @@ struct event_instruction {
 /* Change to port configuration and/or status */
 struct event_port {
     struct event_hdr hdr;    
-    uint64_t dpid;
+    uint64_t node_id;
     uint8_t config;
     uint8_t status;
 };

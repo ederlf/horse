@@ -21,7 +21,8 @@ create_random_events(struct sim *s, struct event *ev)
 		struct event_flow *flow = malloc(sizeof(struct event_flow));
 	    flow->hdr.id = i + 1;
 	    flow->hdr.type = EVENT_FLOW;
-	    flow->dpid = 0x0000000000000001;
+	    flow->node_id = 1;
+      memset(&flow->match, 0x0, sizeof(struct flow_key));
 	    HASH_ADD(hh, s->events, id, sizeof(uint64_t), (struct event_hdr*) flow);
 	    init_event(&ev[i], EVENT_FLOW, i + 1, i + 1); 
 	    scheduler_insert(s->sch, &ev[i]);

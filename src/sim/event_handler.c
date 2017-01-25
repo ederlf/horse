@@ -4,12 +4,14 @@ static void
 handle_flow(struct topology *topo, struct event_flow *ev)
 {
     /* Retrieve node handle the flow */
-    struct node *node = topology_node(topo, ev->dpid);
+    struct node *node = topology_node(topo, ev->node_id);
     if (node){
         if (node->type == DATAPATH){
+            struct datapath *dp = (struct datapath*) node;
+            dp_handle_flow(dp, ev->pkt_cnt, ev->byte_cnt, &ev->match);
             // uint32_t *out_ports; 
-        // out_ports = dp_handle_flow(dp, ev->pkt_cnt, ev->byte_cnt, ev->match);
-            // printf("Executing HA\n");
+            /* Schedule next event */
+            
         }
         else if (node->type == ROUTER){
 
