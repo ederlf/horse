@@ -59,7 +59,6 @@ struct port*
 dp_port(struct datapath *dp, uint32_t port_id)
 {
     struct port *p = node_port(&dp->base, port_id);
-    
     return p;
 }
 
@@ -73,15 +72,17 @@ dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct 
     struct flow *f;
     uint32_t in_port = match->in_port;
     struct port *p = dp_port(dp, in_port);
-    p->stats.rx_packets = byte_cnt;
-    p->stats.rx_bytes = pkt_cnt;
 
-    /* Enter pipeline */
-    for(i = 0; i < MAX_TABLES; ++i){
-        f = flow_table_lookup(dp->tables[i], match);
-        if (f){
+    if (p != NULL) {
+        p->stats.rx_packets = byte_cnt;
+        p->stats.rx_bytes = pkt_cnt;
+        /* Enter pipeline */
+        for(i = 0; i < MAX_TABLES; ++i){
+            f = flow_table_lookup(dp->tables[i], match);
+            if (f){
             /* Execute instructions */
-        }
+            }
+        } 
     }
 }
 
