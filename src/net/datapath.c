@@ -50,8 +50,7 @@ void dp_destroy(struct datapath *dp)
 
 void 
 dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
-{
-    
+{   
     node_add_port(&dp->base, port_id, eth_addr);
 }
 
@@ -60,6 +59,7 @@ struct port*
 dp_port(struct datapath *dp, uint32_t port_id)
 {
     struct port *p = node_port(&dp->base, port_id);
+    
     return p;
 }
 
@@ -86,7 +86,7 @@ dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct 
 }
 
 uint64_t 
-uuid(struct datapath* dp)
+dp_uuid(struct datapath* dp)
 {
     return dp->base.uuid;
 }

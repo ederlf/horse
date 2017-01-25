@@ -18,7 +18,7 @@ cdef class SDNSwitch:
 
     @property
     def uuid(self):
-        return uuid(self._dp_ptr)     
+        return dp_uuid(self._dp_ptr)     
 
 
 cdef class Topology:

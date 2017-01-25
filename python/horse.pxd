@@ -14,9 +14,8 @@ cdef extern from "sim/sim.h":
     datapath* dp_new(uint64_t)
     void dp_destroy(datapath* dp)
     void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr)
-    
     uint64_t dp_id(datapath* dp)
-    uint64_t uuid(datapath* dp)
+    uint64_t dp_uuid(datapath* dp)
     # Topology.h
     topology* topology_new()
     void topology_destroy(topology *topo)
