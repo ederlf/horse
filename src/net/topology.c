@@ -65,7 +65,7 @@ topology_add_datapath(struct topology *topo, struct datapath* dp)
 }
 
 void 
-topology_add_link(struct topology *t, struct node *n1, struct node *n2, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed)
+topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed)
 {
     struct node *dpA, *dpB;
     struct link *l;
