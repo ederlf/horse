@@ -30,6 +30,11 @@ flow_new(void)
     struct flow *f = xmalloc(sizeof(struct flow));
     f->priority = 0;
     f->cookie = 0;
+    f->pkt_cnt = 0;
+    f->byte_cnt = 0;
+    f->created = 0;
+    f->remove_at = 0;
+    f->last_used = 0;
     memset(&f->key, 0x0, sizeof(struct flow_key));
     memset(&f->mask, 0x0, sizeof(struct flow_key));
     init_instruction_set(f);
