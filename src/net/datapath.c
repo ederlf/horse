@@ -56,7 +56,7 @@ dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
 
 /* Retrieve a datapath port */
 struct port* 
-dp_port(struct datapath *dp, uint32_t port_id)
+dp_port(const struct datapath *dp, uint32_t port_id)
 {
     struct port *p = node_port(&dp->base, port_id);
     return p;
@@ -74,27 +74,28 @@ dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct 
     struct port *p = dp_port(dp, in_port);
 
     if (p != NULL) {
-        p->stats.rx_packets = byte_cnt;
-        p->stats.rx_bytes = pkt_cnt;
+        p->stats.rx_packets += byte_cnt;
+        p->stats.rx_bytes += pkt_cnt;
         /* Enter pipeline */
         for(i = 0; i < MAX_TABLES; ++i){
             f = flow_table_lookup(dp->tables[i], match);
             if (f){
             /* Execute instructions */
             }
-        } 
+        }
+        /* Execute action set */ 
     }
 }
 
 uint64_t 
-dp_uuid(struct datapath* dp)
+dp_uuid(const struct datapath* dp)
 {
     return dp->base.uuid;
 }
 
 
 uint64_t 
-dp_id(struct datapath* dp)
+dp_id(const struct datapath* dp)
 {
     return dp->dp_id;
 }

@@ -34,7 +34,7 @@ node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
 
 /* Retrieve a datapath port */
 struct port* 
-node_port(struct node *n, uint32_t port)
+node_port(const struct node *n, uint32_t port)
 {
     struct port *p;
     HASH_FIND(hh, n->ports, &port, sizeof(uint32_t), p);

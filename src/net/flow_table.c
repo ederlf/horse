@@ -56,7 +56,7 @@ void flow_table_destroy(struct flow_table *ft)
 }
 
 struct flow* 
-flow_table_lookup(struct flow_table *ft, struct flow_key *key)
+flow_table_lookup(const struct flow_table *ft, struct flow_key *key)
 {
     struct flow *ret_flow = NULL;
     struct mini_flow_table *nxt_mft;

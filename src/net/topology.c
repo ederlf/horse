@@ -128,7 +128,7 @@ topology_destroy(struct topology *topo)
 }
 
 struct node* 
-topology_node(struct topology *topo, uint64_t uuid)
+topology_node(const struct topology *topo, uint64_t uuid)
 {
     struct node *n = NULL;
     HASH_FIND(hh, topo->nodes, &uuid, sizeof(uint64_t), n);
@@ -165,12 +165,12 @@ struct topology* from_json(char *json_file)
 
 /* Get struct members */
 uint32_t 
-topology_dps_num(struct topology *topo)
+topology_dps_num(const struct topology *topo)
 {
     return topo->n_datapaths;
 }
 
-uint32_t topology_links_num(struct topology *topo)
+uint32_t topology_links_num(const struct topology *topo)
 {
     return topo->n_links;
 }
