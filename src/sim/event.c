@@ -12,8 +12,7 @@
 
 
 void 
-init_event(struct event *ev, uint8_t type, uint64_t time, uint64_t id){
-    ev->type =  type;
+init_event(struct event *ev, uint64_t time, uint64_t id){
     ev->time = time;
     ev->id = id;
 }

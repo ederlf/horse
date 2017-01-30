@@ -18,7 +18,7 @@ void add_flow_event(void **state){
     uint64_t times[10] = {50, 80, 70, 60, 40, 90, 10, 30, 100, 20};
     int i;
     for (i = 0; i < 10; ++i){
-        init_event(&ev[i], EVENT_FLOW, times[i], i + 1);    
+        init_event(&ev[i], times[i], i + 1);    
         scheduler_insert(sch, &ev[i]);
     } 
     qsort(times, 10, sizeof(uint64_t), cmpfunc);
@@ -39,7 +39,7 @@ void random_add_flow_event(void **state){
     srand(time(NULL));
     for (i = 0; i < MAX_EVENTS_TEST; ++i){
         times[i] =  rand(); 
-        init_event(&ev[i], EVENT_FLOW, times[i], i + 1);   
+        init_event(&ev[i], times[i], i + 1);   
         scheduler_insert(sch, &ev[i]);
     } 
     qsort(times, MAX_EVENTS_TEST, sizeof(uint64_t), cmpfunc);
@@ -58,7 +58,6 @@ void event_table(void **state){
     struct event_flow *flow = malloc(sizeof(struct event_flow));
     uint64_t id = 1;
     flow->hdr.id = 1;
-    flow->hdr.type = EVENT_FLOW;
     flow->node_id = 0x9000000000000001;
     HASH_ADD(hh, table, id, sizeof(uint64_t), (struct event_hdr*) flow);
 

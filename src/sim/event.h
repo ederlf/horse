@@ -31,7 +31,6 @@ enum events {
 */
 struct event {
     struct heap_node node;      /* ev_node.priority and ev_node.idx .    */
-    uint8_t type;               /* Type of the event to handle.          */
     uint64_t time;              /* Time of the event.                    */
     uint64_t id;                /* Retrieve it in hash table of events.  */  
 };
@@ -39,8 +38,9 @@ struct event {
 /* Common header for all events */
 struct event_hdr {
     UT_hash_handle hh;          /* Make the struct hashable.            */
-    uint64_t id;                /* Event key.                           */ 
     uint8_t type;               /* Type of the event.                   */
+    uint64_t id;                /* Event key.                           */
+    uint64_t time;              /* When it happened                     */
 };
 
 /*  A flow event represents 
@@ -48,7 +48,7 @@ struct event_hdr {
 */
 struct event_flow {
     struct event_hdr hdr;       
-    uint64_t node_id;              /* The switch to process the event.     */
+    uint64_t node_id;           /* The switch to process the event.     */
     uint64_t pkt_cnt;           /* Number of packets in the flow.       */
     uint64_t byte_cnt;          /* Total number of packets in the flow. */ 
     struct flow_key match;      /* The fields belonging to a flow.      */
@@ -70,6 +70,6 @@ struct event_port {
     uint8_t status;
 };
 
-void init_event(struct event *ev, uint8_t type, uint64_t time, uint64_t id);
+void init_event(struct event *ev, uint64_t time, uint64_t id);
 
 #endif
