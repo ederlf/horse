@@ -65,7 +65,7 @@ dp_port(const struct datapath *dp, uint32_t port_id)
 /* The match can be modified by an action */
 /* Return is a list of ports/ NULL or -1 */
 void 
-dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct flow_key *match)
+dp_handle_flow(struct datapath *dp, uint64_t time, uint64_t pkt_cnt, uint64_t byte_cnt, struct flow_key *match)
 {
     /* Get the input port and update rx counters*/
     uint8_t i;
@@ -78,9 +78,9 @@ dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt, struct 
         p->stats.rx_bytes += pkt_cnt;
         /* Enter pipeline */
         for(i = 0; i < MAX_TABLES; ++i){
-            f = flow_table_lookup(dp->tables[i], match);
-            if (f){
-            /* Execute instructions */
+            f = flow_table_lookup(dp->tables[i], match, time);
+            if (f != NULL){
+                /* Execute instructions */
             }
         }
         /* Execute action set */ 

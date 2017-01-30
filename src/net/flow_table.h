@@ -40,9 +40,9 @@ struct flow_table {
 
 struct flow_table* flow_table_new(uint8_t table_id);
 void flow_table_destroy(struct flow_table *ft);
-struct flow* flow_table_lookup(const struct flow_table* ft, struct flow_key *key);
-void add_flow(struct flow_table *ft, struct flow *f);
-void modify_flow(struct flow_table *ft, struct flow *f, bool strict);
+struct flow* flow_table_lookup(struct flow_table* ft, struct flow_key *key, uint64_t time);
+void add_flow(struct flow_table *ft, struct flow *f, uint64_t time);
+void modify_flow(struct flow_table *ft, struct flow *f, bool strict, uint64_t time);
 void delete_flow(struct flow_table *ft, struct flow *f, bool strict);
 
 

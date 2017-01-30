@@ -30,7 +30,7 @@ void dp_destroy(struct datapath *dp);
 void dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
-void dp_handle_flow(struct datapath *dp, uint64_t pkt_cnt, uint64_t byte_cnt,struct flow_key *match);
+void dp_handle_flow(struct datapath *dp, uint64_t time, uint64_t pkt_cnt, uint64_t byte_cnt, struct flow_key *match);
 
 /* Access functions*/
 uint64_t dp_uuid(const struct datapath* dp);

@@ -32,8 +32,10 @@ flow_new(void)
     f->cookie = 0;
     f->pkt_cnt = 0;
     f->byte_cnt = 0;
+    f->hard_timeout = 0;
+    f->idle_timeout = 0;
     f->created = 0;
-    f->remove_at = 0;
+    f->remove_at = 0; 
     f->last_used = 0;
     memset(&f->key, 0x0, sizeof(struct flow_key));
     memset(&f->mask, 0x0, sizeof(struct flow_key));
