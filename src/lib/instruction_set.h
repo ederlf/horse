@@ -1,7 +1,9 @@
 #ifndef INSTRUCTION_SET_H
+#define INSTRUCTION_SET_H 1
 
 #include "instruction.h"
 #include <inttypes.h>
+#include <stdbool.h>
 
 struct instruction_set {
     uint8_t active;           /* Bitmap of active instructions */
@@ -20,5 +22,6 @@ void add_write_actions(struct instruction_set *is, struct write_actions act);
 void add_write_metadata(struct instruction_set *is, struct write_metadata act);
 void add_goto_table(struct instruction_set *is, struct goto_table act);
 void instruction_set_clean(struct instruction_set *is);
-#define INSTRUCTION_SET_H 1
+bool instruction_is_active(struct instruction_set *is, uint8_t type);
+
 #endif

@@ -62,25 +62,64 @@ dp_port(const struct datapath *dp, uint32_t port_id)
     return p;
 }
 
+// INSTRUCTION_APPLY_ACTIONS
+// INSTRUCTION_CLEAR_ACTIONS
+// INSTRUCTION_WRITE_ACTIONS
+// INSTRUCTION_WRITE_METADATA
+// INSTRUCTION_GOTO_TABLE
+
+static void 
+execute_instructions(struct instruction_set *is, uint8_t *table_id, struct flow_key *flow, struct action_set *as) {
+
+    if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)){
+
+    }
+
+    if (instruction_is_active(is, INSTRUCTION_CLEAR_ACTIONS)){
+        action_set_clean(as);
+    }
+
+    if (instruction_is_active(is, INSTRUCTION_WRITE_ACTIONS)){
+        action_set_merge(as, &is->write_act.actions);
+    }
+    
+    if (instruction_is_active(is, INSTRUCTION_WRITE_METADATA)){
+        flow->metadata = is->write_meta.metadata;
+    }
+
+    if (instruction_is_active(is, INSTRUCTION_GOTO_TABLE)){
+        *table_id = is->gt_table.table_id;
+    }
+}
+
+
 /* The match can be modified by an action */
 /* Return is a list of ports/ NULL or -1 */
 void 
 dp_handle_flow(struct datapath *dp, uint64_t time, uint64_t pkt_cnt, uint64_t byte_cnt, struct flow_key *match)
 {
     /* Get the input port and update rx counters*/
-    uint8_t i;
+    uint8_t table;
     struct flow *f;
     uint32_t in_port = match->in_port;
     struct port *p = dp_port(dp, in_port);
-
     if (p != NULL) {
+        struct action_set acts;
+        action_set_init(&acts);
         p->stats.rx_packets += byte_cnt;
         p->stats.rx_bytes += pkt_cnt;
         /* Enter pipeline */
-        for(i = 0; i < MAX_TABLES; ++i){
-            f = flow_table_lookup(dp->tables[i], match, time);
+        for(table = 0; table < MAX_TABLES; ++table){
+            f = flow_table_lookup(dp->tables[table], match, time);
             if (f != NULL){
+                /* Cut the packet and byte count if flow lasts longer than
+                    remotion by hard timeout */
+                
+                /* Increase the flow counters */
+                f->pkt_cnt += pkt_cnt;
+                f->byte_cnt += byte_cnt;
                 /* Execute instructions */
+                execute_instructions(&f->insts, &table, match, &acts);
             }
         }
         /* Execute action set */ 

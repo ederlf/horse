@@ -1,6 +1,8 @@
 #include "instruction_set.h"
 #include "util.h"
 
+extern inline bool instruction_is_active(struct instruction_set *is, uint8_t type);
+
 void 
 instruction_set_init(struct instruction_set *is)
 {
@@ -49,4 +51,9 @@ instruction_set_clean(struct instruction_set *is)
 {   
     apply_actions_clean(&is->apply_act);
     write_actions_clean(&is->write_act);
+}
+
+bool 
+instruction_is_active(struct instruction_set *is, uint8_t type){
+    return (is->active & type);
 }
