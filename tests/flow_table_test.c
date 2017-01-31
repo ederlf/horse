@@ -42,6 +42,30 @@ void lookup_expired(void **state)
     assert_int_equal(ret, NULL);
     flow_table_destroy(ft);
 }
+
+void stress_lookup_expired(void **state)
+{
+    struct flow *ret;
+    struct mini_flow_table *elt;
+    struct flow_table *ft = flow_table_new(0);
+    int i;
+    for(i = 0; i < 1000000; ++i) {
+        struct flow *fl = flow_new();
+        set_eth_type(fl, 0x800);
+        fl->hard_timeout = 5;
+        add_flow(ft, fl, 0);
+        struct flow_key key;
+        memset(&key, 0x0, sizeof(struct flow_key));
+        key.eth_type = 0x800;
+        ret = flow_table_lookup(ft, &key, 4);
+        assert_int_not_equal(ret, NULL);
+        assert_int_equal(ret->key.eth_type, 0x800);
+        ret = flow_table_lookup(ft, &key, 10);
+        assert_int_equal(ret, NULL);
+    }
+    flow_table_destroy(ft);    
+}
+
 /* Must return the flow with highest priority */
 void lookup_priority(void **state)
 {
@@ -350,7 +374,6 @@ int main(int argc, char* argv[]) {
         unit_test(modify_strict),
         unit_test(modify_non_strict),
         unit_test(delete_non_strict),
-        unit_test(stress_modify_non_strict),
     };
     return run_tests(tests);
 }
