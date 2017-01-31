@@ -11,6 +11,7 @@
 #define ACTION_H 1
 
 #include <inttypes.h>
+#include <uthash/uthash.h>
 #include "util.h"
 
 #define MAX_ACTION_SET 11
@@ -116,6 +117,7 @@ struct action {
         struct pop_mpls pop_mpls;
         struct set_field set;
     };
+    UT_hash_handle hh;
 };
 
 void action_meter(struct action *meter, uint32_t meter_id);
