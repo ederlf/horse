@@ -7,10 +7,10 @@ void action_set_init(struct action_set *as){
 
 void action_set_clean(struct action_set *as)
 {
-    struct action *nxt_elem, *tmp;
-    HASH_ITER(hh, as->actions, nxt_elem, tmp){
-        HASH_DEL(as->actions, nxt_elem);
-        free(nxt_elem);
+    struct action *act, *tmp;
+    HASH_ITER(hh, as->actions, act, tmp){
+        HASH_DEL(as->actions, act);
+        free(act);
     }
 }
 
@@ -21,7 +21,8 @@ action_set_add(struct action_set *as, struct action act){
     uint16_t type = act.type;
     HASH_FIND(hh, as->actions, &type, sizeof(uint16_t), orig_action);
     if (orig_action != NULL) {
-        /* Do not know why i cannot just copy act to orig_action...*/
+        /* If I try to copy the action to orig_action a buffer overflow     
+            happens when trying to merge fields. Create a new action and hope the overhead is not too costly.*/
         struct action *new_action;
         new_action = xmalloc(sizeof(struct action));
         memcpy(new_action, &act, sizeof(struct action));

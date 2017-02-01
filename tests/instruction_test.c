@@ -68,6 +68,7 @@ void merge_action_set(void **state)
     action_set_merge(&as1, &as2);
     unsigned int actions_num;
     actions_num = HASH_COUNT(as1.actions);
+    printf("%d\n", actions_num);
     struct action *act;
     uint16_t type = ACT_PUSH_VLAN;
     HASH_FIND(hh, as1.actions, &type, sizeof(uint16_t), act);
