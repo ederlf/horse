@@ -8,7 +8,7 @@ handle_flow(struct topology *topo, struct event_flow *ev)
     if (node){
         if (node->type == DATAPATH){
             struct datapath *dp = (struct datapath*) node;
-            dp_handle_flow(dp, ev->hdr.time, ev->pkt_cnt, ev->byte_cnt, &ev->match);
+            dp_handle_flow(dp, &ev->flow);
             // uint32_t *out_ports; 
             /* Schedule next event */
             

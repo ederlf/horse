@@ -14,6 +14,7 @@
 #include "lib/util.h"
 #include "lib/heap.h"
 #include "lib/flow.h"
+#include "lib/netflow.h"
 
 enum events {
     EVENT_FLOW = 0, 
@@ -49,9 +50,7 @@ struct event_hdr {
 struct event_flow {
     struct event_hdr hdr;       
     uint64_t node_id;           /* The switch to process the event.     */
-    uint64_t pkt_cnt;           /* Number of packets in the flow.       */
-    uint64_t byte_cnt;          /* Total number of packets in the flow. */ 
-    struct flow_key match;      /* The fields belonging to a flow.      */
+    struct net_flow flow;
 };
 
 /* A instruction from the control plane. */

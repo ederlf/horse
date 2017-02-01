@@ -28,6 +28,8 @@
 #include <stdbool.h>
 #include <uthash/uthash.h>
 
+#define MAX_STACK_SIZE 8
+
 struct flow_key {
     uint32_t in_port;
     uint64_t metadata;
@@ -59,6 +61,7 @@ struct flow_key {
     uint8_t ipv6_nd_tll[6];
 };
 
+/* Description of a switch flow */
 struct flow {
     struct flow_key key;
     struct flow_key mask;
@@ -75,12 +78,16 @@ struct flow {
     UT_hash_handle hh;
 };
 
-
 struct flow *flow_new(void);
 void flow_clean_instructions(struct flow *f);
 void flow_destroy(struct flow *f);
 bool flow_key_cmp(struct flow_key *a, struct flow_key *b);
 void flow_add_instructions(struct flow *f, struct instruction_set is);
+
+void flow_push_vlan(struct flow* f);
+void flow_pop_vlan(struct flow* f);
+void flow_push_mpls(struct flow* f);
+void flow_pop_mpls(struct flow* f);
 
 /* Set field functions */
 void set_in_port(struct flow *f, uint32_t in_port);

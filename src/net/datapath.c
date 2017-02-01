@@ -62,14 +62,98 @@ dp_port(const struct datapath *dp, uint32_t port_id)
     return p;
 }
 
+
+// ACT_METER = 1 << 0,
+//     ACT_COPY_TTL_INWARDS = 1 << 1,
+//     ACT_POP_VLAN = 1 << 2,
+//     ACT_POP_MPLS = 1 << 3,
+//     ACT_PUSH_MPLS = 1 << 4,
+//     ACT_PUSH_VLAN = 1 << 5,
+//     ACT_COPY_TTL_OUTWARDS = 1 << 6,
+//     ACT_DECREMENT_TTL = 1 << 7,
+//     ACT_SET_MPLS_TTL = 1 << 8,
+//     ACT_DECREMENT_MPLS_TTL = 1 << 9,
+//     ACT_SET_FIELD = 1 << 10,
+//     ACT_QOS = 1 << 11,
+//     ACT_GROUP = 1 << 12,
+//     ACT_OUTPUT = 1 << 13
+
 // INSTRUCTION_APPLY_ACTIONS
 // INSTRUCTION_CLEAR_ACTIONS
 // INSTRUCTION_WRITE_ACTIONS
 // INSTRUCTION_WRITE_METADATA
 // INSTRUCTION_GOTO_TABLE
 
+ 
+
 static void 
-execute_instructions(struct instruction_set *is, uint8_t *table_id, struct flow_key *flow, struct action_set *as) {
+execute_action(struct action *act, struct net_flow *flow, uint32_t *out_ports, size_t *out_port_num) {
+
+    // switch(act->type) {
+    //     case ACT_COPY_TTL_INWARDS: {
+    //         break;
+    //     }
+    //     case ACT_POP_VLAN: {
+    //         break;
+    //     }
+    //     case ACT_POP_MPLS: {
+    //         break;
+    //     }
+    //     case ACT_PUSH_MPLS: {
+    //         break;
+    //     }
+    //     case ACT_PUSH_VLAN: {
+    //         break;
+    //     }
+    //     case ACT_COPY_TTL_OUTWARDS: {
+    //         break;
+    //     }
+    //     case ACT_DECREMENT_TTL: {
+    //         break;
+    //     }
+    //     case ACT_SET_MPLS_TTL: {
+    //         break;
+    //     }
+    //     case ACT_DECREMENT_MPLS_TTL: {
+    //         break;
+    //     }
+    //     case ACT_SET_FIELD: {
+    //         break;
+    //     }
+    //     case ACT_QOS: {
+    //         break;
+    //     }
+    //     case ACT_GROUP: {
+    //         break;
+    //     }
+    //     case ACT_OUTPUT: {
+    //         out_ports
+    //         *out_port_num++;
+    //         break;
+    //     }
+    // }
+
+    printf("%d %p %p %p\n", act->type, flow, out_ports, out_port_num);
+
+}
+
+static 
+void execute_action_set(struct action_set *as, struct net_flow *flow, uint32_t *out_ports, size_t *out_port_num){
+
+    struct action *act;
+    enum action_set_order type;
+    for (type = ACT_METER; type < ACT_OUTPUT; 
+         type = type << 1) {
+        act = action_set_action(as, type);
+        if(act){
+            execute_action(act, flow, out_ports, out_port_num);
+            continue;
+        }
+    }
+}
+
+static void 
+execute_instructions(struct instruction_set *is, uint8_t *table_id, struct net_flow *flow, struct action_set *as) {
 
     if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)){
 
@@ -84,7 +168,7 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct flow_
     }
     
     if (instruction_is_active(is, INSTRUCTION_WRITE_METADATA)){
-        flow->metadata = is->write_meta.metadata;
+        flow->match.metadata = is->write_meta.metadata;
     }
 
     if (instruction_is_active(is, INSTRUCTION_GOTO_TABLE)){
@@ -92,37 +176,38 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct flow_
     }
 }
 
-
 /* The match can be modified by an action */
 /* Return is a list of ports/ NULL or -1 */
 void 
-dp_handle_flow(struct datapath *dp, uint64_t time, uint64_t pkt_cnt, uint64_t byte_cnt, struct flow_key *match)
+dp_handle_flow(struct datapath *dp, struct net_flow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table;
+    size_t out_ports_num;
     struct flow *f;
-    uint32_t in_port = match->in_port;
+    uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
         struct action_set acts;
         action_set_init(&acts);
-        p->stats.rx_packets += byte_cnt;
-        p->stats.rx_bytes += pkt_cnt;
+        p->stats.rx_packets += flow->byte_cnt;
+        p->stats.rx_bytes += flow->pkt_cnt;
         /* Enter pipeline */
         for(table = 0; table < MAX_TABLES; ++table){
-            f = flow_table_lookup(dp->tables[table], match, time);
+            f = flow_table_lookup(dp->tables[table], &flow->match, flow->start_time);
             if (f != NULL){
                 /* Cut the packet and byte count if flow lasts longer than
                     remotion by hard timeout */
                 
                 /* Increase the flow counters */
-                f->pkt_cnt += pkt_cnt;
-                f->byte_cnt += byte_cnt;
+                f->pkt_cnt += flow->pkt_cnt;
+                f->byte_cnt += flow->byte_cnt;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &table, match, &acts);
+                execute_instructions(&f->insts, &table, flow, &acts);
             }
         }
         /* Execute action set */ 
+        execute_action_set(&acts, flow, NULL, &out_ports_num);
     }
 }
 

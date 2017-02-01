@@ -43,3 +43,12 @@ action_set_merge(struct action_set *as_orig, struct action_set *as_merge)
         action_set_add(as_orig, *act);
     }
 }
+
+/* Return an action if it exists in the hash. Returns NULL if not */
+struct action* 
+action_set_action(struct action_set *as, uint16_t type)
+{
+    struct action *act;  
+    HASH_FIND(hh, as->actions, &type, sizeof(uint16_t), act);
+    return act;
+}
