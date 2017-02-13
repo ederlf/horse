@@ -2,6 +2,9 @@
 #define NET_FLOW_H 1
 
 #include "flow.h"
+#include "packets.h"
+
+#define STACK_EMPTY -1
 
 enum tcp_flags {
     SYN = 1 << 0,
@@ -10,13 +13,13 @@ enum tcp_flags {
     RST = 1 << 3,
 };
 
-struct mpls_stack {
-    uint32_t label[MAX_STACK_SIZE];
+struct vlan_stack {
+    struct vlan level[MAX_STACK_SIZE];
     int top;
 };
 
-struct vlan_stack {
-    uint16_t tag[MAX_STACK_SIZE];
+struct mpls_stack {
+    struct mpls level[MAX_STACK_SIZE];
     int top;
 };
 
@@ -31,5 +34,11 @@ struct net_flow {
     struct flow_key match;      /* The fields belonging to a flow.      */
     enum tcp_flags tcp_flags;   /* Bitmap of TCP flags present in the flow */
 };
+
+void net_flow_push_vlan(struct net_flow *nf, uint16_t eth_type);
+void net_flow_push_mpls(struct net_flow *nf, uint16_t eth_type);
+void net_flow_pop_vlan(struct net_flow *nf);
+void net_flow_pop_mpls(struct net_flow *nf, uint16_t eth_type);
+
 
 #endif
