@@ -71,6 +71,12 @@ set_field(struct action *sf, uint8_t field)
     sf->set.field = field;  
 }
 
+void action_set_field_u8(struct action *sf, uint8_t field, uint8_t value)
+{
+    set_field(sf, field);
+    sf->set.u8_field = value;
+}
+
 void action_set_field_u16(struct action *sf, uint8_t field, uint16_t value)
 {
     set_field(sf, field);

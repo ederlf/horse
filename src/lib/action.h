@@ -14,7 +14,7 @@
 #include <uthash/uthash.h>
 #include "util.h"
 
-#define MAX_ACTION_SET 11
+#define MAX_ACTION_SET 14
 
 /* TTL fields do not make sense now but
 *  are included for possible future usage.
@@ -98,6 +98,7 @@ struct pop_mpls {
 struct set_field {
     uint8_t field;
     union {
+        uint8_t u8_field;
         uint16_t u16_field;
         uint32_t u32_field;
         uint64_t u64_field;
@@ -130,6 +131,7 @@ void action_copy_ttl_out(struct action *copy_ttl_in);
 void action_mpls_ttl(struct action *smttl, uint8_t new_ttl);
 void action_dec_ttl(struct action *dec_ttl);
 void action_dec_mpls_ttl(struct action *dec_ttl);
+void action_set_field_u8(struct action *sf, uint8_t field, uint8_t value);
 void action_set_field_u16(struct action *sf, uint8_t field, uint16_t value);
 void action_set_field_u32(struct action *sf, uint8_t field, uint32_t value);
 void action_set_field_u64(struct action *sf, uint8_t field, uint64_t value);
