@@ -9,6 +9,7 @@
  */
 
 #include "datapath.h"
+#include "dp_actions.h"
 #include "lib/util.h" 
 
 
@@ -62,83 +63,14 @@ dp_port(const struct datapath *dp, uint32_t port_id)
     return p;
 }
 
-
-// ACT_METER = 1 << 0,
-//     ACT_COPY_TTL_INWARDS = 1 << 1,
-//     ACT_POP_VLAN = 1 << 2,
-//     ACT_POP_MPLS = 1 << 3,
-//     ACT_PUSH_MPLS = 1 << 4,
-//     ACT_PUSH_VLAN = 1 << 5,
-//     ACT_COPY_TTL_OUTWARDS = 1 << 6,
-//     ACT_DECREMENT_TTL = 1 << 7,
-//     ACT_SET_MPLS_TTL = 1 << 8,
-//     ACT_DECREMENT_MPLS_TTL = 1 << 9,
-//     ACT_SET_FIELD = 1 << 10,
-//     ACT_QOS = 1 << 11,
-//     ACT_GROUP = 1 << 12,
-//     ACT_OUTPUT = 1 << 13
-
 // INSTRUCTION_APPLY_ACTIONS
 // INSTRUCTION_CLEAR_ACTIONS
 // INSTRUCTION_WRITE_ACTIONS
 // INSTRUCTION_WRITE_METADATA
 // INSTRUCTION_GOTO_TABLE
 
- 
-
-static void 
-execute_action(struct action *act, struct net_flow *flow, uint32_t *out_ports, size_t *out_port_num) {
-
-    // switch(act->type) {
-    //     case ACT_COPY_TTL_INWARDS: {
-    //         break;
-    //     }
-    //     case ACT_POP_VLAN: {
-    //         break;
-    //     }
-    //     case ACT_POP_MPLS: {
-    //         break;
-    //     }
-    //     case ACT_PUSH_MPLS: {
-    //         break;
-    //     }
-    //     case ACT_PUSH_VLAN: {
-    //         break;
-    //     }
-    //     case ACT_COPY_TTL_OUTWARDS: {
-    //         break;
-    //     }
-    //     case ACT_DECREMENT_TTL: {
-    //         break;
-    //     }
-    //     case ACT_SET_MPLS_TTL: {
-    //         break;
-    //     }
-    //     case ACT_DECREMENT_MPLS_TTL: {
-    //         break;
-    //     }
-    //     case ACT_SET_FIELD: {
-    //         break;
-    //     }
-    //     case ACT_QOS: {
-    //         break;
-    //     }
-    //     case ACT_GROUP: {
-    //         break;
-    //     }
-    //     case ACT_OUTPUT: {
-    //         out_ports
-    //         *out_port_num++;
-    //         break;
-    //     }
-    // }
-
-    printf("%d %p %p %p\n", act->type, flow, out_ports, out_port_num);
-
-}
-
 static 
-void execute_action_set(struct action_set *as, struct net_flow *flow, uint32_t *out_ports, size_t *out_port_num){
+void execute_action_set(struct action_set *as, struct net_flow *flow, struct out_port *out_ports){
 
     struct action *act;
     enum action_set_order type;
@@ -146,7 +78,7 @@ void execute_action_set(struct action_set *as, struct net_flow *flow, uint32_t *
          type = type << 1) {
         act = action_set_action(as, type);
         if(act){
-            execute_action(act, flow, out_ports, out_port_num);
+            execute_action(act, flow, out_ports);
             continue;
         }
     }
@@ -177,14 +109,14 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct net_f
 }
 
 /* The match can be modified by an action */
-/* Return is a list of ports/ NULL or -1 */
+/* Return is a list of ports or NULL in case it is dropped*/
 void 
 dp_handle_flow(struct datapath *dp, struct net_flow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table;
-    size_t out_ports_num;
     struct flow *f;
+    struct out_port *out_ports = NULL;
     uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
@@ -207,7 +139,10 @@ dp_handle_flow(struct datapath *dp, struct net_flow *flow)
             }
         }
         /* Execute action set */ 
-        execute_action_set(&acts, flow, NULL, &out_ports_num);
+        execute_action_set(&acts, flow, out_ports);
+        if (out_ports != NULL){
+
+        }
     }
 }
 
