@@ -19,10 +19,13 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/json_topology.c \
 		src/lib/netflow.h \
 		src/lib/netflow.c \
+                src/lib/packets.h \
                 src/lib/util.h \
                 src/lib/util.c \
                 src/net/datapath.h \
                 src/net/datapath.c \
+                src/net/dp_actions.h \
+                src/net/dp_actions.c \
                 src/net/flow_table.h \ 
                 src/net/flow_table.c \
                 src/net/node.h \
