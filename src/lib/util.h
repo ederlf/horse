@@ -16,12 +16,12 @@
 #include <string.h>
 #include <inttypes.h>
 
+#define UNUSED(x) (void)x;
 
 void out_of_memory(void);
 void file_read_error(void);
 void *xmalloc(size_t size);
 void *xrealloc(void *v, int size);
-
 char* file_to_string(const char * file_name, size_t *size);
 
 #endif
