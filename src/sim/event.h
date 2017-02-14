@@ -50,7 +50,7 @@ struct event_hdr {
 struct event_flow {
     struct event_hdr hdr;       
     uint64_t node_id;           /* The switch to process the event.     */
-    struct net_flow flow;
+    struct netflow flow;
 };
 
 /* A instruction from the control plane. */

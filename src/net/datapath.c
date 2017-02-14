@@ -70,7 +70,7 @@ dp_port(const struct datapath *dp, uint32_t port_id)
 // INSTRUCTION_GOTO_TABLE
 
 static 
-void execute_action_set(struct action_set *as, struct net_flow *flow, struct out_port *out_ports){
+void execute_action_set(struct action_set *as, struct netflow *flow, struct out_port *out_ports){
 
     struct action *act;
     enum action_set_order type;
@@ -85,7 +85,7 @@ void execute_action_set(struct action_set *as, struct net_flow *flow, struct out
 }
 
 static void 
-execute_instructions(struct instruction_set *is, uint8_t *table_id, struct net_flow *flow, struct action_set *as) {
+execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as) {
 
     if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)){
 
@@ -111,7 +111,7 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct net_f
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
 void 
-dp_handle_flow(struct datapath *dp, struct net_flow *flow)
+dp_handle_flow(struct datapath *dp, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table;

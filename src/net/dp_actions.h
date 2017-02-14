@@ -9,6 +9,6 @@ struct out_port {
     struct out_port *next;
 };
 
-void execute_action(struct action *act, struct net_flow *flow, struct out_port *out_ports);
+void execute_action(struct action *act, struct netflow *flow, struct out_port *out_ports);
 
 #endif

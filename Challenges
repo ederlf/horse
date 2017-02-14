@@ -21,3 +21,9 @@
         - Flow generation must respect the application or is it just mindless traffic going through a network?
         - chicken/egg problem, some traffic patterns might depend on the network state, so not sure if it is valid to replay all the traffic from an IPFIX capture
 
+- Control vs Data Plane traffic
+
+Can we have control plane protocols (i.e BGP, OSPF, ARP...) as packets and data traffic as flows? 
+
+Need to implement router nodes and model protocols accordingly. 
+    - Can I run one in parallel one priority queue for control plane protocols and another for data? (So far I think yes.)

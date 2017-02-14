@@ -3,7 +3,7 @@
 #include <uthash/utlist.h>
 
 static void 
-pop_vlan(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+pop_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     UNUSED(act);
     UNUSED(nf);
@@ -11,7 +11,7 @@ pop_vlan(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 }
 
 static void 
-push_vlan(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+push_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     UNUSED(act);
     UNUSED(nf);
@@ -19,7 +19,7 @@ push_vlan(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 }
 
 static void 
-push_mpls(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+push_mpls(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     UNUSED(act);
     UNUSED(nf);
@@ -27,7 +27,7 @@ push_mpls(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 }
 
 static void 
-pop_mpls(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+pop_mpls(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     UNUSED(act);
     UNUSED(nf);
@@ -35,7 +35,7 @@ pop_mpls(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 }
 
 static void 
-set_field(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+set_field(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     struct set_field set = act->set;
     switch (set.field) {
@@ -169,7 +169,7 @@ set_field(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 }
 
 static void 
-group(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+group(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     UNUSED(act);
     UNUSED(nf);
@@ -177,7 +177,7 @@ group(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 }
 
 static void 
-output(struct action *act, struct net_flow *nf, struct out_port *out_ports)
+output(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
     struct output out = act->out;
     struct out_port *op = xmalloc(sizeof(struct out_port));
@@ -188,7 +188,7 @@ output(struct action *act, struct net_flow *nf, struct out_port *out_ports)
 
 // TODO use log2 [log2(act->type)] to calculate position
 /* Array of function pointers for the actions. */ 
-static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct net_flow *nf, struct out_port *out_ports) = {
+static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct netflow *nf, struct out_port *out_ports) = {
     [2] = pop_vlan, 
     [3] = pop_mpls,
     [4] = push_vlan,
@@ -199,7 +199,7 @@ static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct net_flo
 };
 
 void 
-execute_action(struct action *act, struct net_flow *flow, struct out_port *out_ports) {
+execute_action(struct action *act, struct netflow *flow, struct out_port *out_ports) {
 
     /* Execute action based on the type */
     (*handle_action[act->type]) (act, flow, out_ports);

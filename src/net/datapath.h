@@ -32,7 +32,7 @@ void dp_add_port(struct datapath *dp, uint32_t port_id,
                  uint8_t eth_addr[ETH_LEN]);
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
-void dp_handle_flow(struct datapath *dp, struct net_flow *flow);
+void dp_handle_flow(struct datapath *dp, struct netflow *flow);
 
 /* Access functions*/
 uint64_t dp_uuid(const struct datapath* dp);

@@ -1,5 +1,5 @@
-#ifndef NET_FLOW_H
-#define NET_FLOW_H 1
+#ifndef netflow_H
+#define netflow_H 1
 
 #include "flow.h"
 #include "packets.h"
@@ -24,7 +24,7 @@ struct mpls_stack {
 };
 
 /* Description of a network flow */
-struct net_flow {
+struct netflow {
     uint64_t pkt_cnt;           /* Number of packets in the flow.       */
     uint64_t byte_cnt;          /* Total number of packets in the flow. */
     uint64_t start_time;
@@ -35,10 +35,10 @@ struct net_flow {
     enum tcp_flags tcp_flags;   /* Bitmap of TCP flags present in the flow */
 };
 
-void net_flow_push_vlan(struct net_flow *nf, uint16_t eth_type);
-void net_flow_push_mpls(struct net_flow *nf, uint16_t eth_type);
-void net_flow_pop_vlan(struct net_flow *nf);
-void net_flow_pop_mpls(struct net_flow *nf, uint16_t eth_type);
+void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);
+void netflow_push_mpls(struct netflow *nf, uint16_t eth_type);
+void netflow_pop_vlan(struct netflow *nf);
+void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type);
 
 
 #endif

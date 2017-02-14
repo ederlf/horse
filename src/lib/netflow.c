@@ -1,7 +1,7 @@
 #include "netflow.h"
 
 void 
-net_flow_push_vlan(struct net_flow *nf, uint16_t eth_type)
+netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
 {
     /* eth_type must be 0x8100 or 0x88a8 */
     if ( nf->vlan_stk.top < (MAX_STACK_SIZE - 1) && 
@@ -20,7 +20,7 @@ net_flow_push_vlan(struct net_flow *nf, uint16_t eth_type)
     }
 }
 
-void net_flow_push_mpls(struct net_flow *nf, uint16_t eth_type)
+void netflow_push_mpls(struct netflow *nf, uint16_t eth_type)
 {
     /* eth_type must be 0x8847 or 0x8848 */
     if ( nf->mpls_stk.top < (MAX_STACK_SIZE - 1) && 
@@ -44,7 +44,7 @@ void net_flow_push_mpls(struct net_flow *nf, uint16_t eth_type)
     }
 }
 
-void net_flow_pop_vlan(struct net_flow *nf)
+void netflow_pop_vlan(struct netflow *nf)
 {
     if (nf->vlan_stk.top >= 0) {
         /* Reset values */
@@ -59,7 +59,7 @@ void net_flow_pop_vlan(struct net_flow *nf)
     } 
 }
 
-void net_flow_pop_mpls(struct net_flow *nf, uint16_t eth_type)
+void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type)
 {
     if (nf->mpls_stk.top >= 0) {
         /* Reset values */
