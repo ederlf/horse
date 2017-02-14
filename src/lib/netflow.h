@@ -32,7 +32,7 @@ struct netflow {
     struct mpls_stack mpls_stk;
     struct vlan_stack vlan_stk; 
     struct flow_key match;      /* The fields belonging to a flow.      */
-    enum tcp_flags tcp_flags;   /* Bitmap of TCP flags present in the flow */
+    uint8_t tcp_flags;   /* Bitmap of TCP flags present in the flow */
 };
 
 void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);

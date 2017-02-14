@@ -34,10 +34,13 @@ void netflow_push_mpls(struct netflow *nf, uint16_t eth_type)
             nf->mpls_stk.level[nf->mpls_stk.top].fields = nf->mpls_stk.level[nf->mpls_stk.top-1].fields;
             /* Set S bit to 0*/
             nf->mpls_stk.level[nf->mpls_stk.top].fields &= ~MPLS_S_MASK;
+            nf->match.mpls_bos = 0;
+            /* TC and label keep the same values */
         }
         else {
             /* Set S bit to 1*/
             nf->mpls_stk.level[nf->mpls_stk.top].fields = MPLS_S_MASK;
+            nf->match.mpls_bos = 1;
         }
         /* Change eth_type to mpls type */
         nf->match.eth_type = eth_type; 
@@ -56,6 +59,9 @@ void netflow_pop_vlan(struct netflow *nf)
             nf->match.vlan_id = (nf->vlan_stk.level[nf->vlan_stk.top].tag  & VLAN_VID_MASK) >> VLAN_VID_SHIFT;
             nf->match.vlan_pcp = (nf->vlan_stk.level[nf->vlan_stk.top].tag  & VLAN_PCP_MASK) >> VLAN_PCP_SHIFT;
         }
+        else {
+            nf->match.vlan_id = nf->match.vlan_pcp = 0;
+        }
     } 
 }
 
@@ -72,6 +78,9 @@ void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type)
             nf->match.mpls_label = (nf->mpls_stk.level[nf->mpls_stk.top].fields & MPLS_LABEL_MASK) >> MPLS_LABEL_SHIFT;
             nf->match.mpls_tc = (nf->mpls_stk.level[nf->mpls_stk.top].fields & MPLS_TC_MASK) >> MPLS_TC_SHIFT;
             nf->match.mpls_bos = (nf->mpls_stk.level[nf->mpls_stk.top].fields & MPLS_S_MASK) >> MPLS_S_SHIFT;
+        }
+        else {
+            nf->match.mpls_label = nf->match.mpls_tc = nf->match.mpls_bos = 0;
         }
     } 
 }
