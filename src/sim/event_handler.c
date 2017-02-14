@@ -8,10 +8,10 @@ handle_flow(struct topology *topo, struct event_flow *ev)
     if (node){
         if (node->type == DATAPATH){
             struct datapath *dp = (struct datapath*) node;
-            dp_handle_flow(dp, &ev->flow);
-            // uint32_t *out_ports; 
-            /* Schedule next event */
-            
+            struct out_port *op;
+            op = dp_handle_flow(dp, &ev->flow);
+            /* Schedule next event using the next ports*/
+            UNUSED(op);
         }
         else if (node->type == ROUTER){
 

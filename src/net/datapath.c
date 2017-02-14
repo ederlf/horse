@@ -113,9 +113,27 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
     }
 }
 
+static void
+ports_fwd(struct datapath *dp, struct out_port *ports, uint64_t pkt_cnt,uint64_t byte_cnt)
+{
+    struct out_port *nxt_port;
+    struct port *out;
+    LL_FOREACH(ports, nxt_port){
+        out = dp_port(dp, nxt_port->port);
+        if (out != NULL) {
+            uint8_t up = out->config & PORT_UP;
+            uint8_t live = out->state & PORT_LIVE;
+            if (up && live){
+                out->stats.tx_packets += pkt_cnt;
+                out->stats.tx_bytes += byte_cnt;
+            }
+        }
+    }
+}
+
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
-void 
+struct out_port* 
 dp_handle_flow(struct datapath *dp, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
@@ -146,9 +164,11 @@ dp_handle_flow(struct datapath *dp, struct netflow *flow)
         /* Execute action set */ 
         execute_action_set(&acts, flow, out_ports);
         if (out_ports != NULL){
-
+             ports_fwd(dp, out_ports, flow->pkt_cnt, flow->byte_cnt);
         }
     }
+    /* We need the ports to create the next events. */
+    return out_ports;
 }
 
 uint64_t 
