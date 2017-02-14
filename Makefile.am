@@ -15,10 +15,10 @@ horse_LDADD = .libs/libhorse.a
 
 
 # Unit tests
-TESTS = flow_table_test scheduler_test instruction_test
+TESTS = flow_table_test scheduler_test instruction_test netflow_test
 unit_test_CFLAGS = -DUNIT_TESTING=1 -I./src -I./vendor
 
-noinst_PROGRAMS = flow_table_test scheduler_test instruction_test
+noinst_PROGRAMS = flow_table_test scheduler_test instruction_test netflow_test
 
 flow_table_test_SOURCES = tests/flow_table_test.c
 flow_table_test_CFLAGS = $(unit_test_CFLAGS)
@@ -32,3 +32,6 @@ instruction_test_SOURCES = tests/instruction_test.c
 instruction_test_CFLAGS = $(unit_test_CFLAGS)
 instruction_test_LDADD = -lcmockery .libs/libhorse.a
 
+netflow_test_SOURCES = tests/netflow_test.c
+netflow_test_CFLAGS = $(unit_test_CFLAGS)
+netflow_test_LDADD = -lcmockery .libs/libhorse.a
