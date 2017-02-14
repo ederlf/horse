@@ -10,7 +10,7 @@ action_list_init(struct action_list *al)
 void action_list_clean(struct action_list *al)
 {
     struct action_list_elem *nxt_elem, *tmp;
-    DL_FOREACH_SAFE(al->actions, nxt_elem, tmp){
+    LL_FOREACH_SAFE(al->actions, nxt_elem, tmp){
         LL_DELETE(al->actions, nxt_elem);
         free(nxt_elem);
     }

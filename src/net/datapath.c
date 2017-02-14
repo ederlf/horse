@@ -11,6 +11,7 @@
 #include "datapath.h"
 #include "dp_actions.h"
 #include "lib/util.h" 
+#include <uthash/utlist.h>
 
 
 /* Definition of a switch of the network */
@@ -63,14 +64,18 @@ dp_port(const struct datapath *dp, uint32_t port_id)
     return p;
 }
 
-// INSTRUCTION_APPLY_ACTIONS
-// INSTRUCTION_CLEAR_ACTIONS
-// INSTRUCTION_WRITE_ACTIONS
-// INSTRUCTION_WRITE_METADATA
-// INSTRUCTION_GOTO_TABLE
+static void 
+execute_action_list(struct action_list *al, struct netflow *flow, struct out_port *out_ports)
+{
+    struct action_list_elem *act_elem;
+    LL_FOREACH(al->actions, act_elem){
+        execute_action(&act_elem->act, flow, out_ports);
+    }
+}
 
-static 
-void execute_action_set(struct action_set *as, struct netflow *flow, struct out_port *out_ports){
+
+static void 
+execute_action_set(struct action_set *as, struct netflow *flow, struct out_port *out_ports){
 
     struct action *act;
     enum action_set_order type;
@@ -85,10 +90,10 @@ void execute_action_set(struct action_set *as, struct netflow *flow, struct out_
 }
 
 static void 
-execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as) {
+execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as, struct out_port *out_ports) {
 
     if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)){
-
+        execute_action_list(&is->apply_act.actions, flow, out_ports);
     }
 
     if (instruction_is_active(is, INSTRUCTION_CLEAR_ACTIONS)){
@@ -135,7 +140,7 @@ dp_handle_flow(struct datapath *dp, struct netflow *flow)
                 f->pkt_cnt += flow->pkt_cnt;
                 f->byte_cnt += flow->byte_cnt;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &table, flow, &acts);
+                execute_instructions(&f->insts, &table, flow, &acts, out_ports);
             }
         }
         /* Execute action set */ 

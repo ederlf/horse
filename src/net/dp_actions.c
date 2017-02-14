@@ -198,7 +198,6 @@ void
 execute_action(struct action *act, struct netflow *flow, struct out_port *out_ports) {
 
     /* Execute action based on the type */
-
     (*handle_action[act->type]) (act, flow, out_ports);
 
 }
