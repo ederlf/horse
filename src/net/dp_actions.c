@@ -5,32 +5,29 @@
 static void 
 pop_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
+    netflow_pop_vlan(nf);
     UNUSED(act);
-    UNUSED(nf);
     UNUSED(out_ports);
 }
 
 static void 
 push_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
-    UNUSED(act);
-    UNUSED(nf);
+    netflow_push_vlan(nf, act->psh.eth_type);
     UNUSED(out_ports);
 }
 
 static void 
 push_mpls(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
-    UNUSED(act);
-    UNUSED(nf);
+    netflow_push_mpls(nf, act->psh.eth_type);
     UNUSED(out_ports);
 }
 
 static void 
 pop_mpls(struct action *act, struct netflow *nf, struct out_port *out_ports)
 {
-    UNUSED(act);
-    UNUSED(nf);
+    netflow_pop_mpls(nf, act->pop_mpls.eth_type);
     UNUSED(out_ports);
 }
 
@@ -186,22 +183,22 @@ output(struct action *act, struct netflow *nf, struct out_port *out_ports)
     UNUSED(nf);
 }
 
-// TODO use log2 [log2(act->type)] to calculate position
 /* Array of function pointers for the actions. */ 
 static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct netflow *nf, struct out_port *out_ports) = {
-    [2] = pop_vlan, 
-    [3] = pop_mpls,
-    [4] = push_vlan,
-    [5] = push_mpls,
-    [10] = set_field,
-    [12] = group,
-    [13] = output
+    [ACT_POP_VLAN] = pop_vlan, 
+    [ACT_POP_MPLS] = pop_mpls,
+    [ACT_PUSH_MPLS] = push_vlan,
+    [ACT_PUSH_VLAN] = push_mpls,
+    [ACT_SET_FIELD] = set_field,
+    [ACT_GROUP] = group,
+    [ACT_OUTPUT] = output
 };
 
 void 
 execute_action(struct action *act, struct netflow *flow, struct out_port *out_ports) {
 
     /* Execute action based on the type */
+
     (*handle_action[act->type]) (act, flow, out_ports);
 
 }

@@ -74,8 +74,8 @@ void execute_action_set(struct action_set *as, struct netflow *flow, struct out_
 
     struct action *act;
     enum action_set_order type;
-    for (type = ACT_METER; type < ACT_OUTPUT; 
-         type = type << 1) {
+    /* Loop through the enum */
+    for (type = ACT_METER; type < ACT_OUTPUT; ++type) {
         act = action_set_action(as, type);
         if(act){
             execute_action(act, flow, out_ports);

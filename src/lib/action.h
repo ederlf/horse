@@ -20,20 +20,20 @@
 *  are included for possible future usage.
 */
 enum action_set_order {
-    ACT_METER = 1 << 0,
-    ACT_COPY_TTL_INWARDS = 1 << 1,
-    ACT_POP_VLAN = 1 << 2,
-    ACT_POP_MPLS = 1 << 3,
-    ACT_PUSH_MPLS = 1 << 4,
-    ACT_PUSH_VLAN = 1 << 5,
-    ACT_COPY_TTL_OUTWARDS = 1 << 6,
-    ACT_DECREMENT_TTL = 1 << 7,
-    ACT_SET_MPLS_TTL = 1 << 8,
-    ACT_DECREMENT_MPLS_TTL = 1 << 9,
-    ACT_SET_FIELD = 1 << 10,
-    ACT_QOS = 1 << 11,
-    ACT_GROUP = 1 << 12,
-    ACT_OUTPUT = 1 << 13
+    ACT_METER = 0,
+    ACT_COPY_TTL_INWARDS = 1,
+    ACT_POP_VLAN = 2,
+    ACT_POP_MPLS = 3,
+    ACT_PUSH_MPLS = 4,
+    ACT_PUSH_VLAN = 5,
+    ACT_COPY_TTL_OUTWARDS = 6,
+    ACT_DECREMENT_TTL = 7,
+    ACT_SET_MPLS_TTL = 8,
+    ACT_DECREMENT_MPLS_TTL = 9,
+    ACT_SET_FIELD = 10,
+    ACT_QOS = 11,
+    ACT_GROUP = 12,
+    ACT_OUTPUT = 13
 };
 
 enum set_field_type {
