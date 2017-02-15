@@ -65,7 +65,7 @@ dp_port(const struct datapath *dp, uint32_t port_id)
 }
 
 static void 
-execute_action_list(struct action_list *al, struct netflow *flow, struct out_port *out_ports)
+execute_action_list(struct action_list *al, struct netflow *flow, struct out_port **out_ports)
 {
     struct action_list_elem *act_elem;
     LL_FOREACH(al->actions, act_elem){
@@ -75,22 +75,21 @@ execute_action_list(struct action_list *al, struct netflow *flow, struct out_por
 
 
 static void 
-execute_action_set(struct action_set *as, struct netflow *flow, struct out_port *out_ports){
+execute_action_set(struct action_set *as, struct netflow *flow, struct out_port **out_ports){
 
     struct action *act;
     enum action_set_order type;
     /* Loop through the enum */
-    for (type = ACT_METER; type < ACT_OUTPUT; ++type) {
+    for (type = ACT_METER; type <= ACT_OUTPUT; ++type) {
         act = action_set_action(as, type);
         if(act){
             execute_action(act, flow, out_ports);
-            continue;
         }
     }
 }
 
 static void 
-execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as, struct out_port *out_ports) {
+execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as, struct out_port **out_ports) {
 
     if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)){
         execute_action_list(&is->apply_act.actions, flow, out_ports);
@@ -134,7 +133,7 @@ ports_fwd(struct datapath *dp, struct out_port *ports, uint64_t pkt_cnt,uint64_t
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
 struct out_port* 
-dp_handle_flow(struct datapath *dp, struct netflow *flow)
+dp_recv_netflow(struct datapath *dp, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table;
@@ -153,24 +152,31 @@ dp_handle_flow(struct datapath *dp, struct netflow *flow)
         for(table = 0; table < MAX_TABLES; ++table){
             f = flow_table_lookup(dp->tables[table], &flow->match, flow->start_time);
             if (f != NULL){
-                /* Cut the packet and byte count if flow lasts longer than
+                /* TODO: Cut the packet and byte count if flow lasts longer than
                     remotion by hard timeout */
-                
+
                 /* Increase the flow counters */
                 f->pkt_cnt += flow->pkt_cnt;
                 f->byte_cnt += flow->byte_cnt;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &table, flow, &acts, out_ports);
+                execute_instructions(&f->insts, &table, flow, &acts, &out_ports);
             }
         }
         /* Execute action set */ 
-        execute_action_set(&acts, flow, out_ports);
+        execute_action_set(&acts, flow, &out_ports);
         if (out_ports != NULL){
-             ports_fwd(dp, out_ports, flow->pkt_cnt, flow->byte_cnt);
+            ports_fwd(dp, out_ports, flow->pkt_cnt, flow->byte_cnt);
         }
     }
     /* We need the ports to create the next events. */
     return out_ports;
+}
+
+/* TODO: better to pass a struct that represents a flow_mod */
+void
+dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time)
+{
+    add_flow(dp->tables[table_id], f, time);
 }
 
 uint64_t 

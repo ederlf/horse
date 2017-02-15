@@ -3,7 +3,7 @@
 #include <uthash/utlist.h>
 
 static void 
-pop_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
+pop_vlan(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     netflow_pop_vlan(nf);
     UNUSED(act);
@@ -11,28 +11,28 @@ pop_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
 }
 
 static void 
-push_vlan(struct action *act, struct netflow *nf, struct out_port *out_ports)
+push_vlan(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     netflow_push_vlan(nf, act->psh.eth_type);
     UNUSED(out_ports);
 }
 
 static void 
-push_mpls(struct action *act, struct netflow *nf, struct out_port *out_ports)
+push_mpls(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     netflow_push_mpls(nf, act->psh.eth_type);
     UNUSED(out_ports);
 }
 
 static void 
-pop_mpls(struct action *act, struct netflow *nf, struct out_port *out_ports)
+pop_mpls(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     netflow_pop_mpls(nf, act->pop_mpls.eth_type);
     UNUSED(out_ports);
 }
 
 static void 
-set_field(struct action *act, struct netflow *nf, struct out_port *out_ports)
+set_field(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     struct set_field set = act->set;
     switch (set.field) {
@@ -166,7 +166,7 @@ set_field(struct action *act, struct netflow *nf, struct out_port *out_ports)
 }
 
 static void 
-group(struct action *act, struct netflow *nf, struct out_port *out_ports)
+group(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     UNUSED(act);
     UNUSED(nf);
@@ -174,17 +174,17 @@ group(struct action *act, struct netflow *nf, struct out_port *out_ports)
 }
 
 static void 
-output(struct action *act, struct netflow *nf, struct out_port *out_ports)
+output(struct action *act, struct netflow *nf, struct out_port **out_ports)
 {
     struct output out = act->out;
     struct out_port *op = xmalloc(sizeof(struct out_port));
     op->port = out.port;
-    LL_APPEND(out_ports, op);
+    LL_APPEND(*out_ports, op);
     UNUSED(nf);
 }
 
 /* Array of function pointers for the actions. */ 
-static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct netflow *nf, struct out_port *out_ports) = {
+static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct netflow *nf, struct out_port **out_ports) = {
     [ACT_POP_VLAN] = pop_vlan, 
     [ACT_POP_MPLS] = pop_mpls,
     [ACT_PUSH_MPLS] = push_vlan,
@@ -195,9 +195,8 @@ static void (*handle_action[MAX_ACTION_SET]) (struct action *act, struct netflow
 };
 
 void 
-execute_action(struct action *act, struct netflow *flow, struct out_port *out_ports) {
+execute_action(struct action *act, struct netflow *flow, struct out_port **out_ports) {
 
     /* Execute action based on the type */
     (*handle_action[act->type]) (act, flow, out_ports);
-
 }

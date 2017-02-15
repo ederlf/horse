@@ -10,7 +10,7 @@ handle_traffic(struct topology *topo, struct event_hdr *ev)
         if (node->type == DATAPATH){
             struct datapath *dp = (struct datapath*) node;
             struct out_port *op;
-            op = dp_handle_flow(dp, &ev_flow->flow);
+            op = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the next ports*/
             UNUSED(op);
         }
