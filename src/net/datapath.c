@@ -147,6 +147,8 @@ dp_handle_flow(struct datapath *dp, struct netflow *flow)
         action_set_init(&acts);
         p->stats.rx_packets += flow->byte_cnt;
         p->stats.rx_bytes += flow->pkt_cnt;
+        /* Reset metadata */
+        flow->match.metadata = 0;
         /* Enter pipeline */
         for(table = 0; table < MAX_TABLES; ++table){
             f = flow_table_lookup(dp->tables[table], &flow->match, flow->start_time);
