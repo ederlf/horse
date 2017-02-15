@@ -33,6 +33,49 @@ create_random_events(struct sim *s, struct event *ev)
 	}
 }
 
+static void add_flows(struct topology *topo){
+    /* DP 1 */
+    struct datapath *dp = (struct datapath*) topology_node(topo, 1);
+    struct flow *fl = flow_new();
+    struct instruction_set is;
+    instruction_set_init(&is);
+    struct write_metadata wm;
+    inst_write_metadata(&wm, 0xbeef);
+    add_write_metadata(&is, wm);
+    /* Write actions */
+    struct write_actions wa;
+    struct action_set as;
+    struct action gen_act;
+    action_set_init(&as);
+    action_output(&gen_act, 2);
+    action_set_add(&as, gen_act);
+    action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
+    action_set_add(&as, gen_act);
+    inst_write_actions(&wa, as);
+    add_write_actions(&is, wa);
+    /* Match */
+    set_in_port(fl, 1);
+    flow_add_instructions(fl, is);
+    dp_handle_flow_mod(dp, 0, fl, 0);
+    
+    /* DP 2 */
+    dp = (struct datapath*) topology_node(topo, 2);
+    struct flow *fl2 = flow_new();
+    instruction_set_init(&is);
+    struct apply_actions aa;
+    struct action_list al;
+    action_list_init(&al);
+    action_output(&gen_act, 2);
+    action_list_add(&al, gen_act);
+    inst_apply_actions(&aa, al);
+    add_apply_actions(&is, aa);
+    /* Match */
+    set_in_port(fl2, 2);
+    set_eth_type(fl2, 0x800);
+    flow_add_instructions(fl2, is);
+    dp_handle_flow_mod(dp, 0, fl2, 0);
+}
+
 static void
 sim_init(struct sim *s, struct topology *topo) 
 {
@@ -76,6 +119,7 @@ start(struct topology *topo)
     struct sim s;
     struct event* ev = malloc(sizeof(struct event) * EV_NUM);
     sim_init(&s, topo);
+    add_flows(topo);
     create_random_events(&s, ev);
     while (!scheduler_is_empty(s.sch)) {
     	sim_execute_event(&s);
