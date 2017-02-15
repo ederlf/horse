@@ -16,6 +16,8 @@
 #include "lib/flow.h"
 #include "lib/netflow.h"
 
+#define EVENTS_NUM 4
+
 enum events {
     EVENT_FLOW = 0, 
     EVENT_PACKET = 1,     /* For the future case of hybrid simulation. */
