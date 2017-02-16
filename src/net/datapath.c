@@ -144,8 +144,9 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
                 execute_instructions(&f->insts, &table, flow, &acts, &out_ports);
             }
         }
-        /* Execute action set */ 
+        /* Execute action and clean */ 
         execute_action_set(&acts, flow, &out_ports);
+        action_set_clean(&acts);
     }
     /* We need the ports to create the next events. */
     return out_ports;
