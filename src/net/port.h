@@ -54,8 +54,8 @@ struct end_point {
  
 struct port {
     uint32_t port_id;              /* Identification number.     */
-    uint32_t speed;                /* Total speed.               */
-    uint32_t curr_speed;           /* Current speed.             */
+    uint32_t speed;                /* Total speed in kbps.       */
+    uint32_t curr_speed;           /* Current speed in kbps.     */
     uint8_t config;                /* Administrative state.      */
     uint8_t state;                 /* Interface up or down.      */ 
     char name[MAX_PORT_NAME];
