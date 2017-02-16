@@ -6,11 +6,10 @@ static uint64_t current_uuid = 0;
 void 
 node_init(struct node* n, uint16_t type)
 {
-    n->uuid = current_uuid;
+    n->uuid = ++current_uuid;
     n->ports_num = 0;
     n->ports = NULL;
     n->type = type;
-    ++current_uuid;
 }
 
 void 

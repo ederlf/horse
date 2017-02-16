@@ -19,6 +19,8 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]) {
     memcpy(p->eth_address, eth_addr, ETH_LEN);
     p->config |= PORT_UP;
     p->state |= PORT_LIVE;
+    /* TODO: Set port speed */
+    p->curr_speed = 1000000;
     return p;
 }
 

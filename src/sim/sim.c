@@ -18,18 +18,19 @@ create_random_events(struct sim *s, struct event *ev)
 {
 	int i;
 	for (i = 0; i < EV_NUM; ++i){
-		  struct event_flow *flow = malloc(sizeof(struct event_flow));
-	    flow->hdr.id = i + 1;
-      flow->hdr.time = i + 1;
-	    flow->hdr.type = EVENT_FLOW;
-	    flow->node_id = 1;
-      flow->flow.start_time = flow->hdr.time;
-      flow->flow.end_time = flow->flow.start_time + 1;
-      memset(&flow->flow.match, 0x0, sizeof(struct flow_key));
-      flow->flow.match.in_port = 1;
-	    HASH_ADD(hh, s->events, id, sizeof(uint64_t), (struct event_hdr*) flow);
-	    init_event(&ev[i], flow->hdr.time , flow->hdr.id); 
-	    scheduler_insert(s->sch, &ev[i]);
+    	struct event_flow *flow = malloc(sizeof(struct event_flow));
+        flow->hdr.id = i + 1;
+        flow->hdr.time = i + 1;
+        flow->hdr.type = EVENT_FLOW;
+        flow->node_id = 1;
+        flow->flow.start_time = flow->hdr.time;
+        flow->flow.end_time = flow->flow.start_time + 1;
+        memset(&flow->flow.match, 0x0, sizeof(struct flow_key));
+        flow->flow.match.in_port = 1;
+        HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
+                 (struct event_hdr*) flow);
+        init_event(&ev[i], flow->hdr.time , flow->hdr.id); 
+        scheduler_insert(s->sch, &ev[i]);
 	}
 }
 
@@ -109,7 +110,7 @@ sim_execute_event(struct sim *s)
 	struct event sch_ev = scheduler_dispatch(s->sch);
 	/* Event MUST exist in the hash */
 	HASH_FIND(hh, s->events, &sch_ev.id, sizeof(uint64_t), ev);
-	handle_event(s->topo, ev);
+	handle_event(s->sch, s->topo, s->events, ev);
 
 }
 

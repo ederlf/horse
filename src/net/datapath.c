@@ -112,24 +112,6 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
     }
 }
 
-static void
-ports_fwd(struct datapath *dp, struct out_port *ports, uint64_t pkt_cnt,uint64_t byte_cnt)
-{
-    struct out_port *nxt_port;
-    struct port *out;
-    LL_FOREACH(ports, nxt_port){
-        out = dp_port(dp, nxt_port->port);
-        if (out != NULL) {
-            uint8_t up = out->config & PORT_UP;
-            uint8_t live = out->state & PORT_LIVE;
-            if (up && live){
-                out->stats.tx_packets += pkt_cnt;
-                out->stats.tx_bytes += byte_cnt;
-            }
-        }
-    }
-}
-
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
 struct out_port* 
@@ -164,12 +146,27 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
         }
         /* Execute action set */ 
         execute_action_set(&acts, flow, &out_ports);
-        if (out_ports != NULL){
-            ports_fwd(dp, out_ports, flow->pkt_cnt, flow->byte_cnt);
-        }
     }
     /* We need the ports to create the next events. */
     return out_ports;
+}
+
+void
+dp_send_netflow(struct datapath *dp, struct netflow *flow, uint32_t port)
+{
+    struct port *p = dp_port(dp, port);
+    if (p != NULL) {
+        uint8_t up = p->config & PORT_UP;
+        uint8_t live = p->state & PORT_LIVE;
+        if (up && live){
+            p->stats.tx_packets += flow->pkt_cnt;
+            p->stats.tx_bytes += flow->byte_cnt;
+            /* Start time of the flow will be the same as the end */
+            flow->start_time = flow->end_time;
+            /* Make sure p->curr_speed is not 0 */
+            flow->end_time += (flow->byte_cnt * 8) / ((p->curr_speed * 1000)/1000000);
+        }
+    }
 }
 
 /* TODO: better to pass a struct that represents a flow_mod */
@@ -177,6 +174,15 @@ void
 dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time)
 {
     add_flow(dp->tables[table_id], f, time);
+}
+
+void clean_out_ports(struct out_port *ports)
+{
+    struct out_port *p, *tmp;
+    LL_FOREACH_SAFE(ports, p, tmp) {
+      LL_DELETE(ports, p);
+      free(p); 
+    }
 }
 
 uint64_t 

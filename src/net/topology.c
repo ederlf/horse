@@ -22,6 +22,7 @@ struct node_port_pair {
     uint32_t port;
 };
 
+/* TODO: Possible split link on its own interface */
 struct link {
     struct node_port_pair node1;
     struct node_port_pair node2;
@@ -101,6 +102,22 @@ topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t p
     }
 }
 
+void
+topology_next_hop(const struct topology *topo, const uint64_t orig_uuid, const uint32_t orig_port, uint64_t *dst_uuid, uint32_t *dst_port, uint32_t *latency)
+{
+    struct link *l;
+    struct node_port_pair np;
+    memset(&np, 0x0, sizeof(struct node_port_pair));
+    np.uuid = orig_uuid;
+    np.port = orig_port;
+    HASH_FIND(hh, topo->links, &np, sizeof(struct node_port_pair), l);
+    if (l != NULL){
+        *dst_uuid = l->node2.uuid;
+        *dst_port = l->node2.port;
+        *latency = l->latency;
+    }
+}
+
 /* Clean the dynamically allocated members of a topology 
 *  As there should be a single instance of topology allocated 
 *  in the stack it is not necessary to free topo.
@@ -142,6 +159,9 @@ void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
     /* Create Datapaths */
     for (i = 0; i < ptopo->ndps; ++i){
         struct datapath *dp = dp_new(ptopo->dps[i]);
+        uint8_t mac[6] = {0,0,0,0,0,1};
+        dp_add_port(dp, 1, mac);
+        dp_add_port(dp, 2, mac);
         topology_add_datapath(topo, dp);
     }
     /* Create links */

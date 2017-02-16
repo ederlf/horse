@@ -26,17 +26,33 @@
 
 struct datapath;
 
+/* Use it as a list of output ports after the pipeline */
+struct out_port {
+    uint32_t port;
+    struct out_port *next;
+};
+
 struct datapath* dp_new(uint64_t dp_id);
+
 void dp_destroy(struct datapath *dp);
+
 void dp_add_port(struct datapath *dp, uint32_t port_id, 
                  uint8_t eth_addr[ETH_LEN]);
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
+
 struct out_port* dp_recv_netflow(struct datapath *dp, struct netflow *flow);
+
+void dp_send_netflow(struct datapath *dp, struct netflow *flow, 
+                     uint32_t port);
+
 void dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time);
+
+void clean_out_ports(struct out_port *ports);
 
 /* Access functions*/
 uint64_t dp_uuid(const struct datapath* dp);
+
 uint64_t dp_id(const struct datapath* dp);
 
 
