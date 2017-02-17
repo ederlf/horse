@@ -13,8 +13,8 @@ int cmpfunc (const void * a, const void * b)
 /* Tests if the event order is correct */
 void add_flow_event(void **state){
     struct scheduler* sch = scheduler_new();
-    struct event ev_ret;
-    struct event ev[10];
+    struct event *ev_ret;
+    struct event *ev = malloc( sizeof(struct event) * 10);
     uint64_t times[10] = {50, 80, 70, 60, 40, 90, 10, 30, 100, 20};
     int i;
     for (i = 0; i < 10; ++i){
@@ -24,15 +24,16 @@ void add_flow_event(void **state){
     qsort(times, 10, sizeof(uint64_t), cmpfunc);
     for (i = 0; i < 10; ++i){
         ev_ret = scheduler_dispatch(sch);
-        assert_int_equal(ev_ret.time, times[i]);        
+        assert_int_equal(ev_ret->time, times[i]);        
     } 
+    free(ev);
     scheduler_destroy(sch);
 }
 
 /* Generates random times and checks if the order is correct */
 void random_add_flow_event(void **state){
     struct scheduler* sch = scheduler_new();
-    struct event ev_ret;
+    struct event *ev_ret;
     struct event* ev = malloc(sizeof(struct event) * MAX_EVENTS_TEST);
     uint64_t* times = malloc(sizeof(uint64_t) * MAX_EVENTS_TEST);
     int i;
@@ -45,7 +46,7 @@ void random_add_flow_event(void **state){
     qsort(times, MAX_EVENTS_TEST, sizeof(uint64_t), cmpfunc);
     for (i = 0; i < MAX_EVENTS_TEST; ++i){
         ev_ret = scheduler_dispatch(sch);
-        assert_int_equal(ev_ret.time, times[i]);        
+        assert_int_equal(ev_ret->time, times[i]);        
     } 
     scheduler_destroy(sch);
     free(ev);
