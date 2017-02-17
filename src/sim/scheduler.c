@@ -46,10 +46,10 @@ scheduler_insert(struct scheduler *sch, struct event *ev)
 }
 
 
-struct event
+struct event*
 scheduler_dispatch(struct scheduler *sch)
 {
     struct event *ev = (struct event*) heap_delete(sch->ev_queue);
     sch->clock = ev->time;
-    return *ev;
+    return ev;
 };

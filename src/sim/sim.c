@@ -14,10 +14,11 @@
 #define EV_NUM 10
 
 static void 
-create_random_events(struct sim *s, struct event *ev)
+create_random_events(struct sim *s)
 {
 	int i;
 	for (i = 0; i < EV_NUM; ++i){
+        struct event *ev = malloc(sizeof(struct event));
     	struct event_flow *flow = malloc(sizeof(struct event_flow));
         flow->hdr.id = i + 1;
         flow->hdr.time = i + 1;
@@ -29,8 +30,8 @@ create_random_events(struct sim *s, struct event *ev)
         flow->flow.match.in_port = 1;
         HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
                  (struct event_hdr*) flow);
-        init_event(&ev[i], flow->hdr.time , flow->hdr.id); 
-        scheduler_insert(s->sch, &ev[i]);
+        init_event(ev, flow->hdr.time , flow->hdr.id); 
+        scheduler_insert(s->sch, ev);
 	}
 }
 
@@ -107,25 +108,23 @@ static void
 sim_execute_event(struct sim *s)
 {
 	struct event_hdr *ev;
-	struct event sch_ev = scheduler_dispatch(s->sch);
+	struct event *sch_ev = scheduler_dispatch(s->sch);
 	/* Event MUST exist in the hash */
-	HASH_FIND(hh, s->events, &sch_ev.id, sizeof(uint64_t), ev);
+	HASH_FIND(hh, s->events, &sch_ev->id, sizeof(uint64_t), ev);
 	handle_event(s->sch, s->topo, s->events, ev);
-
+    free(sch_ev);
 }
 
 void 
 start(struct topology *topo) 
 {
     struct sim s;
-    struct event* ev = malloc(sizeof(struct event) * EV_NUM);
     sim_init(&s, topo);
     add_flows(topo);
-    create_random_events(&s, ev);
+    create_random_events(&s);
     while (!scheduler_is_empty(s.sch)) {
     	sim_execute_event(&s);
     }
-    free(ev);
     sim_close(&s);    
 }
 
