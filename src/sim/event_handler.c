@@ -14,6 +14,7 @@ handle_traffic(struct scheduler *sch, struct topology *topo, struct event_hdr *e
             struct out_port *op;
             out_ports = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the output ports*/
+
             LL_FOREACH(out_ports, op){
                uint64_t dst_uuid;
                uint32_t dst_port, latency;
@@ -28,11 +29,11 @@ handle_traffic(struct scheduler *sch, struct topology *topo, struct event_hdr *e
                // memcpy(new_flow, ev_flow, sizeof(struct event_flow));
                // new_flow->node_id = dst_uuid;
                // new_flow->hdr.id +=  10;
-               // printf("It is a new flow bro\n");
+               // new_flow->hdr.time = ev_flow->flow.start_time;
                // HASH_ADD(hh, events, id, sizeof(uint64_t), 
                //   (struct event_hdr*) new_flow);
                // struct event* new_ev = malloc(sizeof(struct event));
-               // init_event(new_ev, ev_flow->hdr.time , ev_flow->hdr.id); 
+               // init_event(new_ev, new_flow->hdr.time , new_flow->hdr.id); 
                // scheduler_insert(sch, new_ev);
                UNUSED(sch);
                UNUSED(events);

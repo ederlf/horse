@@ -11,7 +11,7 @@
 #include "sim.h"
 #include "event_handler.h"
 
-#define EV_NUM 10
+#define EV_NUM 1
 
 static void 
 create_random_events(struct sim *s)
@@ -28,6 +28,7 @@ create_random_events(struct sim *s)
         flow->flow.end_time = flow->flow.start_time + 1;
         memset(&flow->flow.match, 0x0, sizeof(struct flow_key));
         flow->flow.match.in_port = 1;
+        flow->flow.match.eth_type = 0x800;
         HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
                  (struct event_hdr*) flow);
         init_event(ev, flow->hdr.time , flow->hdr.id); 

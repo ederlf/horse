@@ -16,10 +16,11 @@ void lookup(void **state)
     add_flow(ft, fl2, 0);
     struct flow_key key;
     memset(&key, 0x0, sizeof(struct flow_key));
-    key.eth_type = 0x806;
+    key.eth_type = 0x800;
+    key.in_port = 1;
     ret = flow_table_lookup(ft, &key, 0);
     assert_int_not_equal(ret, NULL);
-    assert_int_equal(ret->key.eth_type, 0x806);
+    assert_int_equal(ret->key.eth_type, 0x800);
     flow_table_destroy(ft);
 }
 

@@ -131,11 +131,11 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
         /* Reset metadata */
         flow->match.metadata = 0;
         /* Enter pipeline */
+        
         for(table = 0; table < MAX_TABLES; ++table){
             f = flow_table_lookup(dp->tables[table], &flow->match, flow->start_time);
             if (f != NULL){
-                /* TODO: Cut the packet and byte count if flow lasts longer than
-                    remotion by hard timeout */
+                /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
 
                 /* Increase the flow counters */
                 f->pkt_cnt += flow->pkt_cnt;
