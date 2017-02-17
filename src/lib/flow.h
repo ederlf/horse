@@ -24,6 +24,7 @@
 
 #include "instruction.h"
 #include "instruction_set.h"
+#include "packets.h"
 #include <inttypes.h>
 #include <stdbool.h>
 #include <uthash/uthash.h>
@@ -35,8 +36,8 @@ struct flow_key {
     uint64_t metadata;
     uint64_t tunnel_id;
     uint16_t eth_type;
-    uint8_t eth_dst[6]; /* TODO: Use ETH_LEN */
-    uint8_t eth_src[6];
+    uint8_t eth_dst[ETH_LEN];
+    uint8_t eth_src[ETH_LEN];
     uint16_t vlan_id;
     uint8_t vlan_pcp;
     uint32_t mpls_label;
@@ -52,13 +53,13 @@ struct flow_key {
     uint16_t arp_op;
     uint32_t arp_spa;
     uint32_t arp_tpa;
-    uint8_t arp_sha[6];
-    uint8_t arp_tha[6];
-    uint8_t ipv6_dst[16];
-    uint8_t ipv6_src[16];
-    uint8_t ipv6_nd_target[16];
-    uint8_t ipv6_nd_sll[6];
-    uint8_t ipv6_nd_tll[6];
+    uint8_t arp_sha[ETH_LEN];
+    uint8_t arp_tha[ETH_LEN];
+    uint8_t ipv6_dst[IPV6_LEN];
+    uint8_t ipv6_src[IPV6_LEN];
+    uint8_t ipv6_nd_target[IPV6_LEN];
+    uint8_t ipv6_nd_sll[ETH_LEN];
+    uint8_t ipv6_nd_tll[ETH_LEN];
 };
 
 /* Description of a switch flow */

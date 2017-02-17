@@ -98,15 +98,13 @@ void action_set_field_u64(struct action *sf, uint8_t field, uint64_t value)
 void action_set_field_eth_addr(struct action *sf, uint8_t field, uint8_t *eth_addr)
 {
     set_field(sf, field);
-    /*TODO: use ETH_LEN */
-    memcpy(sf->set.eth_addr, eth_addr, 6);
+    memcpy(sf->set.eth_addr, eth_addr, ETH_LEN);
 }
 
 void action_set_field_ipv6_addr(struct action *sf, uint8_t field, uint8_t *ipv6_addr)
 {
     set_field(sf, field);
-    /*TODO: use IPV6_LEN */
-    memcpy(sf->set.eth_addr, ipv6_addr, 16); 
+    memcpy(sf->set.eth_addr, ipv6_addr, IPV6_LEN); 
 }
 
 void

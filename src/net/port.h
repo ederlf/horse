@@ -11,11 +11,10 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H value
 
+#include "lib/packets.h"
 #include <stdint.h>
 #include <uthash/uthash.h>
 
-/* TODO: Move to a global file? */
-#define ETH_LEN 6
 #define MAX_PORT_NAME 16
 
 enum port_config {

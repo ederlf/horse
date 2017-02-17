@@ -12,6 +12,7 @@
 
 #include <inttypes.h>
 #include <uthash/uthash.h>
+#include "packets.h"
 #include "util.h"
 
 #define MAX_ACTION_SET 14
@@ -102,8 +103,8 @@ struct set_field {
         uint16_t u16_field;
         uint32_t u32_field;
         uint64_t u64_field;
-        uint8_t  eth_addr[6];  /* TODO: Use ETH_LEN */
-        uint8_t  ipv6_addr[16];
+        uint8_t  eth_addr[ETH_LEN];  
+        uint8_t  ipv6_addr[IPV6_LEN];
     };
 };
 

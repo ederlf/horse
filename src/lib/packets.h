@@ -1,6 +1,11 @@
 #ifndef PACKET_H
 #define PACKET_H 1
 
+#include <stdint.h>
+
+#define ETH_LEN 6
+#define IPV6_LEN 16
+
 #define ETH_TYPE_IP            0x0800
 #define ETH_TYPE_IPV6          0x86dd
 #define ETH_TYPE_ARP           0x0806
