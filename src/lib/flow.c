@@ -421,7 +421,7 @@ apply_all_mask(struct flow *flow, struct flow_key *mask)
     flow->key.in_port &= mask->in_port;
     set_masked_metadata(flow, flow->key.metadata, mask->metadata);
     set_masked_tunnel_id(flow, flow->key.tunnel_id, mask->tunnel_id);
-    flow->key.eth_type &= flow->key.eth_type;
+    flow->key.eth_type &= mask->eth_type;
     set_masked_eth_dst(flow, flow->key.eth_dst, mask->eth_dst);
     set_masked_eth_src(flow, flow->key.eth_src, mask->eth_src);
     set_masked_vlan_id(flow, flow->key.vlan_id, mask->vlan_id);
