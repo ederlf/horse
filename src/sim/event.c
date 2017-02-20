@@ -10,11 +10,16 @@
 
 #include "event.h"
 
-
-void 
-init_event(struct event *ev, uint64_t time, uint64_t id){
+struct event*
+event_new(uint64_t time, uint64_t id)
+{
+    struct event *ev = xmalloc(sizeof(struct event));
     ev->time = time;
     ev->id = id;
+    return ev;
 }
 
 
+void event_free(struct event* ev){
+    free(ev);
+}

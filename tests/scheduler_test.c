@@ -14,19 +14,19 @@ int cmpfunc (const void * a, const void * b)
 void add_flow_event(void **state){
     struct scheduler* sch = scheduler_new();
     struct event *ev_ret;
-    struct event *ev = malloc( sizeof(struct event) * 10);
     uint64_t times[10] = {50, 80, 70, 60, 40, 90, 10, 30, 100, 20};
     int i;
     for (i = 0; i < 10; ++i){
-        init_event(&ev[i], times[i], i + 1);    
-        scheduler_insert(sch, &ev[i]);
+        struct event *ev = event_new(times[i], i + 1);
+        scheduler_insert(sch, ev);
     } 
+    printf("\n");
     qsort(times, 10, sizeof(uint64_t), cmpfunc);
     for (i = 0; i < 10; ++i){
         ev_ret = scheduler_dispatch(sch);
-        assert_int_equal(ev_ret->time, times[i]);        
+        assert_int_equal(ev_ret->time, times[i]);
+        event_free(ev_ret);       
     } 
-    free(ev);
     scheduler_destroy(sch);
 }
 
@@ -34,22 +34,21 @@ void add_flow_event(void **state){
 void random_add_flow_event(void **state){
     struct scheduler* sch = scheduler_new();
     struct event *ev_ret;
-    struct event* ev = malloc(sizeof(struct event) * MAX_EVENTS_TEST);
     uint64_t* times = malloc(sizeof(uint64_t) * MAX_EVENTS_TEST);
     int i;
     srand(time(NULL));
     for (i = 0; i < MAX_EVENTS_TEST; ++i){
         times[i] =  rand(); 
-        init_event(&ev[i], times[i], i + 1);   
-        scheduler_insert(sch, &ev[i]);
+        struct event *ev = event_new(times[i], i + 1);
+        scheduler_insert(sch, ev);
     } 
     qsort(times, MAX_EVENTS_TEST, sizeof(uint64_t), cmpfunc);
     for (i = 0; i < MAX_EVENTS_TEST; ++i){
         ev_ret = scheduler_dispatch(sch);
-        assert_int_equal(ev_ret->time, times[i]);        
+        assert_int_equal(ev_ret->time, times[i]);
+        event_free(ev_ret);        
     } 
     scheduler_destroy(sch);
-    free(ev);
     free(times);
 }
 

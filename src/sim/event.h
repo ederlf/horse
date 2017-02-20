@@ -71,6 +71,7 @@ struct event_port {
     uint8_t status;
 };
 
-void init_event(struct event *ev, uint64_t time, uint64_t id);
+struct event* event_new(uint64_t time, uint64_t id);
+void event_free(struct event* ev);
 
 #endif

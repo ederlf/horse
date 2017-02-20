@@ -18,7 +18,7 @@ create_random_events(struct sim *s)
 {
 	int i;
 	for (i = 0; i < EV_NUM; ++i){
-        struct event *ev = malloc(sizeof(struct event));
+        struct event *ev;
     	struct event_flow *flow = malloc(sizeof(struct event_flow));
         flow->hdr.id = i + 1;
         flow->hdr.time = i + 1;
@@ -31,7 +31,7 @@ create_random_events(struct sim *s)
         flow->flow.match.eth_type = 0x800;
         HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
                  (struct event_hdr*) flow);
-        init_event(ev, flow->hdr.time , flow->hdr.id); 
+        ev = event_new(flow->hdr.time , flow->hdr.id); 
         scheduler_insert(s->sch, ev);
 	}
 }
@@ -113,7 +113,7 @@ sim_execute_event(struct sim *s)
 	/* Event MUST exist in the hash */
 	HASH_FIND(hh, s->events, &sch_ev->id, sizeof(uint64_t), ev);
 	handle_event(s->sch, s->topo, s->events, ev);
-    free(sch_ev);
+    event_free(sch_ev);
 }
 
 void 
