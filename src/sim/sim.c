@@ -11,7 +11,7 @@
 #include "sim.h"
 #include "event_handler.h"
 
-#define EV_NUM 1
+#define EV_NUM 1000000
 
 static void 
 create_random_events(struct sim *s)
@@ -19,11 +19,7 @@ create_random_events(struct sim *s)
 	int i;
 	for (i = 0; i < EV_NUM; ++i){
         struct event *ev;
-    	struct event_flow *flow = malloc(sizeof(struct event_flow));
-        flow->hdr.id = i + 1;
-        flow->hdr.time = i + 1;
-        flow->hdr.type = EVENT_FLOW;
-        flow->node_id = 1;
+        struct event_flow *flow = event_flow_new(i + 1, i + 1, 1);
         flow->flow.start_time = flow->hdr.time;
         flow->flow.end_time = flow->flow.start_time + 1;
         memset(&flow->flow.match, 0x0, sizeof(struct flow_key));

@@ -14,29 +14,28 @@ handle_traffic(struct scheduler *sch, struct topology *topo, struct event_hdr *e
             struct out_port *op;
             out_ports = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the output ports*/
-
             LL_FOREACH(out_ports, op){
-               uint64_t dst_uuid;
-               uint32_t dst_port, latency;
-               dp_send_netflow(dp, &ev_flow->flow, op->port);
-               /* Get the next hop */ 
-               topology_next_hop(topo, node->uuid, op->port, &dst_uuid, &dst_port, &latency);
-               /* Set completion time and in_port*/ 
-               ev_flow->flow.end_time += latency * 1000000000;
-               ev_flow->flow.match.in_port = op->port;
-               /* This is just here for a quick test */
-               // struct event_flow *new_flow = malloc(sizeof(struct event_flow));
-               // memcpy(new_flow, ev_flow, sizeof(struct event_flow));
-               // new_flow->node_id = dst_uuid;
-               // new_flow->hdr.id +=  10;
-               // new_flow->hdr.time = ev_flow->flow.start_time;
-               // HASH_ADD(hh, events, id, sizeof(uint64_t), 
-               //   (struct event_hdr*) new_flow);
-               // struct event* new_ev = malloc(sizeof(struct event));
-               // init_event(new_ev, new_flow->hdr.time , new_flow->hdr.id); 
-               // scheduler_insert(sch, new_ev);
-               UNUSED(sch);
-               UNUSED(events);
+                uint64_t dst_uuid;
+                uint32_t dst_port, latency;
+                dp_send_netflow(dp, &ev_flow->flow, op->port);
+                /* Get the next hop */ 
+                if (topology_next_hop(topo, node->uuid, op->port, &dst_uuid, &dst_port, &latency)) {
+                 /* Set completion time and in_port*/ 
+                 ev_flow->flow.end_time += latency * 1000000000;
+                 ev_flow->flow.match.in_port = op->port;
+
+                 /* This is just here for a quick test */
+
+                 struct event_flow *new_flow = malloc(sizeof(struct event_flow));
+                 memcpy(new_flow, ev_flow, sizeof(struct event_flow));
+                 new_flow->node_id = dst_uuid;
+                 new_flow->hdr.id +=  10;
+                 new_flow->hdr.time = ev_flow->flow.start_time;
+                 HASH_ADD(hh, events, id, sizeof(uint64_t), 
+                   (struct event_hdr*) new_flow);
+                 struct event* new_ev = event_new(new_flow->hdr.time , new_flow->hdr.id);
+                 scheduler_insert(sch, new_ev);
+                }
             }
             clean_out_ports(out_ports);
         }

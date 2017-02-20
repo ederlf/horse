@@ -73,5 +73,6 @@ struct event_port {
 
 struct event* event_new(uint64_t time, uint64_t id);
 void event_free(struct event* ev);
+struct event_flow* event_flow_new(uint64_t ev_id, uint64_t time, uint64_t node_id);
 
 #endif

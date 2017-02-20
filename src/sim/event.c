@@ -23,3 +23,14 @@ event_new(uint64_t time, uint64_t id)
 void event_free(struct event* ev){
     free(ev);
 }
+
+struct event_flow* event_flow_new(uint64_t ev_id, uint64_t time, uint64_t node_id)
+{
+    struct event_flow *flow = xmalloc(sizeof(struct event_flow));
+    flow->hdr.id = ev_id;
+    flow->hdr.time = time;
+    flow->hdr.type = EVENT_FLOW;
+    flow->node_id = node_id;
+    return flow;   
+}
+

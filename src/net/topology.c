@@ -102,7 +102,7 @@ topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t p
     }
 }
 
-void
+bool
 topology_next_hop(const struct topology *topo, const uint64_t orig_uuid, const uint32_t orig_port, uint64_t *dst_uuid, uint32_t *dst_port, uint32_t *latency)
 {
     struct link *l;
@@ -115,7 +115,9 @@ topology_next_hop(const struct topology *topo, const uint64_t orig_uuid, const u
         *dst_uuid = l->node2.uuid;
         *dst_port = l->node2.port;
         *latency = l->latency;
+        return true;
     }
+    return false;
 }
 
 /* Clean the dynamically allocated members of a topology 
