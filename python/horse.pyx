@@ -7,11 +7,10 @@ cdef class SDNSwitch:
     def __cinit__(self, uint64_t dp_id):
         self._dp_ptr = dp_new(dp_id)
 
-    def add_port(self, port, eth_addr):
+    def add_port(self, port, eth_addr, max_speed = 1000000, cur_speed = 1000000):
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
-        dp_add_port(self._dp_ptr, port, c_eth_addr)      
-
+        dp_add_port(self._dp_ptr, port, c_eth_addr, max_speed, cur_speed)      
     @property
     def dp_id(self):
         return dp_id(self._dp_ptr) 

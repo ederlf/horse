@@ -63,6 +63,6 @@ struct port {
     UT_hash_handle hh;             /* Make the struct hashable   */
 };
 
-struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
+struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
 
 #endif

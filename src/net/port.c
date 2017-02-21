@@ -12,7 +12,7 @@
 #include "port.h"
 #include <string.h>
 
-struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]) {
+struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed) {
     struct port* p = xmalloc(sizeof(struct port));
     memset(p, 0x0, sizeof(struct port));
     p->port_id = port_id;
@@ -20,7 +20,8 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN]) {
     p->config |= PORT_UP;
     p->state |= PORT_LIVE;
     /* TODO: Set port speed */
-    p->curr_speed = 1000000;
+    p->speed = speed;
+    p->curr_speed = curr_speed;
     return p;
 }
 

@@ -51,9 +51,9 @@ void dp_destroy(struct datapath *dp)
 }
 
 void 
-dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
+dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
 {   
-    node_add_port(&dp->base, port_id, eth_addr);
+    node_add_port(&dp->base, port_id, eth_addr, speed, curr_speed);
 }
 
 /* Retrieve a datapath port */

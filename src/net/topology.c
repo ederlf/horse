@@ -162,8 +162,8 @@ void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
     for (i = 0; i < ptopo->ndps; ++i){
         struct datapath *dp = dp_new(ptopo->dps[i]);
         uint8_t mac[6] = {0,0,0,0,0,1};
-        dp_add_port(dp, 1, mac);
-        dp_add_port(dp, 2, mac);
+        dp_add_port(dp, 1, mac, 1000000, 1000000);
+        dp_add_port(dp, 2, mac, 1000000, 1000000);
         topology_add_datapath(topo, dp);
     }
     /* Create links */

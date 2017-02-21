@@ -24,9 +24,9 @@ node_destroy_ports(struct node *n)
 }
 
 void 
-node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN])
+node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
 {
-    struct port *p = port_new(port_id, eth_addr);
+    struct port *p = port_new(port_id, eth_addr, speed, curr_speed);
     HASH_ADD(hh, n->ports, port_id, sizeof(uint32_t), p);
     n->ports_num++;
 }

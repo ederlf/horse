@@ -37,7 +37,7 @@ struct datapath* dp_new(uint64_t dp_id);
 void dp_destroy(struct datapath *dp);
 
 void dp_add_port(struct datapath *dp, uint32_t port_id, 
-                 uint8_t eth_addr[ETH_LEN]);
+                 uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
 

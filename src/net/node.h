@@ -20,6 +20,6 @@ struct node {
 
 void node_init(struct node* n, uint16_t type);
 void node_destroy_ports(struct node *n);
-void node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN]);
+void node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
 struct port* node_port(const struct node *n, uint32_t port_id);
 #endif
