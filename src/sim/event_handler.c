@@ -2,51 +2,51 @@
 #include <uthash/utlist.h>
 
 static void 
-handle_traffic(struct scheduler *sch, struct topology *topo, struct event_hdr *events, struct event_hdr *ev)
+next_flow_event(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_flow *cur_flow, uint32_t next_port)
 {
+    uint64_t dst_uuid;
+    uint32_t dst_port, latency;
+    if (topology_next_hop(topo, cur_flow->node_id, next_port, &dst_uuid, &dst_port, &latency)) {
+         /* Set completion time and in_port*/ 
+         cur_flow->flow.end_time += latency * 1000000000;
+         cur_flow->flow.match.in_port = next_port;
+         /* Create new flow event */
+         struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time, dst_uuid);
+         memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
+         HASH_ADD(hh, *events, id, sizeof(uint64_t), 
+           (struct event_hdr*) new_flow);
+         struct event* new_ev = event_new(new_flow->hdr.time , new_flow->hdr.id);
+         scheduler_insert(sch, new_ev);
+    }
+}
+
+static void 
+handle_traffic(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
+{
+    struct out_port *out_ports = NULL;
+    struct out_port *op;
     struct event_flow *ev_flow = (struct event_flow *) ev;
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node){
         if (node->type == DATAPATH){
             struct datapath *dp = (struct datapath*) node;
-            struct out_port *out_ports;
-            struct out_port *op;
             out_ports = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the output ports*/
             LL_FOREACH(out_ports, op){
-                uint64_t dst_uuid;
-                uint32_t dst_port, latency;
                 dp_send_netflow(dp, &ev_flow->flow, op->port);
-                /* Get the next hop */ 
-                if (topology_next_hop(topo, node->uuid, op->port, &dst_uuid, &dst_port, &latency)) {
-                 /* Set completion time and in_port*/ 
-                 ev_flow->flow.end_time += latency * 1000000000;
-                 ev_flow->flow.match.in_port = op->port;
-
-                 /* This is just here for a quick test */
-
-                 struct event_flow *new_flow = malloc(sizeof(struct event_flow));
-                 memcpy(new_flow, ev_flow, sizeof(struct event_flow));
-                 new_flow->node_id = dst_uuid;
-                 new_flow->hdr.id +=  10;
-                 new_flow->hdr.time = ev_flow->flow.start_time;
-                 HASH_ADD(hh, events, id, sizeof(uint64_t), 
-                   (struct event_hdr*) new_flow);
-                 struct event* new_ev = event_new(new_flow->hdr.time , new_flow->hdr.id);
-                 scheduler_insert(sch, new_ev);
-                }
+                next_flow_event(sch, topo, events, ev_flow, op->port);
             }
-            clean_out_ports(out_ports);
         }
         else if (node->type == ROUTER){
 
         }  
     }
+    clean_out_ports(out_ports);
 }
 
 static void 
-handle_instruction(struct scheduler *sch, struct topology *topo, struct event_hdr *events, struct event_hdr *ev)
+handle_instruction(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
     struct event_instruction *ev_inst = (struct event_instruction *) ev;
     printf("%d\n", topology_dps_num(topo));
@@ -56,7 +56,7 @@ handle_instruction(struct scheduler *sch, struct topology *topo, struct event_hd
 }
 
 static void 
-handle_packet(struct scheduler *sch, struct topology *topo, struct event_hdr *events, struct event_hdr *ev)
+handle_packet(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
     printf("%d\n", topology_dps_num(topo));
     printf("%d\n", ev->type);
@@ -65,7 +65,7 @@ handle_packet(struct scheduler *sch, struct topology *topo, struct event_hdr *ev
 }
 
 static void 
-handle_port(struct scheduler *sch, struct topology *topo, struct event_hdr *events, struct event_hdr *ev)
+handle_port(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
     struct event_port *ev_port = (struct event_port *) ev;
     printf("%d\n", topology_dps_num(topo));
@@ -74,14 +74,14 @@ handle_port(struct scheduler *sch, struct topology *topo, struct event_hdr *even
     UNUSED(events);
 }
 
-static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology *topo, struct event_hdr *events, struct event_hdr *ev) = {
+static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev) = {
     [EVENT_FLOW] = handle_traffic,
     [EVENT_PACKET] = handle_packet,
     [EVENT_INSTRUCTION] = handle_instruction,
     [EVENT_PORT] = handle_port
 };
 
-void handle_event(struct scheduler *sch, struct topology *topo, struct event_hdr *events, struct event_hdr *ev)
+void handle_event(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
     (*event_handler[ev->type]) (sch, topo, events, ev);
 }

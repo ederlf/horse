@@ -3,7 +3,7 @@
 #include <time.h>
 #include "cmockery_horse.h"
 
-#define MAX_EVENTS_TEST 100000
+#define MAX_EVENTS_TEST 10
 
 int cmpfunc (const void * a, const void * b)
 {
@@ -20,7 +20,6 @@ void add_flow_event(void **state){
         struct event *ev = event_new(times[i], i + 1);
         scheduler_insert(sch, ev);
     } 
-    printf("\n");
     qsort(times, 10, sizeof(uint64_t), cmpfunc);
     for (i = 0; i < 10; ++i){
         ev_ret = scheduler_dispatch(sch);
