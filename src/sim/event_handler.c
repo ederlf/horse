@@ -4,21 +4,21 @@
 static void 
 next_flow_event(struct scheduler *sch, struct topology *topo,
                 struct event_hdr **events,
-                struct event_flow *cur_flow, uint32_t next_port) {
+                struct event_flow *cur_flow, uint32_t exit_port) {
     uint64_t dst_uuid;
     uint32_t dst_port, latency;
-    if (topology_next_hop(topo, cur_flow->node_id, next_port, &dst_uuid,
-                          &dst_port, &latency)) {
+    if (topology_next_hop(topo, cur_flow->node_id, exit_port, 
+                           &dst_uuid, &dst_port, &latency)) {
         /* Set completion time and in_port*/
         cur_flow->flow.end_time += latency * 1000000000;
-        cur_flow->flow.match.in_port = next_port;
+        cur_flow->flow.match.in_port = dst_port;
         /* Create new flow event */
-        struct event_flow *new_flow =
-            event_flow_new(cur_flow->flow.start_time, dst_uuid);
+        struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
         memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
         HASH_ADD(hh, *events, id, sizeof(uint64_t),
                  (struct event_hdr *)new_flow);
-        struct event *new_ev = event_new(new_flow->hdr.time, new_flow->hdr.id);
+        struct event *new_ev = event_new(new_flow->hdr.time, 
+                                         new_flow->hdr.id);
         scheduler_insert(sch, new_ev);
     }
 }
@@ -37,7 +37,7 @@ handle_traffic(struct scheduler *sch, struct topology *topo,
             out_ports = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the output ports*/
             LL_FOREACH(out_ports, op) {
-                printf("Node %ld Next port %d \n", ev_flow->node_id, op->port);
+                printf("Handling node %ld %d\n", ev_flow->node_id, op->port);
                 dp_send_netflow(dp, &ev_flow->flow, op->port);
                 next_flow_event(sch, topo, events, ev_flow, op->port);
             }
