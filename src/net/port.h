@@ -60,9 +60,14 @@ struct port {
     char name[MAX_PORT_NAME];
     struct port_stats stats;       /* Current port statistics.   */
     uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address. */
+    uint32_t *ipv4_addr;            /* Port may have an IPv4 assigned */
+    uint8_t *ipv6_addr;              /* Port may have an IPv6 assigned */
     UT_hash_handle hh;             /* Make the struct hashable   */
 };
 
 struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
+
+void port_add_v4addr(struct port *p, uint8_t ipv4_addr);
+void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN]);
 
 #endif
