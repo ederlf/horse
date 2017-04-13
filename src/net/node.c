@@ -19,6 +19,8 @@ node_destroy_ports(struct node *n)
     struct port *cur_port, *tmp;
     HASH_ITER(hh, n->ports, cur_port, tmp) {
         HASH_DEL(n->ports, cur_port);  
+        free(cur_port->ipv4_addr);
+        free(cur_port->ipv6_addr);
         free(cur_port);
     }
 }

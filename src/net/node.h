@@ -8,6 +8,8 @@
 enum node_type {
     DATAPATH = 0,
     ROUTER = 1,
+    L2_SWITCH = 2,
+    HOST = 3,
 };
 
 struct node {
