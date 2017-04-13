@@ -1,17 +1,18 @@
 AUTOMAKE_OPTIONS = foreign -Wno-syntax subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I./src -I./vendor -Wstrict-prototypes -Wall -Wextra -Werror  -fPIC   
+AM_CFLAGS = -I./src -I./vendor -Wstrict-prototypes -Wall -Wextra -Werror  -fPIC -pthread  
 
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 
+include vendor/patricia/automake.mk
 include vendor/json/automake.mk
 include src/automake.mk
 
 bin_PROGRAMS = horse
 horse_SOURCES = src/horse.c
-horse_LDADD = .libs/libhorse.a
+horse_LDADD = .libs/libhorse.a -lhiredis 
 
 
 # Unit tests
