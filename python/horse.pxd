@@ -7,6 +7,9 @@ cdef extern from "sim/sim.h":
     cdef struct datapath:
         pass
 
+    cdef struct host:
+        pass
+
     cdef struct topology:
         pass
 
@@ -16,6 +19,12 @@ cdef extern from "sim/sim.h":
     void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
     uint64_t dp_id(const datapath* dp)
     uint64_t dp_uuid(const datapath* dp)
+
+    # Host.h
+
+    host* host_new()
+    void host_destroy(host* h)
+
     # Topology.h
     topology* topology_new()
     void topology_destroy(topology *topo)
