@@ -30,6 +30,10 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/dp_actions.c \
                 src/net/flow_table.h \ 
                 src/net/flow_table.c \
+                src/net/host.h \
+                src/net/host.c \
+                src/net/legacy_node.h \ 
+                src/net/legacy_node.c \
                 src/net/node.h \
                 src/net/node.c \
                 src/net/port.h \
