@@ -24,11 +24,14 @@ cdef extern from "sim/sim.h":
 
     host* host_new()
     void host_destroy(host* h)
+    void host_add_port(host *dp, uint32_t port_id, uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
+    uint64_t host_uuid(const host* h)
 
     # Topology.h
     topology* topology_new()
     void topology_destroy(topology *topo)
     void topology_add_datapath(topology *topo, datapath *dp)
+    void topology_add_host(topology *topo, host *h)
     uint32_t topology_dps_num(const topology *topo)
     uint32_t topology_links_num(const topology *topo)
     void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)
