@@ -699,19 +699,19 @@ patricia_lookup (patricia_tree_t *patricia, prefix_t *prefix)
 	assert (prefix->bitlen <= patricia->maxbits);
 
 	if (patricia->head == NULL) {
-	node = calloc(1, sizeof *node);
-	node->bit = prefix->bitlen;
-	node->prefix = Ref_Prefix (prefix);
-	node->parent = NULL;
-	node->l = node->r = NULL;
-	node->data = NULL;
-	patricia->head = node;
-#ifdef PATRICIA_DEBUG
-	fprintf (stderr, "patricia_lookup: new_node #0 %s/%d (head)\n", 
-		 prefix_toa (prefix), prefix->bitlen);
-#endif /* PATRICIA_DEBUG */
-	patricia->num_active_node++;
-	return (node);
+		node = calloc(1, sizeof *node);
+		node->bit = prefix->bitlen;
+		node->prefix = Ref_Prefix (prefix);
+		node->parent = NULL;
+		node->l = node->r = NULL;
+		node->data = NULL;
+		patricia->head = node;
+	#ifdef PATRICIA_DEBUG
+		fprintf (stderr, "patricia_lookup: new_node #0 %s/%d (head)\n", 
+		prefix_toa (prefix), prefix->bitlen);
+	#endif /* PATRICIA_DEBUG */
+		patricia->num_active_node++;
+		return (node);
 	}
 
 	addr = prefix_touchar (prefix);
