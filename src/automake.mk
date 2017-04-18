@@ -38,6 +38,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/node.c \
                 src/net/port.h \
                 src/net/port.c \
+                src/net/route_table.h \
+                src/net/route_table.c \
                 src/net/topology.h \
                 src/net/topology.c \
                 src/sim/event.h \
