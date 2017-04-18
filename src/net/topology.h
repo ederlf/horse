@@ -12,6 +12,7 @@
 #define TOPOLOGY_H 1
 
 #include "datapath.h"
+#include "host.h"
 #include "lib/util.h"
 
 /* Total number of possible datapaths
@@ -24,6 +25,7 @@ struct topology;
 struct topology* topology_new(void);
 
 void topology_add_datapath(struct topology *topo, struct datapath *dp);
+void topology_add_host(struct topology *topo, struct host *h);
 
 void topology_add_link(struct topology *t, uint64_t uuidA, 
                        uint64_t uuidB, uint32_t portA, uint32_t portB,

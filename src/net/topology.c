@@ -36,8 +36,9 @@ struct topology {
     struct node *nodes;             /* Hash table of network nodes. */
     struct link *links;             /* Hash table of links */
     uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
-    uint32_t n_datapaths;           /* Number of datapaths. */
-    uint32_t n_routers;             /* Number of routers */
+    uint32_t n_dps;                 /* Number of datapaths. */
+    uint32_t n_routers;             /* Number of routers. */
+    uint32_t n_hosts;               /* Number of hosts. */
     uint32_t n_links;               /* Number of links. */
 };
 
@@ -45,8 +46,7 @@ static void
 topology_init(struct topology* topo)
 {
     topo->nodes = NULL;
-    topo->n_datapaths = 0;
-    topo->n_routers = 0;
+    topo->n_dps = 0;
     topo->n_links = 0;
     topo->links = NULL;
 }
@@ -62,7 +62,14 @@ void
 topology_add_datapath(struct topology *topo, struct datapath* dp)
 {
     HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) dp);
-    topo->n_datapaths++;
+    topo->n_dps++;
+}
+
+void 
+topology_add_host(struct topology *topo, struct host *h)
+{
+    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) h);
+    topo->n_hosts++;
 }
 
 void 
@@ -142,6 +149,9 @@ topology_destroy(struct topology *topo)
         if (cur_node->type == DATAPATH){
             dp_destroy((struct datapath*) cur_node);    
         }
+        else if (cur_node->type == HOST){
+                host_destroy((struct host*) cur_node);    
+        }
     }
     free(topo);
 }
@@ -189,7 +199,7 @@ struct topology* from_json(char *json_file)
 uint32_t 
 topology_dps_num(const struct topology *topo)
 {
-    return topo->n_datapaths;
+    return topo->n_dps;
 }
 
 uint32_t topology_links_num(const struct topology *topo)
