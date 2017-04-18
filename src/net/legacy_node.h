@@ -2,6 +2,7 @@
 #define LEGACY_NODE_H 1
 
 #include "node.h"
+#include "route_table.h"
 #include <patricia/patricia.h>
 #include <uthash/uthash.h>
 #include <inttypes.h>
@@ -32,27 +33,12 @@ struct arp_table_entry {
     uint32_t iface;
 };
 
-struct ipv4_route_entry {
-    uint32_t next_hop;
-    uint32_t netmask;
-    uint32_t iface;
-    uint8_t metric;
-};
-
-struct ipv6_route_entry {
-    uint8_t next_hop[IPV6_LEN];
-    uint8_t netmask[IPV6_LEN];
-    uint32_t iface;
-    uint8_t metric;
-};
-
 /* A legacy node can represent a simple host 
 *  or like a legacy switch or a router   */
 struct legacy_node {
     struct node base;
     struct arp_table_entry *arp_table;
-    patricia_tree_t *ipv4_table;
-    patricia_tree_t *ipv6_table;
+    struct route_table rt;
 };
 
 void legacy_node_init(struct legacy_node *ln, uint16_t type);
