@@ -464,24 +464,24 @@ Clear_Patricia (patricia_tree_t *patricia, void_fn1_t func)
 		if (Xrn->data && func)
 				func (Xrn->data);
 			}
-			else {
-		assert (Xrn->data == NULL);
-			}
-			Delete (Xrn);
+		else {
+			assert (Xrn->data == NULL);
+		}
+		Delete (Xrn);
 		patricia->num_active_node--;
 
-			if (l) {
-				if (r) {
-					*Xsp++ = r;
-				}
-				Xrn = l;
-			} else if (r) {
-				Xrn = r;
-			} else if (Xsp != Xstack) {
-				Xrn = *(--Xsp);
-			} else {
-				Xrn = (patricia_node_t *) 0;
+		if (l) {
+			if (r) {
+				*Xsp++ = r;
 			}
+			Xrn = l;
+		} else if (r) {
+			Xrn = r;
+		} else if (Xsp != Xstack) {
+			Xrn = *(--Xsp);
+		} else {
+			Xrn = (patricia_node_t *) 0;
+		}
 		}
 	}
 	assert (patricia->num_active_node == 0);
