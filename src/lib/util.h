@@ -23,5 +23,7 @@ void file_read_error(void);
 void *xmalloc(size_t size);
 void *xrealloc(void *v, int size);
 char* file_to_string(const char * file_name, size_t *size);
+int nlz(uint32_t x);
+int ntz(uint32_t x);
 
 #endif

@@ -41,6 +41,32 @@ xrealloc(void *v, int size)
     return v;
 }
 
+/* Counts the number of trailing zeros in a word.
+ * Extracted from the book Hacker's Delight. */ 
+static int 
+pop(uint32_t x) {
+   x = x - ((x >> 1) & 0x55555555);
+   x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+   x = (x + (x >> 4)) & 0x0F0F0F0F;
+   x = x + (x << 8);
+   x = x + (x << 16);
+   return x >> 24;
+}
+
+int 
+nlz(uint32_t x) {
+   x = x | (x >> 1);
+   x = x | (x >> 2);
+   x = x | (x >> 4);
+   x = x | (x >> 8);
+   x = x | (x >>16);
+   return pop(~x);
+}
+
+int ntz(unsigned x) {
+   return pop(~x & (x - 1));
+}
+
 /* Return the size of the string for reuse */
 char* file_to_string(const char * file_name, size_t *size){
     FILE *fh = fopen(file_name, "r");
