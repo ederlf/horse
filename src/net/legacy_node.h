@@ -3,8 +3,8 @@
 
 #include "node.h"
 #include "route_table.h"
+#include "arp_table.h"
 #include <patricia/patricia.h>
-#include <uthash/uthash.h>
 #include <inttypes.h>
 
 /* Administrative distance. Lowest distance wins.
@@ -26,18 +26,12 @@
 *    Unknown 255 
 */
 
-struct arp_table_entry {
-    UT_hash_handle hh;          /* Make the struct hashable. */
-    uint32_t ip;
-    uint8_t eth_addr[ETH_LEN];
-    uint32_t iface;
-};
 
 /* A legacy node can represent a simple host 
 *  or like a legacy switch or a router   */
 struct legacy_node {
     struct node base;
-    struct arp_table_entry *arp_table;
+    struct arp_table at;
     struct route_table rt;
 };
 

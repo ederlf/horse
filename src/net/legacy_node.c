@@ -4,7 +4,7 @@ void
 legacy_node_init(struct legacy_node *ln, uint16_t type)
 {
     node_init(&ln->base, type);
-    ln->arp_table = NULL;
+    arp_table_init(&ln->at);
     route_table_init(&ln->rt);
 }
 
