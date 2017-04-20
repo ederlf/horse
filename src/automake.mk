@@ -17,13 +17,15 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/instruction_set.c \
                 src/lib/json_topology.h \
                 src/lib/json_topology.c \
-				src/lib/netflow.h \
-				src/lib/netflow.c \
+		src/lib/netflow.h \
+		src/lib/netflow.c \
                 src/lib/packets.h \
                 src/lib/timer.h \
                 src/lib/timer.c \
                 src/lib/util.h \
                 src/lib/util.c \
+                src/net/arp_table.h \
+                src/net/arp_table.c \
                 src/net/datapath.h \
                 src/net/datapath.c \
                 src/net/dp_actions.h \
