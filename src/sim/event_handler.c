@@ -1,4 +1,6 @@
 #include "event_handler.h"
+#include "net/datapath.h"
+#include "net/host.h"
 #include <uthash/utlist.h>
 
 static void 
@@ -7,6 +9,11 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
                 struct event_flow *cur_flow, uint32_t exit_port) {
     uint64_t dst_uuid;
     uint32_t dst_port, latency;
+
+    // if (exit_port == CONTROLLER){
+        
+    //     scheduler_insert(sch, new_ev);  
+    // }
     if (topology_next_hop(topo, cur_flow->node_id, exit_port, 
                            &dst_uuid, &dst_port, &latency)) {
         /* Set completion time and in_port*/
@@ -24,7 +31,7 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
 }
 
 static void 
-handle_traffic(struct scheduler *sch, struct topology *topo,
+handle_netflow(struct scheduler *sch, struct topology *topo,
                struct event_hdr **events, struct event_hdr *ev) {
     struct out_port *out_ports = NULL;
     struct out_port *op;
@@ -37,12 +44,14 @@ handle_traffic(struct scheduler *sch, struct topology *topo,
             out_ports = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the output ports*/
             LL_FOREACH(out_ports, op) {
-                printf("Handling node %ld %d\n", ev_flow->node_id, op->port);
+                printf("Handling node %ld %d %ld %ld\n", ev_flow->node_id, op->port, ev->time, sch->clock);
                 dp_send_netflow(dp, &ev_flow->flow, op->port);
+                printf("Will create new event\n");
                 next_flow_event(sch, topo, events, ev_flow, op->port);
             }
-        } else if (node->type == ROUTER) {
         }
+        // } else if (node->type == ROUTER) {
+        // }
     }
     clean_out_ports(out_ports);
 }
@@ -51,7 +60,7 @@ static void
 handle_instruction(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
     struct event_instruction *ev_inst = (struct event_instruction *) ev;
-    printf("%d\n", topology_dps_num(topo));
+    printf("%p\n", topo);
     printf("%d\n", ev_inst->hdr.type);
     UNUSED(sch);
     UNUSED(events);
@@ -60,7 +69,7 @@ handle_instruction(struct scheduler *sch, struct topology *topo, struct event_hd
 static void 
 handle_packet(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
-    printf("%d\n", topology_dps_num(topo));
+    printf("%p\n", topo);
     printf("%d\n", ev->type);
     UNUSED(sch);
     UNUSED(events);
@@ -70,14 +79,14 @@ static void
 handle_port(struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev)
 {
     struct event_port *ev_port = (struct event_port *) ev;
-    printf("%d\n", topology_dps_num(topo));
+    printf("%p\n", topo);
     printf("%d\n", ev_port->hdr.type);
     UNUSED(sch);
     UNUSED(events);
 }
 
 static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology *topo, struct event_hdr **events, struct event_hdr *ev) = {
-    [EVENT_FLOW] = handle_traffic,
+    [EVENT_FLOW] = handle_netflow,
     [EVENT_PACKET] = handle_packet,
     [EVENT_INSTRUCTION] = handle_instruction,
     [EVENT_PORT] = handle_port

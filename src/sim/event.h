@@ -23,6 +23,7 @@ enum events {
     EVENT_PACKET = 1,     /* For the future case of hybrid simulation. */
     EVENT_INSTRUCTION = 2, /* Instructions from the control plane.      */
     EVENT_PORT = 3,
+    EVENT_CTRL = 4,
 };
 
 /*  The initial field of event heap node so 
