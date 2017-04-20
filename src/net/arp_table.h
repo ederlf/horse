@@ -16,6 +16,8 @@ struct arp_table {
 };
 
 void arp_table_init(struct arp_table *at);
+void arp_table_clean(struct arp_table *at);
 void arp_table_add_entry(struct arp_table *at, struct arp_table_entry *e);
+struct arp_table_entry* arp_table_lookup(struct arp_table *at, uint32_t ip);
 
 #endif

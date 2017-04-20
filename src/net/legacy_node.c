@@ -11,5 +11,6 @@ legacy_node_init(struct legacy_node *ln, uint16_t type)
 void legacy_node_clean(struct legacy_node *ln)
 {
     node_destroy_ports(&ln->base);
+    arp_table_clean(&ln->at);
     route_table_clean(&ln->rt);
 }
