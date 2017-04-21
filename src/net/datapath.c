@@ -31,6 +31,8 @@ dp_new(uint64_t dp_id)
     struct datapath *dp = xmalloc(sizeof(struct datapath));
     int i;
     node_init(&dp->base, DATAPATH);
+    dp->base.recv_netflow = dp_recv_netflow;
+    dp->base.send_netflow = dp_send_netflow;
     dp->dp_id = dp_id;
     /* Create flow tables*/
     for (i = 0; i < MAX_TABLES; ++i){
@@ -115,12 +117,13 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
 struct out_port* 
-dp_recv_netflow(struct datapath *dp, struct netflow *flow)
+dp_recv_netflow(struct node *n, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table;
     struct flow *f;
     struct out_port *out_ports = NULL;
+    struct datapath *dp = (struct datapath*) n;
     uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
@@ -153,8 +156,9 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
 }
 
 void
-dp_send_netflow(struct datapath *dp, struct netflow *flow, uint32_t port)
+dp_send_netflow(struct node *n, struct netflow *flow, uint32_t port)
 {
+    struct datapath *dp = (struct datapath*) n;
     struct port *p = dp_port(dp, port);
     if (p != NULL) {
         uint8_t up = p->config & PORT_UP;

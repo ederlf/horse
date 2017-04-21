@@ -39,16 +39,18 @@ handle_netflow(struct scheduler *sch, struct topology *topo,
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node) {
-        if (node->type == DATAPATH) {
-            struct datapath *dp = (struct datapath *)node;
-            out_ports = dp_recv_netflow(dp, &ev_flow->flow);
+        printf("Node type %d\n", node->type);
+        out_ports = node->recv_netflow(node, &ev_flow->flow);
+        // if (node->type == DATAPATH) {
+        //     struct datapath *dp = (struct datapath *)node;
+            // out_ports = dp_recv_netflow(dp, &ev_flow->flow);
             /* Schedule next event using the output ports*/
-            LL_FOREACH(out_ports, op) {
-                printf("Handling node %ld %d %ld %ld\n", ev_flow->node_id, op->port, ev->time, sch->clock);
-                dp_send_netflow(dp, &ev_flow->flow, op->port);
-                printf("Will create new event\n");
-                next_flow_event(sch, topo, events, ev_flow, op->port);
-            }
+        LL_FOREACH(out_ports, op) {
+            printf("Handling node Id:%ld Port:%d ev_time:%ld global_t:%ld\n", ev_flow->node_id, op->port, ev->time, sch->clock);
+            node->send_netflow(node, &ev_flow->flow, op->port);
+            printf("Will create new event\n");
+            next_flow_event(sch, topo, events, ev_flow, op->port);
+            // }
         }
         // } else if (node->type == ROUTER) {
         // }

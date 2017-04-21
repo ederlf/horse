@@ -2,6 +2,7 @@
 #define NODE_H 1
 
 #include "port.h"
+#include "lib/netflow.h"
 #include <uthash/uthash.h>
 
 /* Define the possible types of nodes */
@@ -12,11 +13,19 @@ enum node_type {
     HOST = 3,
 };
 
+/* List of possible output ports after node processing */
+struct out_port {
+    uint32_t port;
+    struct out_port *next;
+};
+
 struct node {
     uint64_t uuid;      /* Sequential identification value in the simulator  */
     struct port *ports; /* Hash table of ports */
     uint16_t ports_num; /* Total number of ports */
-    uint16_t type;      
+    uint16_t type;
+    struct out_port* (*recv_netflow) (struct node *n, struct netflow *f);
+    void  (*send_netflow) (struct node *n, struct netflow *f, uint32_t port);
     UT_hash_handle hh;  
 };
 
