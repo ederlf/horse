@@ -55,6 +55,8 @@ struct flow_key {
     uint32_t arp_tpa;
     uint8_t arp_sha[ETH_LEN];
     uint8_t arp_tha[ETH_LEN];
+    uint8_t icmp_type;
+    uint8_t icmp_code;
     uint8_t ipv6_dst[IPV6_LEN];
     uint8_t ipv6_src[IPV6_LEN];
     uint8_t ipv6_nd_target[IPV6_LEN];
@@ -110,6 +112,8 @@ void set_ipv4_src(struct flow *f, uint32_t ipv4_src);
 void set_tp_dst(struct flow *f, uint16_t tp_dst);
 void set_tp_src(struct flow *f, uint16_t tp_src);
 void set_arp_op(struct flow *f, uint16_t arp_op);
+void set_icmp_type(struct flow *f, uint8_t icmp_type);
+void set_icmp_code(struct flow *f, uint8_t icmp_code);
 void set_arp_spa(struct flow *f, uint32_t arp_spa);
 void set_arp_tpa(struct flow *f, uint32_t arp_tpa);
 void set_arp_sha(struct flow *f, uint8_t arp_sha[6]);

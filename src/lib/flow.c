@@ -72,6 +72,8 @@ flow_key_cmp(struct flow_key *a, struct flow_key *b)
             (a->tp_dst == b->tp_dst) &&
             (a->tp_src == b->tp_src) &&
             (a->arp_op == b->arp_op) &&
+            (a->icmp_type == b->icmp_type) &&
+            (a->icmp_code == b->icmp_code) &&
             (a->arp_spa == b->arp_spa) &&
             (a->arp_tpa == b->arp_tpa) &&
             (memcmp(a->arp_sha, b->arp_sha, 6) == 0) &&
@@ -213,6 +215,20 @@ set_tp_src(struct flow *f, uint16_t tp_src)
 {
     f->key.tp_src = tp_src;
     f->mask.tp_src = ALL_UINT16_MASK;
+}
+
+void 
+set_icmp_type(struct flow *f, uint8_t icmp_type)
+{
+    f->key.icmp_type = icmp_type;
+    f->mask.icmp_type = ALL_UINT8_MASK;
+}
+
+void 
+set_icmp_code(struct flow *f, uint8_t icmp_code)
+{
+    f->key.icmp_code = icmp_code;
+    f->mask.icmp_code = ALL_UINT8_MASK;
 }
 
 void set_arp_op(struct flow *f, uint16_t arp_op)
