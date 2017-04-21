@@ -2,7 +2,7 @@
 #define HOST_H 1
 
 #include <inttypes.h>
-#include "node.hsrc/net/host.c"
+#include "node.h"
 #include "lib/packets.h"
 
 

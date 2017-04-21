@@ -25,7 +25,7 @@ struct node {
     uint16_t ports_num; /* Total number of ports */
     uint16_t type;
     struct out_port* (*recv_netflow) (struct node *n, struct netflow *f);
-    void  (*send_netflow) (struct node *n, struct netflow *f, uint32_t port);
+    void  (*send_netflow) (struct node *, struct netflow *, uint32_t);
     UT_hash_handle hh;  
 };
 
