@@ -13,7 +13,6 @@
 
 #include "event.h"
 #include "lib/heap.h"
-#include "net/topology.h"
 
 struct scheduler {
     uint64_t clock;          /* Current time of the simulation. */
