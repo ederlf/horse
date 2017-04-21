@@ -144,6 +144,9 @@ dp_thread(void * args){
             pthread_cond_wait( &condition_var, &mutex1 );
         }
         pthread_mutex_unlock( &mutex1 );
+        if (scheduler_is_empty(s->sch)){
+            continue;
+        }
         struct event *sch_ev = scheduler_dispatch(s->sch);
         s->sch->clock = sch_ev->time;
         HASH_FIND(hh, s->events, &sch_ev->id, sizeof(uint64_t), ev);
@@ -161,6 +164,7 @@ dp_thread(void * args){
             event_free(sch_ev);
             pthread_mutex_lock( &mutex1 );
             des = 0;
+            redisCommand(c, "HSET dp_signal sig 0");
             /* Wake up timer */
             pthread_cond_signal( &condition_var );
             pthread_mutex_unlock( &mutex1 );
@@ -195,28 +199,32 @@ timer_func(void* args)
 
     s->sch->clock++;
     redisReply *reply;
-    if (cur_ev == NULL){
+    if (cur_ev == NULL && !scheduler_is_empty(s->sch)){
         cur_ev = scheduler_dispatch(s->sch);
+    
+        HASH_FIND(hh, s->events, &cur_ev->id, sizeof(uint64_t), ev);
+        if (ev->type == EVENT_FLOW && cur_ev->time <= s->sch->clock){
+            /* Execute */
+            printf("CONT executing %ld %ld %ld\n", cur_ev->time, s->sch->clock, cur_ev->id);
+            handle_event(s->sch, s->topo, &s->events, ev);
+            event_free(cur_ev);
+            cur_ev = NULL;
+        }
+        else if (ev->type == EVENT_CTRL){
+            // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
+            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(*ev)); 
+            event_free(cur_ev);
+            cur_ev = NULL;
+        }
     }
-    HASH_FIND(hh, s->events, &cur_ev->id, sizeof(uint64_t), ev);
-    if (ev->type == EVENT_FLOW && cur_ev->time <= s->sch->clock){
-        /* Execute */
-        printf("CONT executing %ld %ld %ld\n", cur_ev->time, s->sch->clock, cur_ev->id);
-        handle_event(s->sch, s->topo, &s->events, ev);
-        event_free(cur_ev);
-        cur_ev = NULL;
-    }
-    else if (ev->type == EVENT_CTRL){
-        // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
-        redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(*ev)); 
-        event_free(cur_ev);
-        cur_ev = NULL;
+    else {
+        redisCommand(c, "HSET dp_signal sig 1");  
     }
     /* Check if controller is done */
     // printf("Getting signal %d\n", cur_time);
     reply = redisCommand(c,"HGET dp_signal sig");
     if (reply){
-        // printf("REPLY %s\n", reply->str);
+        printf("REPLY %s\n", reply->str);
         if (strcmp("1", reply->str) == 0){
             // printf("Received signal to awake %s\n", reply->str);
             pthread_mutex_lock( &mutex1 );
@@ -275,7 +283,7 @@ void
 start(struct topology *topo) 
 {
     struct sim s;
-    // rt_test();
+    // rt_tessrc/lib/timer.ht();
     sim_init(&s, topo);
     c = redis_connect();
     add_flows(topo);
