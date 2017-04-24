@@ -67,7 +67,7 @@ struct port {
 
 struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
 
-void port_add_v4addr(struct port *p, uint8_t ipv4_addr);
+void port_add_v4addr(struct port *p, uint32_t ipv4_addr);
 void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN]);
 
 #endif

@@ -27,7 +27,7 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t spee
     return p;
 }
 
-void port_add_v4addr(struct port *p, uint8_t ipv4_addr)
+void port_add_v4addr(struct port *p, uint32_t ipv4_addr)
 {
     p->ipv4_addr = xmalloc(sizeof(uint32_t));
     *(p->ipv4_addr) = ipv4_addr;
