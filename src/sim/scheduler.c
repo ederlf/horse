@@ -38,10 +38,6 @@ scheduler_destroy(struct scheduler *sch)
 void 
 scheduler_insert(struct scheduler *sch, struct event *ev)
 {
-    /* TODO: Return error if event time is smaller than clock */
-    if (ev->time < sch->clock){
-        return;
-    }
     heap_insert(sch->ev_queue, (struct heap_node*) ev, ev->time);
 }
 
