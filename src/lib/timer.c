@@ -41,7 +41,6 @@ timerthread(void *args)
             perror("sem_wait");
             exit(-1);
         }
-        printf("Will execute specific %p\n", t->exec);
         t->exec(t->arg);   // user-specific, can do anything it wants
     }
     return 0;
