@@ -18,7 +18,7 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t spee
     p->port_id = port_id;
     memcpy(p->eth_address, eth_addr, ETH_LEN);
     p->ipv4_addr = NULL;
-    p->ipv6_addr = NULL; 
+    p->ipv6_addr = NULL;
     p->config |= PORT_UP;
     p->state |= PORT_LIVE;
     /* TODO: Set port speed */
@@ -27,14 +27,16 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t spee
     return p;
 }
 
-void port_add_v4addr(struct port *p, uint32_t ipv4_addr)
+void port_add_v4addr(struct port *p, uint32_t ipv4_addr, uint32_t netmask)
 {
-    p->ipv4_addr = xmalloc(sizeof(uint32_t));
-    *(p->ipv4_addr) = ipv4_addr;
+    p->ipv4_addr = xmalloc(sizeof(struct ipv4_info));
+    p->ipv4_addr->addr = ipv4_addr;
+    p->ipv4_addr->netmask = netmask;
 }
 
-void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN])
+void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN], uint8_t netmask[IPV6_LEN])
 {
-    p->ipv6_addr = xmalloc(IPV6_LEN);
+    p->ipv6_addr = xmalloc(sizeof(struct ipv6_info));
     memcpy(p->ipv6_addr, ipv6_addr, IPV6_LEN);
+    memcpy(p->ipv6_addr->netmask , netmask, IPV6_LEN);
 }

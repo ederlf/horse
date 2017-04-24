@@ -32,6 +32,12 @@ host_add_port(struct host *h, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint3
     node_add_port( (struct node*) h, port_id, eth_addr, speed, curr_speed);
 }
 
+void
+host_set_intf_ipv4(struct host *h, uint32_t port_id, uint32_t addr, uint32_t netmask){
+    struct port *p = host_port(h, port_id);
+    port_add_v4addr(p, addr, netmask);
+}
+
 static int 
 l2_recv_netflow(struct host *h, struct netflow *flow){
 
@@ -47,7 +53,7 @@ l3_recv_netflow(struct host *h, struct netflow *flow){
     struct port *p = host_port(h, flow->match.in_port);
     /* IPv4 Assigned and flow is IPv4 */
     if (p->ipv4_addr && flow->match.ipv4_dst){
-        return *p->ipv4_addr == flow->match.ipv4_dst;
+        return p->ipv4_addr->addr == flow->match.ipv4_dst;
     }
     else if (p->ipv6_addr){
         return !(memcmp(p->ipv6_addr, flow->match.ipv6_dst, IPV6_LEN));
