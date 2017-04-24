@@ -12,7 +12,7 @@ enum host_app {
 
 struct host; 
 
-struct host *host_new(void (*application)(void));
+struct host *host_new(void);
 void host_destroy(struct host *h);
 void host_add_port(struct host *h, uint32_t port_id, 
                  uint8_t eth_addr[ETH_LEN], uint32_t speed, 

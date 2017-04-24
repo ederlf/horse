@@ -9,13 +9,13 @@ struct host {
 };
 
 struct host *
-host_new(void (*application)(void))
+host_new(void)
 {
     struct host *h = xmalloc(sizeof(struct host));
     legacy_node_init(&h->ep, HOST);
     h->ep.base.recv_netflow = host_recv_netflow;
     h->ep.base.send_netflow = host_send_netflow;
-    h->application = application;
+    // h->application = application;
     return h;
 }
 
