@@ -1,4 +1,5 @@
 #include "netflow.h"
+#include <uthash/utlist.h>
 
 void 
 netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
@@ -83,4 +84,14 @@ void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type)
             nf->match.mpls_label = nf->match.mpls_tc = nf->match.mpls_bos = 0;
         }
     } 
+}
+
+void netflow_clean_out_ports(struct netflow *flow)
+{
+    struct out_port *p, *tmp;
+    LL_FOREACH_SAFE(flow->out_ports, p, tmp) {
+      LL_DELETE(flow->out_ports, p);
+      free(p); 
+    }
+    flow->out_ports = NULL;
 }

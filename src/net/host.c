@@ -4,8 +4,8 @@
 
 struct host {
     struct legacy_node ep; /* Node is an endpoint */
-    /* Add stuff possibly stuff related to a node */
-    void (*application)(void);
+    /* Hash Map of applications */
+    struct app* apps;
 };
 
 struct host *
@@ -15,7 +15,9 @@ host_new(void)
     legacy_node_init(&h->ep, HOST);
     h->ep.base.recv_netflow = host_recv_netflow;
     h->ep.base.send_netflow = host_send_netflow;
-    // h->application = application;
+    h->apps = NULL;
+    /* Add ping app to every host for now */
+    host_add_app(h, app_creator(PINGV4));
     return h;
 }
 
@@ -61,21 +63,18 @@ l3_recv_netflow(struct host *h, struct netflow *flow){
     return 0;
 }
 
-struct out_port 
-*host_recv_netflow(struct node *n, struct netflow *flow)
+void
+host_recv_netflow(struct node *n, struct netflow *flow)
 {
     struct host *h = (struct host*) n;
-    struct out_port *ports = NULL;
     printf("Received HOST %d %p\n", h->ep.base.type, flow);
     /* Check MAC and IP addresses. Only returns true if
        both have the node destination MAC and IP       */
     if (!l2_recv_netflow(h, flow) && !l3_recv_netflow(h, flow)){
-        return NULL;
+        return;
     }
 
     /* If gets here send to application */
-
-    return ports;
 }
 
 void host_send_netflow(struct node *n, struct netflow *flow, 
@@ -83,6 +82,24 @@ void host_send_netflow(struct node *n, struct netflow *flow,
 {
     struct host *h = (struct host*) n;
     printf("Sent HOST %d %p %d\n", h->ep.base.type, flow, port);
+}
+
+void 
+host_add_app(struct host *h, struct app *a)
+{
+    HASH_ADD(hh, h->apps, type, sizeof(uint16_t), a);
+}
+
+/* Create flows from applications set to run during the simulation*/  
+void 
+host_ping(struct host *h, uint64_t st, uint32_t ip_dst)
+{
+    struct app *ping;
+    uint16_t type = PINGV4;
+    HASH_FIND(hh, h->apps, &type, sizeof(uint16_t), ping);
+    if (ping){
+        printf("%d %ld\n", ip_dst, st);
+    }
 }
 
 /* Retrieve a datapath port */
@@ -98,3 +115,5 @@ host_uuid(const struct host* h)
 {
     return h->ep.base.uuid;
 }
+
+

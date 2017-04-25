@@ -13,7 +13,6 @@
 #include "lib/util.h" 
 #include <uthash/utlist.h>
 
-
 /* Definition of a switch of the network */
 struct datapath {
     struct node base;
@@ -116,13 +115,12 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
 
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
-struct out_port* 
+void
 dp_recv_netflow(struct node *n, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table;
     struct flow *f;
-    struct out_port *out_ports = NULL;
     struct datapath *dp = (struct datapath*) n;
     uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
@@ -139,20 +137,17 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
             f = flow_table_lookup(dp->tables[table], &flow->match, flow->start_time);
             if (f != NULL){
                 /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
-
                 /* Increase the flow counters */
                 f->pkt_cnt += flow->pkt_cnt;
                 f->byte_cnt += flow->byte_cnt;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &table, flow, &acts, &out_ports);
+                execute_instructions(&f->insts, &table, flow, &acts, &flow->out_ports);
             }
         }
         /* Execute action and clean */ 
-        execute_action_set(&acts, flow, &out_ports);
+        execute_action_set(&acts, flow, &flow->out_ports);
         action_set_clean(&acts);
     }
-    /* We need the ports to create the next events. */
-    return out_ports;
 }
 
 void
@@ -179,15 +174,6 @@ void
 dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time)
 {
     add_flow(dp->tables[table_id], f, time);
-}
-
-void clean_out_ports(struct out_port *ports)
-{
-    struct out_port *p, *tmp;
-    LL_FOREACH_SAFE(ports, p, tmp) {
-      LL_DELETE(ports, p);
-      free(p); 
-    }
 }
 
 uint64_t 

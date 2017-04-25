@@ -23,6 +23,12 @@ struct mpls_stack {
     int top;
 };
 
+/* List of possible output ports after node processing */
+struct out_port {
+    uint32_t port;
+    struct out_port *next;
+};
+
 /* Description of a network flow */
 struct netflow {
     uint64_t pkt_cnt;           /* Number of packets in the flow.       */
@@ -32,13 +38,14 @@ struct netflow {
     struct mpls_stack mpls_stk;
     struct vlan_stack vlan_stk; 
     struct flow_key match;      /* The fields belonging to a flow.      */
-    uint8_t tcp_flags;   /* Bitmap of TCP flags present in the flow */
+    uint8_t tcp_flags;          /* Bitmap of TCP flags present in the flow */
+    struct out_port *out_ports; /* List of ports the flow may be sent */
 };
 
 void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);
 void netflow_push_mpls(struct netflow *nf, uint16_t eth_type);
 void netflow_pop_vlan(struct netflow *nf);
 void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type);
-
+void netflow_clean_out_ports(struct netflow *flow);
 
 #endif

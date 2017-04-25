@@ -35,14 +35,12 @@ void dp_add_port(struct datapath *dp, uint32_t port_id,
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
 
-struct out_port* dp_recv_netflow(struct node *n, struct netflow *flow);
+void dp_recv_netflow(struct node *n, struct netflow *flow);
 
 void dp_send_netflow(struct node *n, struct netflow *flow, 
                      uint32_t port);
 
 void dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time);
-
-void clean_out_ports(struct out_port *ports);
 
 /* Access functions*/
 uint64_t dp_uuid(const struct datapath* dp);

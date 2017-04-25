@@ -27,35 +27,31 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
         struct event *new_ev = event_new(new_flow->hdr.time, 
                                          new_flow->hdr.id);
         scheduler_insert(sch, new_ev);
+        printf("Will create new event dst:%ld size %ld\n", dst_uuid, sch->ev_queue->size);
     }
 }
 
 static void 
 handle_netflow(struct scheduler *sch, struct topology *topo,
                struct event_hdr **events, struct event_hdr *ev) {
-    struct out_port *out_ports = NULL;
     struct out_port *op;
     struct event_flow *ev_flow = (struct event_flow *)ev;
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node) {
-        printf("Node type %d\n", node->type);
-        out_ports = node->recv_netflow(node, &ev_flow->flow);
-        // if (node->type == DATAPATH) {
-        //     struct datapath *dp = (struct datapath *)node;
-            // out_ports = dp_recv_netflow(dp, &ev_flow->flow);
-            /* Schedule next event using the output ports*/
-        LL_FOREACH(out_ports, op) {
+        printf("Node type %d and ID:%ld\n", node->type, ev_flow->node_id);
+        ev_flow->flow.out_ports = NULL;
+        node->recv_netflow(node, &ev_flow->flow);
+        LL_FOREACH(ev_flow->flow.out_ports, op) {
             printf("Handling node Id:%ld Port:%d ev_time:%ld global_t:%ld\n", ev_flow->node_id, op->port, ev->time, sch->clock);
             node->send_netflow(node, &ev_flow->flow, op->port);
-            printf("Will create new event\n");
             next_flow_event(sch, topo, events, ev_flow, op->port);
             // }
         }
-        // } else if (node->type == ROUTER) {
-        // }
+        printf("Will Clean\n");
+        netflow_clean_out_ports(&ev_flow->flow);
+        printf("Cleaned\n");
     }
-    clean_out_ports(out_ports);
 }
 
 static void 
