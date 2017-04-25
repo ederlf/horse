@@ -31,6 +31,10 @@
 #define MPLS_LABEL_MASK 0xfffff000
 #define MPLS_LABEL_SHIFT 12
 
+#define IP_PROTO_ICMPV4 1
+#define IP_PROTO_TCP 6
+#define IP_PROTO_UDP 17
+
 struct vlan {
     uint16_t ethertype;
     uint16_t tag;
