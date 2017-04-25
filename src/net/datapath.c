@@ -66,17 +66,17 @@ dp_port(const struct datapath *dp, uint32_t port_id)
 }
 
 static void 
-execute_action_list(struct action_list *al, struct netflow *flow, struct out_port **out_ports)
+execute_action_list(struct action_list *al, struct netflow *flow)
 {
     struct action_list_elem *act_elem;
     LL_FOREACH(al->actions, act_elem){
-        execute_action(&act_elem->act, flow, out_ports);
+        execute_action(&act_elem->act, flow);
     }
 }
 
 
 static void 
-execute_action_set(struct action_set *as, struct netflow *flow, struct out_port **out_ports){
+execute_action_set(struct action_set *as, struct netflow *flow){
 
     struct action *act;
     enum action_set_order type;
@@ -84,16 +84,16 @@ execute_action_set(struct action_set *as, struct netflow *flow, struct out_port 
     for (type = ACT_METER; type <= ACT_OUTPUT; ++type) {
         act = action_set_action(as, type);
         if(act){
-            execute_action(act, flow, out_ports);
+            execute_action(act, flow);
         }
     }
 }
 
 static void 
-execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as, struct out_port **out_ports) {
+execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as) {
 
     if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)){
-        execute_action_list(&is->apply_act.actions, flow, out_ports);
+        execute_action_list(&is->apply_act.actions, flow);
     }
 
     if (instruction_is_active(is, INSTRUCTION_CLEAR_ACTIONS)){
@@ -141,11 +141,11 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
                 f->pkt_cnt += flow->pkt_cnt;
                 f->byte_cnt += flow->byte_cnt;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &table, flow, &acts, &flow->out_ports);
+                execute_instructions(&f->insts, &table, flow, &acts);
             }
         }
         /* Execute action and clean */ 
-        execute_action_set(&acts, flow, &flow->out_ports);
+        execute_action_set(&acts, flow);
         action_set_clean(&acts);
     }
 }
