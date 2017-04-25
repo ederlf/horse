@@ -19,8 +19,8 @@ void host_send_netflow(struct node *n, struct netflow *flow,
                      uint32_t port);
 
 /* Apps */
-void host_add_app(struct host *h, struct app *a);
-void host_ping(struct host *h, uint64_t st, uint32_t ip_dst);
+void host_add_app(struct host *h, uint16_t type);
+void host_start_app(struct host *h, uint16_t type, uint32_t start_time, void*args);
 /* Access functions */
 struct port* host_port(const struct host *h, uint32_t port_id);
 uint64_t host_uuid(const struct host* h);
