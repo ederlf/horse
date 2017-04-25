@@ -24,6 +24,10 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/timer.c \
                 src/lib/util.h \
                 src/lib/util.c \
+                src/net/app/app.h \
+                src/net/app/app.c \
+                src/net/app/ping.h \
+                src/net/app/ping.c \
                 src/net/arp_table.h \
                 src/net/arp_table.c \
                 src/net/datapath.h \
