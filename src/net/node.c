@@ -10,7 +10,7 @@ node_init(struct node* n, uint16_t type)
     n->ports_num = 0;
     n->ports = NULL;
     n->type = type;
-    n->flow_buff.top = -1;
+    n->flow_buff.head = n->flow_buff.tail = -1;
 }
 
 void 
@@ -46,20 +46,20 @@ node_port(const struct node *n, uint32_t port)
 bool 
 node_is_buffer_empty(struct node *n)
 {
-    return n->flow_buff.top < 0? 1:0;
+    return n->flow_buff.head == n->flow_buff.tail;
 }
 
 bool node_flow_queue(struct node*n, struct netflow flow){
-    if (n->flow_buff.top > BUFFER_MAX){
+    if ((n->flow_buff.tail - BUFFER_MAX) == n->flow_buff.head){
         return 0;
     }
-    n->flow_buff.top++;
-    n->flow_buff.flows[n->flow_buff.top] = flow;
+    n->flow_buff.tail++;
+    n->flow_buff.flows[n->flow_buff.tail % BUFFER_MAX] = flow;
     return 1;
 }
 
 struct netflow node_flow_dequeue(struct node *n){
-    struct netflow f = n->flow_buff.flows[n->flow_buff.top];
-    n->flow_buff.top--;
+    n->flow_buff.head++;
+    struct netflow f = n->flow_buff.flows[n->flow_buff.head % BUFFER_MAX];
     return f;
 }
