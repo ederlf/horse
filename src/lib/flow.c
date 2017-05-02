@@ -453,6 +453,8 @@ apply_all_mask(struct flow *flow, struct flow_key *mask)
     flow->key.tp_dst &= mask->tp_dst;
     flow->key.tp_src &= mask->tp_src;
     flow->key.arp_op &= mask->arp_op;
+    flow->key.icmp_type &= mask->icmp_type;
+    flow->key.icmp_code &= mask->icmp_code;
     set_masked_arp_spa(flow, flow->key.arp_spa, mask->arp_spa);
     set_masked_arp_tpa(flow, flow->key.arp_tpa, mask->arp_tpa);
     set_masked_arp_sha(flow, flow->key.arp_sha, mask->arp_sha);
