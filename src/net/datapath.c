@@ -137,6 +137,7 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
         table_id = 0;
         while(table){
             f = flow_table_lookup(table, &flow->match, flow->start_time);
+            table = NULL;
             if (f != NULL){
                 uint8_t next_table_id = 0;
                 /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
@@ -153,11 +154,8 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
                      /* Execute action and clean */
                     execute_action_set(&acts, flow);
                     action_set_clean(&acts);
-                    table = NULL;
+                    
                 }
-            }
-            else {
-                table = NULL;
             }
         }
     }
