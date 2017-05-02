@@ -119,7 +119,8 @@ void
 dp_recv_netflow(struct node *n, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
-    uint8_t table;
+    uint8_t table_id;
+    struct flow_table *table;
     struct flow *f;
     struct datapath *dp = (struct datapath*) n;
     uint32_t in_port = flow->match.in_port;
@@ -132,21 +133,33 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
         /* Reset metadata */
         flow->match.metadata = 0;
         /* Enter pipeline */
-        
-        for(table = 0; table < MAX_TABLES; ++table){
-            f = flow_table_lookup(dp->tables[table], &flow->match, flow->start_time);
+        table = dp->tables[0];
+        table_id = 0;
+        while(table){
+            f = flow_table_lookup(table, &flow->match, flow->start_time);
             if (f != NULL){
+                uint8_t next_table_id = 0;
                 /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
                 /* Increase the flow counters */
                 f->pkt_cnt += flow->pkt_cnt;
                 f->byte_cnt += flow->byte_cnt;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &table, flow, &acts);
+                execute_instructions(&f->insts, &next_table_id, flow, &acts);
+                if (next_table_id > table_id){
+                    table_id = next_table_id;
+                    table = dp->tables[table_id];
+                }
+                else {
+                     /* Execute action and clean */
+                    execute_action_set(&acts, flow);
+                    action_set_clean(&acts);
+                    table = NULL;
+                }
+            }
+            else {
+                table = NULL;
             }
         }
-        /* Execute action and clean */ 
-        execute_action_set(&acts, flow);
-        action_set_clean(&acts);
     }
 }
 
