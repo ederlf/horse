@@ -4,6 +4,9 @@
 #include "lib/netflow.h"
 #include <uthash/uthash.h>
 
+#define APP_STOP 0
+#define APP_SEND 1
+
 /* Using the types assigned by IANA makes it easier
 *  to access the function that will handle a netflow/packet 
 *  */
@@ -17,7 +20,7 @@ struct app {
     /* Start the application on time in miliseconds */    
     struct netflow (*start) (uint64_t, void*);
     /* Handle the packet  */
-    void (*handle_netflow) (struct netflow*);
+    int (*handle_netflow) (struct netflow*);
     UT_hash_handle hh;  
 };
 
