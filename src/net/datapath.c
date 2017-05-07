@@ -20,6 +20,9 @@ struct datapath {
     struct flow_table *tables[MAX_TABLES]; 
 };
 
+static void dp_recv_netflow(struct datapath *n, struct netflow *flow);
+static void dp_send_netflow(struct datapath *n, struct netflow *flow);
+
 /* Creates a new datapath. 
 *
 *  A datapath starts without any port assigned.  
@@ -30,8 +33,7 @@ dp_new(uint64_t dp_id)
     struct datapath *dp = xmalloc(sizeof(struct datapath));
     int i;
     node_init(&dp->base, DATAPATH);
-    dp->base.recv_netflow = dp_recv_netflow;
-    dp->base.send_netflow = dp_send_netflow;
+    dp->base.handle_netflow = dp_handle_netflow;
     dp->dp_id = dp_id;
     /* Create flow tables*/
     for (i = 0; i < MAX_TABLES; ++i){
@@ -113,16 +115,27 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
     }
 }
 
+void
+dp_handle_netflow(struct node *n, struct netflow *flow){
+
+    struct datapath *dp = (struct datapath*) n;
+    /* There are no out ports, it is receiving */
+    if (!flow->out_ports){
+        dp_recv_netflow(dp, flow);
+    }
+    dp_send_netflow(dp, flow);
+}
+
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
 void
-dp_recv_netflow(struct node *n, struct netflow *flow)
+dp_recv_netflow(struct datapath *dp, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table_id;
     struct flow_table *table;
     struct flow *f;
-    struct datapath *dp = (struct datapath*) n;
+    
     uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
@@ -154,7 +167,6 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
                      /* Execute action and clean */
                     execute_action_set(&acts, flow);
                     action_set_clean(&acts);
-                    
                 }
             }
         }
@@ -162,20 +174,23 @@ dp_recv_netflow(struct node *n, struct netflow *flow)
 }
 
 void
-dp_send_netflow(struct node *n, struct netflow *flow, uint32_t port)
-{
-    struct datapath *dp = (struct datapath*) n;
-    struct port *p = dp_port(dp, port);
-    if (p != NULL) {
-        uint8_t up = p->config & PORT_UP;
-        uint8_t live = p->state & PORT_LIVE;
-        if (up && live){
-            p->stats.tx_packets += flow->pkt_cnt;
-            p->stats.tx_bytes += flow->byte_cnt;
-            /* Start time of the flow will be the same as the end */
-            flow->start_time = flow->end_time;
-            /* Make sure p->curr_speed is not 0 */
-            flow->end_time += (flow->byte_cnt * 8) / ((p->curr_speed * 1000)/1000000);
+dp_send_netflow(struct datapath *dp, struct netflow *flow)
+{   
+    struct out_port *op;
+    struct out_port *ports = flow->out_ports;
+    LL_FOREACH(ports, op) {
+        struct port *p = dp_port(dp, op->port);
+        if (p != NULL) {
+            uint8_t up = p->config & PORT_UP;
+            uint8_t live = p->state & PORT_LIVE;
+            if (up && live){
+                p->stats.tx_packets += flow->pkt_cnt;
+                p->stats.tx_bytes += flow->byte_cnt;
+                /* Start time of the flow will be the same as the end */
+                flow->start_time = flow->end_time;
+                /* Make sure p->curr_speed is not 0 */
+                flow->end_time += (flow->byte_cnt * 8) / ((p->curr_speed * 1000)/1000000);
+            }
         }
     }
 }
