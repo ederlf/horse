@@ -19,27 +19,46 @@
 #define EV_NUM 10
 
 static void 
-create_random_events(struct sim *s)
+initial_events(struct sim *s)
 {
-	int i;
-	for (i = 0; i < EV_NUM; ++i){
-        struct event *ev;
-        struct event_flow *flow = event_flow_new(i + 1, 1);
-        if (i == 3){
-            flow->hdr.type = EVENT_CTRL;
-        }
-        flow->flow.start_time = flow->hdr.time;
-        flow->flow.end_time = flow->flow.start_time + 1;
-        memset(&flow->flow.match, 0x0, sizeof(struct flow_key));
-        flow->flow.match.in_port = 1;
-        flow->flow.match.eth_type = 0x800;
-        HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
+    struct node *cur_node, *tmp;
+    HASH_ITER(hh, topology_nodes(s->topo), cur_node, tmp){
+        if (!node_is_buffer_empty(cur_node)){
+            struct netflow f = node_flow_dequeue(cur_node);
+            struct event *ev; 
+            struct event_flow *flow = event_flow_new(f.start_time, cur_node->uuid);
+            flow->flow = f;
+            printf("%x\n", flow->flow.match.eth_type);
+            HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
                  (struct event_hdr*) flow);
-        ev = event_new(flow->hdr.time , flow->hdr.id); 
-        scheduler_insert(s->sch, ev);
-	}
-
+            ev = event_new(flow->hdr.time , flow->hdr.id); 
+            scheduler_insert(s->sch, ev);
+        }
+    }
 }
+
+// static void 
+// create_random_events(struct sim *s)
+// {
+// 	int i;
+// 	for (i = 0; i < EV_NUM; ++i){
+//         struct event *ev;
+//         struct event_flow *flow = event_flow_new(i + 1, 1);
+//         if (i == 3){
+//             flow->hdr.type = EVENT_CTRL;
+//         }
+//         flow->flow.start_time = flow->hdr.time;
+//         flow->flow.end_time = flow->flow.start_time + 1;
+//         memset(&flow->flow.match, 0x0, sizeof(struct flow_key));
+//         flow->flow.match.in_port = 1;
+//         flow->flow.match.eth_type = 0x800;
+//         HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
+//                  (struct event_hdr*) flow);
+//         ev = event_new(flow->hdr.time , flow->hdr.id); 
+//         scheduler_insert(s->sch, ev);
+// 	}
+
+// }
 
 static void add_flows(struct topology *topo){
     /* DP 1 */
@@ -47,9 +66,9 @@ static void add_flows(struct topology *topo){
     struct flow *fl = flow_new();
     struct instruction_set is;
     instruction_set_init(&is);
-    struct write_metadata wm;
-    inst_write_metadata(&wm, 0xbeef);
-    add_write_metadata(&is, wm);
+    // struct write_metadata wm;
+    // inst_write_metadata(&wm, 0xbeef);
+    // add_write_metadata(&is, wm);
     /* Write actions */
     struct write_actions wa;
     struct action_set as;
@@ -57,8 +76,8 @@ static void add_flows(struct topology *topo){
     action_set_init(&as);
     action_output(&gen_act, 2);
     action_set_add(&as, gen_act);
-    action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
-    action_set_add(&as, gen_act);
+    // action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
+    // action_set_add(&as, gen_act);
     inst_write_actions(&wa, as);
     add_write_actions(&is, wa);
     /* Match */
@@ -66,6 +85,21 @@ static void add_flows(struct topology *topo){
     flow_add_instructions(fl, is);
     dp_handle_flow_mod(dp, 0, fl, 0);
     
+    /* Flow 2 */
+    struct write_actions wa2;
+    struct action_set as2;
+    struct action gen_act2;
+    struct instruction_set is2;
+    action_set_init(&as2);
+    instruction_set_init(&is2);
+    struct flow *f2 = flow_new();
+    action_output(&gen_act2, 1);
+    action_set_add(&as2, gen_act2);
+    inst_write_actions(&wa2, as2);
+    add_write_actions(&is2, wa2);
+    set_in_port(f2, 2);
+    flow_add_instructions(f2, is2);
+    dp_handle_flow_mod(dp, 0, f2, 0);
     /* DP 2 */
     // dp = (struct datapath*) topology_node(topo, 2);
     // struct flow *fl2 = flow_new();
@@ -199,6 +233,7 @@ timer_func(void* args)
 
     s->sch->clock++;
     redisReply *reply;
+    printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, scheduler_is_empty(s->sch), s->sch->ev_queue->size);
     if (cur_ev == NULL && !scheduler_is_empty(s->sch)){
         cur_ev = scheduler_dispatch(s->sch);
     
@@ -216,6 +251,7 @@ timer_func(void* args)
             event_free(cur_ev);
             cur_ev = NULL;
         }
+        redisCommand(c, "HSET dp_signal sig 1");  
     }
     else {
         redisCommand(c, "HSET dp_signal sig 1");  
@@ -283,11 +319,11 @@ void
 start(struct topology *topo) 
 {
     struct sim s;
-    // rt_tessrc/lib/timer.ht();
     sim_init(&s, topo);
     c = redis_connect();
     add_flows(topo);
-    create_random_events(&s);
+    initial_events(&s);
+    // create_random_events(&s);
     /* Pass the simulator to the timer */
     t.exec = timer_func;
     init_timer(t, (void*)&s);

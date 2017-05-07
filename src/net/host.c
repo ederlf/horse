@@ -1,6 +1,14 @@
 #include "host.h"
 #include "legacy_node.h"
+#include "route_table.h"
+#include "arp_table.h"
 #include "lib/util.h"
+#include <uthash/utlist.h>
+
+#define ETH_ADDR_FMT                                                    \
+    "%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8
+#define ETH_ADDR_ARGS(ea)                                   \
+    (ea)[0], (ea)[1], (ea)[2], (ea)[3], (ea)[4], (ea)[5]
 
 struct host {
     struct legacy_node ep; /* Node is an endpoint */
@@ -8,13 +16,15 @@ struct host {
     struct app* apps;
 };
 
+static int host_recv_netflow(struct host *h, struct netflow *flow);
+static void host_send_netflow(struct host *h, struct netflow *flow);
+
 struct host *
 host_new(void)
 {
     struct host *h = xmalloc(sizeof(struct host));
     legacy_node_init(&h->ep, HOST);
-    h->ep.base.recv_netflow = host_recv_netflow;
-    h->ep.base.send_netflow = host_send_netflow;
+    h->ep.base.handle_netflow = host_handle_netflow;
     h->apps = NULL;
     return h;
 }
@@ -36,15 +46,99 @@ void
 host_set_intf_ipv4(struct host *h, uint32_t port_id, uint32_t addr, uint32_t netmask){
     struct port *p = host_port(h, port_id);
     port_add_v4addr(p, addr, netmask);
+    /* Add entry to route table */
+    struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
+    memset(e, 0x0, sizeof(struct route_entry_v4));
+    e->ip = addr & netmask;
+    e->netmask = netmask;
+    e->iface = port_id;
+    add_ipv4_entry(&h->ep.rt, e);
+}
+
+void host_handle_netflow(struct node *n, struct netflow *flow)
+{
+
+    int cont = 0;
+    struct host *h = (struct host*) n;
+    if (!flow->out_ports){
+        cont = host_recv_netflow(h, flow);
+    }
+    if (cont){
+        host_send_netflow(h, flow);
+    }
 }
 
 static int 
 l2_recv_netflow(struct host *h, struct netflow *flow){
 
     struct port *p = host_port(h, flow->match.in_port);
-    uint8_t *eth_dst = flow->match.eth_dst; 
-    /* Return 1 if destination  is the node */
-    return !(memcmp(p->eth_address, eth_dst, ETH_LEN));
+    uint8_t *eth_dst = flow->match.eth_dst;
+    uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    /* Return 0 if destination is other */
+    if (memcmp(p->eth_address, eth_dst, ETH_LEN) && 
+        memcmp(bcast_eth_addr, eth_dst, ETH_LEN)){
+        return 0;
+    }
+    /* Handle ARP */
+    if (flow->match.eth_type == ETH_TYPE_ARP){
+        /* ARP request */
+        if (flow->match.arp_op == ARP_REQUEST){
+            printf("Received ARP Request from %x\n", flow->match.arp_spa);
+            struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, flow->match.arp_spa);
+            /* Learns MAC of the requester */
+            if (!ae){
+                struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
+                memset(e, 0x0, sizeof(struct arp_table_entry));
+                e->ip = flow->match.arp_spa;
+                memcpy(e->eth_addr, flow->match.arp_sha, ETH_LEN);
+                e->iface = flow->match.in_port;
+                arp_table_add_entry(&h->ep.at, e);
+            }
+            /* Craft reply */
+            uint8_t *eth_dst = flow->match.eth_src;
+            uint32_t ip_dst = flow->match.arp_spa;
+            memcpy(flow->match.eth_dst, flow->match.eth_src, ETH_LEN);
+            memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+            memcpy(flow->match.arp_sha, p->eth_address, ETH_LEN);
+            memcpy(flow->match.arp_tha, eth_dst, ETH_LEN);
+            flow->match.arp_spa = flow->match.arp_tpa;
+            flow->match.arp_tpa = ip_dst;
+            flow->match.arp_op = ARP_REPLY;
+            /* Add outport */
+            struct out_port *op = xmalloc(sizeof(struct out_port));
+            op->port = flow->match.in_port;
+            LL_APPEND(flow->out_ports, op); 
+        }
+        /* ARP Reply */
+        else if (flow->match.arp_op == ARP_REPLY) {
+            /* Add ARP table */
+            printf("Received ARP reply\n");
+            struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
+            memset(e, 0x0, sizeof(struct arp_table_entry));
+            e->ip = flow->match.arp_spa;
+            memcpy(e->eth_addr, flow->match.arp_sha, ETH_LEN);
+            e->iface = flow->match.in_port;
+            arp_table_add_entry(&h->ep.at, e);
+            /* Check the queue for flows waiting for the ARP reply */
+            if (!node_is_buffer_empty((struct node*) h)){
+                *flow = node_flow_dequeue((struct node*) h);
+                /* Fill l2 information */
+                struct out_port *op;
+                /* Expects only one port now, will not handle multicast yet */
+                LL_FOREACH(flow->out_ports, op) {
+                    struct port *p = host_port(h, op->port);
+                    memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+                }
+                memcpy(flow->match.eth_dst, e->eth_addr, ETH_LEN);
+            }
+        }
+        return 0;
+    }
+    if (flow->match.eth_type == ETH_TYPE_IP || 
+        flow->match.eth_type == ETH_TYPE_IPV6) {
+        return 1;
+    }
+    return 0;
 }
 
 static int 
@@ -61,25 +155,99 @@ l3_recv_netflow(struct host *h, struct netflow *flow){
     return 0;
 }
 
-void
-host_recv_netflow(struct node *n, struct netflow *flow)
+int
+host_recv_netflow(struct host *n, struct netflow *flow)
 {
+    uint16_t type;
     struct host *h = (struct host*) n;
-    printf("Received HOST %d %p\n", h->ep.base.type, flow);
+    struct app *app;
+    printf("Received HOST %ld %x\n", h->ep.base.uuid, flow->match.eth_type);
     /* Check MAC and IP addresses. Only returns true if
        both have the node destination MAC and IP       */
-    if (!l2_recv_netflow(h, flow) && !l3_recv_netflow(h, flow)){
-        return;
+    if (l2_recv_netflow(h, flow)) {
+        l3_recv_netflow(h, flow);
     }
-
+    else {
+        /* End here if there is not further processing */
+        return 0;
+    }
+    type = flow->match.ip_proto;
+    HASH_FIND(hh, h->apps, &type, sizeof(uint16_t), app);
     /* If gets here send to application */
+    if (app){
+        return app->handle_netflow(flow);
+    }
+    return 0;
 }
 
-void host_send_netflow(struct node *n, struct netflow *flow, 
-                     uint32_t port)
+/* Returns the gateway of destination IP */
+static uint32_t 
+host_send_l3(struct host *h, struct netflow *flow){
+    struct route_entry_v4 *re = ipv4_lookup(&h->ep.rt, flow->match.ipv4_dst);
+    if (!re){
+        /* Default gateway */
+        re = ipv4_lookup(&h->ep.rt, 0);
+    }
+    struct out_port *op = xmalloc(sizeof(struct out_port));
+    op->port = re->iface;
+    LL_APPEND(flow->out_ports, op); 
+    /* IP to search in the ARP table */
+    return re->gateway == 0? flow->match.ipv4_dst: re->gateway;   
+}
+
+static void
+host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
+    struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, ip);
+    printf("Looking up MAC from ip %x %p\n", ip, ae);
+    if (ae){
+        /* Fill Missing information */
+        struct out_port *op;
+        LL_FOREACH(flow->out_ports, op) {
+            struct port *p = host_port(h, op->port);
+            flow->match.ipv4_src = p->ipv4_addr->addr;
+            memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+        }
+        memcpy(flow->match.eth_dst, ae->eth_addr, ETH_LEN);
+        node_flow_queue((struct node*) h, *flow);
+    }
+    else {
+        /*  ARP request before the flow*/
+        uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+        printf("Needs to send ARP %x\n", ip);
+        /* Craft request */
+        struct netflow arp_req;
+        memset(&arp_req, 0x0, sizeof(struct netflow));
+        arp_req.match.eth_type = ETH_TYPE_ARP;
+        /**
+         * TODO: Have to create multiple ARPS for broadcast.
+         */
+        struct out_port *op;
+        LL_FOREACH(flow->out_ports, op) {
+            struct port *p = host_port(h, op->port);
+            /* Need to set missing ip address info */
+            flow->match.ipv4_src = p->ipv4_addr->addr;
+            memcpy(arp_req.match.eth_src, p->eth_address, ETH_LEN);
+            memcpy(arp_req.match.arp_sha, p->eth_address, ETH_LEN);
+            arp_req.match.arp_spa = p->ipv4_addr->addr;
+            struct out_port *ap = xmalloc(sizeof(struct out_port));
+            ap->port = op->port;
+            LL_APPEND(arp_req.out_ports, ap);
+        }
+        /* Set Destination address */
+        memcpy(arp_req.match.eth_dst, bcast_eth_addr, ETH_LEN); 
+        arp_req.match.arp_tpa = ip;
+        arp_req.match.arp_op = ARP_REQUEST;
+        arp_req.start_time = flow->start_time;
+        node_flow_queue((struct node*) h, arp_req);
+        node_flow_queue((struct node*) h, *flow);
+    }
+}
+
+static
+void host_send_netflow(struct host *h, struct netflow *flow)
 {
-    struct host *h = (struct host*) n;
-    printf("Sent HOST %d %p %d\n", h->ep.base.type, flow, port);
+    uint32_t ip = host_send_l3(h, flow);
+    host_send_l2(h, flow, ip);    
 }
 
 void 
@@ -93,9 +261,12 @@ void
 host_start_app(struct host *h, uint16_t type, uint32_t start_time, void* args)
 {
     struct app *app;
+    struct netflow flow;
     HASH_FIND(hh, h->apps, &type, sizeof(uint16_t), app);
     if(app){
-        app->start(start_time, args);
+        flow = app->start(start_time, args);
+        flow.start_time = start_time;
+        host_send_netflow(h, &flow);
     }
 }
 
