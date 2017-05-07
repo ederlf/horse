@@ -4,6 +4,11 @@
 #include "lib/packets.h"
 #include <uthash/uthash.h>
 
+enum arp_op {
+    ARP_REQUEST = 1,
+    ARP_REPLY = 2,
+};
+
 struct arp_table_entry {
     UT_hash_handle hh;          /* Make the struct hashable. */
     uint32_t ip;

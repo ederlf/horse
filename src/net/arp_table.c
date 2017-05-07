@@ -26,6 +26,6 @@ arp_table_clean(struct arp_table *at)
 struct arp_table_entry* arp_table_lookup(struct arp_table *at, uint32_t ip)
 {
     struct arp_table_entry *entry;
-    HASH_FIND(hh, at->entries, &ip, sizeof(struct arp_table_entry), entry);
+    HASH_FIND(hh, at->entries, &ip, sizeof(uint32_t), entry);
     return entry;
 }
