@@ -1,5 +1,6 @@
 from libc.stdint cimport uint64_t
 from libc.stdint cimport uint32_t
+from libc.stdint cimport uint16_t
 from libc.stdint cimport uint8_t
 
 cdef extern from "sim/sim.h":
@@ -25,7 +26,11 @@ cdef extern from "sim/sim.h":
     host* host_new()
     void host_destroy(host* h)
     void host_add_port(host *dp, uint32_t port_id, uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
+    void host_set_intf_ipv4(host *h, uint32_t port_id, uint32_t addr)
     uint64_t host_uuid(const host* h)
+    void host_add_app(host *h, uint16_t type)
+    void host_start_app(host *h, uint16_t type, uint32_t start_time, void* args)
+    void host_set_intf_ipv4(host *h, uint32_t port_id, uint32_t addr, uint32_t netmask)
 
     # Topology.h
     topology* topology_new()
