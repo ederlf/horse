@@ -150,7 +150,7 @@ topology_destroy(struct topology *topo)
             dp_destroy((struct datapath*) cur_node);    
         }
         else if (cur_node->type == HOST){
-                host_destroy((struct host*) cur_node);    
+            host_destroy((struct host*) cur_node);    
         }
     }
     free(topo);
@@ -205,4 +205,9 @@ topology_dps_num(const struct topology *topo)
 uint32_t topology_links_num(const struct topology *topo)
 {
     return topo->n_links;
+}
+
+struct node* topology_nodes(const struct topology *topo)
+{
+    return topo->nodes;
 }

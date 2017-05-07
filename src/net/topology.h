@@ -44,5 +44,6 @@ uint32_t topology_dps_num(const struct topology *topo);
 
 uint32_t topology_links_num(const struct topology *topo);
 
+struct node* topology_nodes(const struct topology *topo);
 
 #endif /* TOPOLOGY_H */
