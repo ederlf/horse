@@ -17,7 +17,8 @@ enum node_type {
 
 struct buffer {
     struct netflow flows[BUFFER_MAX];
-    int top;  
+    int head;
+    int tail;  
 };
 
 struct node {
@@ -26,8 +27,7 @@ struct node {
     uint16_t ports_num; /* Total number of ports */
     uint16_t type;
     struct buffer flow_buff; /* A queue for postponed flows */ 
-    void (*recv_netflow) (struct node *, struct netflow *);
-    void  (*send_netflow) (struct node *, struct netflow *, uint32_t);
+    void (*handle_netflow) (struct node *, struct netflow *);
     UT_hash_handle hh;  
 };
 
