@@ -105,7 +105,6 @@ flow_table_lookup(struct flow_table *ft, struct flow_key *key, uint64_t time)
         apply_all_mask(&tmp_flow, &nxt_mft->mask);
         /* Search for a match in the mini flow table. */
         HASH_FIND(hh, nxt_mft->flows, &tmp_flow.key, sizeof(struct flow_key), flow_found);
-        printf("ETH_DST %x\n", tmp_flow.key.in_port);
         if (flow_found){
             bool expired = flow_table_del_expired(ft, nxt_mft, flow_found, 
                                                   time);
