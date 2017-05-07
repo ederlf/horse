@@ -17,40 +17,44 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
     if (topology_next_hop(topo, cur_flow->node_id, exit_port, 
                            &dst_uuid, &dst_port, &latency)) {
         /* Set completion time and in_port*/
-        cur_flow->flow.end_time += latency * 1000000000;
+        cur_flow->flow.end_time += latency;
         cur_flow->flow.match.in_port = dst_port;
         /* Create new flow event */
         struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
         memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
+        new_flow->flow.out_ports = NULL;
         HASH_ADD(hh, *events, id, sizeof(uint64_t),
                  (struct event_hdr *)new_flow);
         struct event *new_ev = event_new(new_flow->hdr.time, 
                                          new_flow->hdr.id);
         scheduler_insert(sch, new_ev);
-        printf("Will create new event dst:%ld size %ld\n", dst_uuid, sch->ev_queue->size);
+        printf("Will create new event dst:%ld size %ld exit_port %d\n", dst_uuid, sch->ev_queue->size, dst_port);
     }
 }
+
+/**
+ * create just a single function to handle flows.
+ * Static methods for send and receive.
+ * If there are out_ports just send
+ * Else receive and send.
+ */
 
 static void 
 handle_netflow(struct scheduler *sch, struct topology *topo,
                struct event_hdr **events, struct event_hdr *ev) {
-    struct out_port *op;
+    struct out_port *op, *ports;
     struct event_flow *ev_flow = (struct event_flow *)ev;
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node) {
-        printf("Node type %d and ID:%ld\n", node->type, ev_flow->node_id);
-        ev_flow->flow.out_ports = NULL;
-        node->recv_netflow(node, &ev_flow->flow);
-        LL_FOREACH(ev_flow->flow.out_ports, op) {
-            printf("Handling node Id:%ld Port:%d ev_time:%ld global_t:%ld\n", ev_flow->node_id, op->port, ev->time, sch->clock);
-            node->send_netflow(node, &ev_flow->flow, op->port);
+        printf("Node type %s and ID:%ld InPORT %d %x IP\n", node->type? "HOST": "DATAPATH", ev_flow->node_id, ev_flow->flow.match.in_port, ev_flow->flow.match.ipv4_dst);
+        node->handle_netflow(node, &ev_flow->flow);
+        ports = ev_flow->flow.out_ports;
+        /* May have or not ports to send the flow */
+        LL_FOREACH(ports, op) {
             next_flow_event(sch, topo, events, ev_flow, op->port);
-            // }
         }
-        printf("Will Clean\n");
         netflow_clean_out_ports(&ev_flow->flow);
-        printf("Cleaned\n");
     }
 }
 
