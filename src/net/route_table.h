@@ -4,11 +4,18 @@
 #include "lib/packets.h"
 #include <patricia/patricia.h>
 
+enum route_entry_flags {
+    ROUTE_UP = 0,
+    ROUTE_GW = 1,
+    ROUTE_HOST = 2,
+};
+
 struct route_entry_v4 {
     uint32_t ip;
     uint32_t netmask;
-    uint32_t next_hop;
+    uint32_t gateway;
     uint32_t iface;
+    uint8_t flags;
     uint8_t metric;
 };
 
