@@ -25,16 +25,17 @@ initial_events(struct sim *s)
     HASH_ITER(hh, topology_nodes(s->topo), cur_node, tmp){
         if (!node_is_buffer_empty(cur_node)){
             struct netflow f = node_flow_dequeue(cur_node);
-            struct event *ev; 
-            struct event_flow *flow = event_flow_new(f.start_time, cur_node->uuid);
-            flow->flow = f;
-            printf("%x\n", flow->flow.match.eth_type);
-            HASH_ADD(hh, s->events, id, sizeof(uint64_t), 
-                 (struct event_hdr*) flow);
-            ev = event_new(flow->hdr.time , flow->hdr.id); 
-            scheduler_insert(s->sch, ev);
+            struct event_flow *ev = event_flow_new(f.start_time, cur_node->uuid);
+            ev->flow = f;
+            printf("%x\n", ev->flow.match.eth_type); 
+            scheduler_insert(s->sch, (struct event*) ev);
         }
     }
+    struct event *ev; 
+    ev = event_new(UINT64_MAX - 1 , UINT64_MAX - 1); 
+            scheduler_insert(s->sch, ev);
+    ev->type = EVENT_END;
+    scheduler_insert(s->sch, ev);
 }
 
 // static void 
@@ -122,24 +123,12 @@ static void
 sim_init(struct sim *s, struct topology *topo) 
 {
     s->topo = topo;
-    s->events = NULL;
     s->sch = scheduler_new();
-}
-
-static void 
-sim_clean_ev(struct event_hdr *events)
-{
-  struct event_hdr *ev, *tmp;
-  HASH_ITER(hh, events, ev, tmp) {
-      HASH_DEL(events, ev);  
-      free(ev);           
-  }
 }
 
 static void 
 sim_close(struct sim *s)
 {
-    sim_clean_ev(s->events);
     scheduler_destroy(s->sch);
     topology_destroy(s->topo);
 }
@@ -167,9 +156,8 @@ dp_thread(void * args){
 /*  Executes DES while controller does nothing
     Waits for some event from controller or current time
     is larger than event time */
-    struct event_hdr *ev;
     struct sim *s = (struct sim*) args;
-    while (!scheduler_is_empty(s->sch)){
+    while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
         pthread_mutex_lock( &mutex1 );
@@ -181,27 +169,29 @@ dp_thread(void * args){
         if (scheduler_is_empty(s->sch)){
             continue;
         }
-        struct event *sch_ev = scheduler_dispatch(s->sch);
-        s->sch->clock = sch_ev->time;
-        HASH_FIND(hh, s->events, &sch_ev->id, sizeof(uint64_t), ev);
+        struct event *ev = scheduler_dispatch(s->sch);
+        s->sch->clock = ev->time;
         if (ev->type == EVENT_FLOW){
             /* Execute */
-            handle_event(s->sch, s->topo, &s->events, ev);
-            event_free(sch_ev);
+            handle_event(s->sch, s->topo, ev);
+            event_free(ev);
         }
-        else if(ev->type == EVENT_CTRL){
+        else if( ev->type == EVENT_CTRL ){
             // struct ev* evt = cur_ev;
             // Enqueue(evt);
             /* Gets the next event */
-            printf("DES Pushing to redis %ld %ld\n", ev->time, sch_ev->id);
-            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(*ev));
-            event_free(sch_ev);
+            printf("DES Pushing to redis %d %ld\n", ev->type, ev->time);
+            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow));
+            event_free(ev);
             pthread_mutex_lock( &mutex1 );
             des = 0;
             redisCommand(c, "HSET dp_signal sig 0");
             /* Wake up timer */
             pthread_cond_signal( &condition_var );
             pthread_mutex_unlock( &mutex1 );
+        }
+        else if (ev->type == EVENT_END) {
+            break;
         }
     }
     /* Awake the timer so it can stop */
@@ -211,7 +201,6 @@ dp_thread(void * args){
     // des = 0;
     // pthread_cond_signal( &condition_var );
     // pthread_mutex_unlock( &mutex1 );
-
     return 0;
 } 
 
@@ -237,24 +226,22 @@ timer_func(void* args)
     if (cur_ev == NULL && !scheduler_is_empty(s->sch)){
         cur_ev = scheduler_dispatch(s->sch);
     
-        HASH_FIND(hh, s->events, &cur_ev->id, sizeof(uint64_t), ev);
-        if (ev->type == EVENT_FLOW && cur_ev->time <= s->sch->clock){
+        if (cur_ev->type == EVENT_FLOW && cur_ev->time <= s->sch->clock){
             /* Execute */
             printf("CONT executing %ld %ld %ld\n", cur_ev->time, s->sch->clock, cur_ev->id);
-            handle_event(s->sch, s->topo, &s->events, ev);
+            handle_event(s->sch, s->topo, cur_ev);
             event_free(cur_ev);
             cur_ev = NULL;
         }
-        else if (ev->type == EVENT_CTRL){
+        else if (cur_ev->type == EVENT_CTRL){
             // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
-            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(*ev)); 
+            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow)); 
             event_free(cur_ev);
             cur_ev = NULL;
         }
-        redisCommand(c, "HSET dp_signal sig 1");  
-    }
-    else {
-        redisCommand(c, "HSET dp_signal sig 1");  
+        else if (cur_ev->type == EVENT_END) {
+            redisCommand(c, "HSET dp_signal sig 1");  
+        }
     }
     /* Check if controller is done */
     // printf("Getting signal %d\n", cur_time);

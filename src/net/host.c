@@ -77,6 +77,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
     /* Return 0 if destination is other */
     if (memcmp(p->eth_address, eth_dst, ETH_LEN) && 
         memcmp(bcast_eth_addr, eth_dst, ETH_LEN)){
+        printf("Leaving " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(eth_dst));
         return 0;
     }
     /* Handle ARP */
@@ -108,6 +109,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             struct out_port *op = xmalloc(sizeof(struct out_port));
             op->port = flow->match.in_port;
             LL_APPEND(flow->out_ports, op); 
+            printf("destination eth address " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(flow->match.eth_src));
         }
         /* ARP Reply */
         else if (flow->match.arp_op == ARP_REPLY) {

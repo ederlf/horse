@@ -35,9 +35,9 @@ struct netflow {
     uint64_t byte_cnt;          /* Total number of packets in the flow. */
     uint64_t start_time;
     uint64_t end_time;
+    struct flow_key match;      /* The fields belonging to a flow.      */
     struct mpls_stack mpls_stk;
     struct vlan_stack vlan_stk; 
-    struct flow_key match;      /* The fields belonging to a flow.      */
     uint8_t tcp_flags;          /* Bitmap of TCP flags present in the flow */
     struct out_port *out_ports; /* List of ports the flow may be sent */
 };

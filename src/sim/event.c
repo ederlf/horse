@@ -10,8 +10,6 @@
 
 #include "event.h"
 
-static uint64_t event_id = 0;
-
 struct event*
 event_new(uint64_t time, uint64_t id)
 {
@@ -21,7 +19,6 @@ event_new(uint64_t time, uint64_t id)
     return ev;
 }
 
-
 void event_free(struct event* ev){
     free(ev);
 }
@@ -29,7 +26,6 @@ void event_free(struct event* ev){
 struct event_flow* event_flow_new(uint64_t time, uint64_t node_id)
 {
     struct event_flow *flow = xmalloc(sizeof(struct event_flow));
-    flow->hdr.id = ++event_id;
     flow->hdr.time = time;
     flow->hdr.type = EVENT_FLOW;
     flow->node_id = node_id;

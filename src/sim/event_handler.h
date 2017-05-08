@@ -6,6 +6,6 @@
 #include "scheduler.h"
 
 void handle_event(struct scheduler *sch, struct topology *topo,
-                  struct event_hdr **events, struct event_hdr *ev);
+                     struct event *ev);
 
 #endif

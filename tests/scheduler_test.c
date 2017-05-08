@@ -51,32 +51,31 @@ void random_add_flow_event(void **state){
     free(times);
 }
 
-void event_table(void **state){
-    struct event_hdr *table = NULL;
-    struct event_hdr *tmp, *p;
-    struct event_flow *flow = malloc(sizeof(struct event_flow));
-    uint64_t id = 1;
-    flow->hdr.id = 1;
-    flow->node_id = 0x9000000000000001;
-    HASH_ADD(hh, table, id, sizeof(uint64_t), (struct event_hdr*) flow);
+// void event_table(void **state){
+//     struct event_hdr *table = NULL;
+//     struct event_hdr *tmp, *p;
+//     struct event_flow *flow = malloc(sizeof(struct event_flow));
+//     uint64_t id = 1;
+//     flow->hdr.id = 1;
+//     flow->node_id = 0x9000000000000001;
+//     HASH_ADD(hh, table, id, sizeof(uint64_t), (struct event_hdr*) flow);
 
-    HASH_FIND(hh, table, &id, sizeof(uint64_t), p);
-    if (p){
-        struct event_flow *f = (struct event_flow*)p;
-        assert_int_equal(0x9000000000000001, f->node_id);
-    }
+//     HASH_FIND(hh, table, &id, sizeof(uint64_t), p);
+//     if (p){
+//         struct event_flow *f = (struct event_flow*)p;
+//         assert_int_equal(0x9000000000000001, f->node_id);
+//     }
 
-    HASH_ITER(hh, table, p, tmp) {
-      HASH_DEL(table, p);
-      free(p);
-    }
-}
+//     HASH_ITER(hh, table, p, tmp) {
+//       HASH_DEL(table, p);
+//       free(p);
+//     }
+// }
 
 int main(int argc, char* argv[]) {
     const UnitTest tests[] = {
         unit_test(add_flow_event),
         unit_test(random_add_flow_event),
-        unit_test(event_table),
     };
     return run_tests(tests);
 }
