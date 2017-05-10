@@ -107,8 +107,8 @@ cdef class Topology:
             h = <Host> Node
             topology_add_host(self._topo_ptr, h._host_ptr)
 
-    def add_link(self, node1, node2, port1, port2):
-        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, 10, 1, False)
+    def add_link(self, node1, node2, port1, port2, latency = 1):
+        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, 10, latency, False)
 
     @property
     def dp(self):
