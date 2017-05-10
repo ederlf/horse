@@ -44,6 +44,8 @@ uint64_t dp_uuid(const struct datapath* dp);
 
 uint64_t dp_id(const struct datapath* dp);
 
+/* Just for tests */
+struct flow_table *dp_flow_table(const struct datapath *dp, uint8_t table_id);
 
 
 

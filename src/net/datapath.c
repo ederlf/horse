@@ -181,15 +181,12 @@ dp_send_netflow(struct datapath *dp, struct netflow *flow)
     LL_FOREACH(ports, op) {
         struct port *p = dp_port(dp, op->port);
         if (p != NULL) {
-            uint8_t up = p->config & PORT_UP;
-            uint8_t live = p->state & PORT_LIVE;
-            if (up && live){
+            uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
+            if (upnlive){
                 p->stats.tx_packets += flow->pkt_cnt;
                 p->stats.tx_bytes += flow->byte_cnt;
                 /* Start time of the flow will be the same as the end */
-                flow->start_time = flow->end_time;
-                /* Make sure p->curr_speed is not 0 */
-                flow->end_time += (flow->byte_cnt * 8) / ((p->curr_speed * 1000)/1000000);
+                netflow_update_send_time(flow, p->curr_speed);
             }
         }
     }
@@ -213,4 +210,10 @@ uint64_t
 dp_id(const struct datapath* dp)
 {
     return dp->dp_id;
+}
+
+struct flow_table 
+*dp_flow_table(const struct datapath *dp, uint8_t table_id)
+{
+    return dp->tables[table_id];
 }
