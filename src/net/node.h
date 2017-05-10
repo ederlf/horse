@@ -5,7 +5,7 @@
 #include "lib/netflow.h"
 #include <uthash/uthash.h>
 
-#define BUFFER_MAX 2
+#define BUFFER_MAX 3
 
 /* Define the possible types of nodes */
 enum node_type {
@@ -16,7 +16,7 @@ enum node_type {
 };
 
 struct buffer {
-    struct netflow flows[2];
+    struct netflow flows[BUFFER_MAX];
     int tail;  
 };
 
