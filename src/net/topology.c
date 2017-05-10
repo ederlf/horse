@@ -26,7 +26,7 @@ struct node_port_pair {
 struct link {
     struct node_port_pair node1;
     struct node_port_pair node2;
-    uint32_t latency;
+    uint32_t latency;               /* Latency in microseconds */
     uint32_t bandwidth;
     UT_hash_handle hh;  
 };

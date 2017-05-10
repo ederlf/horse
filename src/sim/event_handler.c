@@ -20,6 +20,7 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
         cur_flow->flow.match.in_port = dst_port;
         /* Create new flow event */
         struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
+        printf("%ld\n", cur_flow->flow.end_time);
         memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
         new_flow->flow.out_ports = NULL;
         
@@ -60,7 +61,6 @@ handle_netflow(struct scheduler *sch, struct topology *topo,
         ports = ev_flow->flow.out_ports;
         /* May have or not ports to send the flow */
         LL_FOREACH(ports, op) {
-            printf("PORT %x\n", op->port);
             if (op->port == CONTROLLER){
                 next_ctrl_ev(sch, ev_flow);
             }
