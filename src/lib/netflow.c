@@ -95,3 +95,11 @@ void netflow_clean_out_ports(struct netflow *flow)
     }
     flow->out_ports = NULL;
 }
+
+void 
+netflow_update_send_time(struct netflow *flow, uint32_t port_speed)
+{
+    flow->start_time = flow->end_time;
+    /* Port speed is converted to bits per microseconds */
+    flow->end_time += (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000);
+}

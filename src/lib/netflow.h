@@ -47,5 +47,6 @@ void netflow_push_mpls(struct netflow *nf, uint16_t eth_type);
 void netflow_pop_vlan(struct netflow *nf);
 void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type);
 void netflow_clean_out_ports(struct netflow *flow);
+void netflow_update_send_time(struct netflow *flow, uint32_t port_speed);
 
 #endif
