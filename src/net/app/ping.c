@@ -16,7 +16,7 @@ int ping_handle_netflow(struct netflow *flow)
         }
         /* Received echo reply */
         case ECHO_REPLY: {
-            printf("Received ECHO_REPLY %ld %ld\n", flow->start_time, flow->end_time);
+            printf("Received ECHO_REPLY ms:%lu.%lu\n", flow->end_time / 1000, flow->end_time % 1000);
             return 0;  
         }
     }
@@ -31,6 +31,8 @@ ping_request(struct netflow* flow, uint32_t ip_dst){
     flow->match.ipv4_dst = ip_dst;
     flow->match.icmp_type = ECHO;
     flow->match.icmp_code = 0;
+    flow->pkt_cnt = 1;
+    flow->byte_cnt = 64;
 }
 
 struct netflow ping_start(uint64_t start, void* ip_dst){
