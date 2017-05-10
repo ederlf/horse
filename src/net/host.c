@@ -108,22 +108,28 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             /* Add outport */
             struct out_port *op = xmalloc(sizeof(struct out_port));
             op->port = flow->match.in_port;
-            LL_APPEND(flow->out_ports, op); 
+            LL_APPEND(flow->out_ports, op);
+            netflow_update_send_time(flow, p->curr_speed); 
             printf("destination eth address " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(flow->match.eth_src));
         }
         /* ARP Reply */
         else if (flow->match.arp_op == ARP_REPLY) {
             /* Add ARP table */
-            printf("Received ARP reply\n");
+            printf("Received ARP reply %lu.%lu\n",  flow->end_time / 1000, flow->end_time % 1000);
             struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
             memset(e, 0x0, sizeof(struct arp_table_entry));
             e->ip = flow->match.arp_spa;
             memcpy(e->eth_addr, flow->match.arp_sha, ETH_LEN);
             e->iface = flow->match.in_port;
             arp_table_add_entry(&h->ep.at, e);
-            /* Check the queue for flows waiting for the ARP reply */
+            /* Check the stack for flows waiting for the ARP reply */
             if (!node_is_buffer_empty((struct node*) h)){
-                *flow = node_flow_dequeue((struct node*) h);
+                uint64_t start_time = flow->start_time;
+                uint64_t end_time = flow->end_time;
+                *flow = node_flow_pop((struct node*) h);
+                /* Update the start and end time with the previous ones */ 
+                flow->start_time = start_time;
+                flow->end_time = end_time;
                 /* Fill l2 information */
                 struct out_port *op;
                 /* Expects only one port now, will not handle multicast yet */
@@ -132,6 +138,8 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
                     memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
                 }
                 memcpy(flow->match.eth_dst, e->eth_addr, ETH_LEN);
+                /* Start and end time should be equal to the ARP */
+                netflow_update_send_time(flow, p->curr_speed);
             }
         }
         return 0;
@@ -200,7 +208,7 @@ host_send_l3(struct host *h, struct netflow *flow){
 static void
 host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
     struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, ip);
-    printf("Looking up MAC from ip %x %p\n", ip, ae);
+    printf("Looking up MAC for ip %x %p\n", ip, ae);
     if (ae){
         /* Fill Missing information */
         struct out_port *op;
@@ -208,13 +216,15 @@ host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
             struct port *p = host_port(h, op->port);
             flow->match.ipv4_src = p->ipv4_addr->addr;
             memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+            netflow_update_send_time(flow, p->curr_speed);
         }
         memcpy(flow->match.eth_dst, ae->eth_addr, ETH_LEN);
-        node_flow_queue((struct node*) h, *flow);
+        // node_flow_queue((struct node*) h, *flow);
     }
     else {
         /*  ARP request before the flow*/
-        uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+        uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 
+                                            0xff, 0xff, 0xff};
         printf("Needs to send ARP %x\n", ip);
         /* Craft request */
         struct netflow arp_req;
@@ -240,8 +250,11 @@ host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
         arp_req.match.arp_tpa = ip;
         arp_req.match.arp_op = ARP_REQUEST;
         arp_req.start_time = flow->start_time;
-        node_flow_queue((struct node*) h, arp_req);
-        node_flow_queue((struct node*) h, *flow);
+        arp_req.pkt_cnt = 1;
+        arp_req.byte_cnt = 56;
+        /* Put the current packet in the queue and flow becomes ARP */ 
+        node_flow_push((struct node*) h, *flow);
+        *flow = arp_req;
     }
 }
 
@@ -269,6 +282,7 @@ host_start_app(struct host *h, uint16_t type, uint32_t start_time, void* args)
         flow = app->start(start_time, args);
         flow.start_time = start_time;
         host_send_netflow(h, &flow);
+        node_flow_push((struct node*) h, flow);
     }
 }
 

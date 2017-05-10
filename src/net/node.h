@@ -5,7 +5,7 @@
 #include "lib/netflow.h"
 #include <uthash/uthash.h>
 
-#define BUFFER_MAX 10
+#define BUFFER_MAX 2
 
 /* Define the possible types of nodes */
 enum node_type {
@@ -16,8 +16,7 @@ enum node_type {
 };
 
 struct buffer {
-    struct netflow flows[BUFFER_MAX];
-    int head;
+    struct netflow flows[2];
     int tail;  
 };
 
@@ -36,6 +35,6 @@ void node_destroy_ports(struct node *n);
 void node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
 struct port* node_port(const struct node *n, uint32_t port_id);
 bool node_is_buffer_empty(struct node *n);
-bool node_flow_queue(struct node*n, struct netflow flow);
-struct netflow node_flow_dequeue(struct node *n);
+bool node_flow_push(struct node*n, struct netflow flow);
+struct netflow node_flow_pop(struct node *n);
 #endif
