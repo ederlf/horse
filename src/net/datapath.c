@@ -185,6 +185,9 @@ dp_send_netflow(struct datapath *dp, struct netflow *flow)
             if (upnlive){
                 p->stats.tx_packets += flow->pkt_cnt;
                 p->stats.tx_bytes += flow->byte_cnt;
+                if (dp->base.uuid == 1){
+                    // printf("Port %d -- %ld Packets | %ld Bytes -- time %ld\n", op->port, p->stats.tx_packets, p->stats.tx_bytes, flow->start_time);   
+                }
                 /* Start time of the flow will be the same as the end */
                 netflow_update_send_time(flow, p->curr_speed);
             }

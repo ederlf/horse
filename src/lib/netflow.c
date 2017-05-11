@@ -1,6 +1,12 @@
 #include "netflow.h"
 #include <uthash/utlist.h>
 
+void netflow_init(struct netflow *nf)
+{
+    memset(nf, 0x0, sizeof(struct netflow));
+    nf->next = NULL;
+}
+
 void 
 netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
 {

@@ -122,7 +122,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             memcpy(e->eth_addr, flow->match.arp_sha, ETH_LEN);
             e->iface = flow->match.in_port;
             arp_table_add_entry(&h->ep.at, e);
-            /* Check the stack for flows waiting for the ARP reply */
+            /* Check the stack for a flow waiting for the ARP reply */
             if (!node_is_buffer_empty((struct node*) h)){
                 uint64_t start_time = flow->start_time;
                 uint64_t end_time = flow->end_time;
@@ -132,7 +132,6 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
                 flow->end_time = end_time;
                 /* Fill l2 information */
                 struct out_port *op;
-                /* Expects only one port now, will not handle multicast yet */
                 LL_FOREACH(flow->out_ports, op) {
                     struct port *p = host_port(h, op->port);
                     memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
@@ -252,6 +251,7 @@ host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
         arp_req.start_time = flow->start_time;
         arp_req.pkt_cnt = 1;
         arp_req.byte_cnt = 56;
+        arp_req.next = flow;
         /* Put the current packet in the queue and flow becomes ARP */ 
         node_flow_push((struct node*) h, *flow);
         *flow = arp_req;
@@ -283,6 +283,7 @@ host_start_app(struct host *h, uint16_t type, uint32_t start_time, void* args)
         flow.start_time = start_time;
         host_send_netflow(h, &flow);
         node_flow_push((struct node*) h, flow);
+        printf("%x\n", flow.next->match.eth_type);
     }
 }
 

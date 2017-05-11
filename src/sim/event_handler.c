@@ -20,12 +20,11 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
         cur_flow->flow.match.in_port = dst_port;
         /* Create new flow event */
         struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
-        printf("%ld\n", cur_flow->flow.end_time);
         memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
         new_flow->flow.out_ports = NULL;
         
         scheduler_insert(sch, (struct event*) new_flow);
-        printf("Will create new event dst:%ld size %ld exit_port %d\n", dst_uuid, sch->ev_queue->size, dst_port);
+        // printf("Will create new event dst:%ld size %ld dst_port %d\n", dst_uuid, sch->ev_queue->size, dst_port);
     }
 }
 
@@ -36,7 +35,7 @@ next_ctrl_ev(struct scheduler *sch, struct event_flow *cur_flow)
     new_flow->hdr.type = EVENT_CTRL;
     memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
     scheduler_insert(sch, (struct event*) new_flow);
-    printf("Will create new event to controller from:%ld size %ld\n", cur_flow->node_id, sch->ev_queue->size);
+    // printf("Will create new event to controller from:%ld size %ld\n", cur_flow->node_id, sch->ev_queue->size);
 }
 
 /**
@@ -54,7 +53,7 @@ handle_netflow(struct scheduler *sch, struct topology *topo,
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node) {
-        printf("Node type %s and ID:%ld InPORT %d IP %x\n", node->type? "HOST": "DATAPATH", ev_flow->node_id, ev_flow->flow.match.in_port, ev_flow->flow.match.ipv4_dst);
+        // printf("Node type %s and ID:%ld InPORT %d IP %x time %ld\n", node->type? "HOST": "DATAPATH", ev_flow->node_id, ev_flow->flow.match.in_port, ev_flow->flow.match.ipv4_dst, ev_flow->flow.start_time);
         // struct netflow *f = &ev_flow->flow;
         // printf("POOORT %d\n", f->match.in_port);
         node->handle_netflow(node, &ev_flow->flow);

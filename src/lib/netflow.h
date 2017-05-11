@@ -40,8 +40,10 @@ struct netflow {
     struct vlan_stack vlan_stk; 
     uint8_t tcp_flags;          /* Bitmap of TCP flags present in the flow */
     struct out_port *out_ports; /* List of ports the flow may be sent */
+    struct netflow *next;        /* A pointer to a possible following flow */
 };
 
+void netflow_init(struct netflow *nf);
 void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);
 void netflow_push_mpls(struct netflow *nf, uint16_t eth_type);
 void netflow_pop_vlan(struct netflow *nf);

@@ -15,21 +15,69 @@
 #include "lib/timer.h"
 #include "hiredis/hiredis.h"
 #include <unistd.h>
+#include <time.h>
 
 #define EV_NUM 10
 
+enum tests {
+    SINGLE = 0,
+    LINEAR = 1,
+    CORE_EDGE = 2,
+};
+
+// Assumes 0 <= max <= RAND_MAX
+// Returns in the closed interval [0, max]
+static uint32_t random_at_most(uint32_t max) {
+  uint32_t num_bins = (uint32_t) max + 1;
+    uint32_t num_rand = (uint32_t) RAND_MAX + 1;
+    uint32_t bin_size = num_rand / num_bins;
+    uint32_t defect   = num_rand % num_bins;
+
+  uint32_t x;
+  do {
+   x = rand();
+  }
+  // This is carefully written not to overflow
+  while (num_rand - defect <= (uint32_t)x);
+
+  // Truncated division is intentional
+  return x/bin_size;
+}
+
 static void 
-initial_events(struct sim *s)
+initial_events(struct sim *s, int test)
 {
-    struct node *cur_node, *tmp;
-    HASH_ITER(hh, topology_nodes(s->topo), cur_node, tmp){
-        if (!node_is_buffer_empty(cur_node)){
-            struct netflow f = node_flow_pop(cur_node);
-            struct event_flow *ev = event_flow_new(f.start_time, cur_node->uuid);
+    if (test == LINEAR || test == SINGLE) {
+        struct node *cur_node, *tmp;
+        HASH_ITER(hh, topology_nodes(s->topo), cur_node, tmp){
+            if (!node_is_buffer_empty(cur_node)){
+                struct netflow f = node_flow_pop(cur_node);
+                struct event_flow *ev = event_flow_new(f.start_time, cur_node->uuid);
+                ev->flow = f;
+                printf("%x\n", ev->flow.match.eth_type); 
+                scheduler_insert(s->sch, (struct event*) ev);
+            }
+        }
+    }
+    else if (test == CORE_EDGE){
+        struct netflow f;
+        int i;
+        srand(time(NULL)); //108134200
+        for (i = 0; i < 10009000; ++i){
+            netflow_init(&f);
+            f.match.eth_type = 0x800;
+            f.match.ipv4_src = random_at_most(254);
+            f.match.ipv4_dst = random_at_most(254);
+            f.match.in_port = 5;
+            f.start_time = f.end_time = i;
+            f.pkt_cnt = random_at_most(20);
+            f.byte_cnt = f.pkt_cnt * random_at_most(1500);
+            struct event_flow *ev = event_flow_new(i, 
+                                                   1);
             ev->flow = f;
-            printf("%x\n", ev->flow.match.eth_type); 
             scheduler_insert(s->sch, (struct event*) ev);
         }
+        printf("Will add some events bro\n");
     }
     struct event *ev; 
     ev = event_new(UINT64_MAX - 1 , UINT64_MAX - 1); 
@@ -61,9 +109,9 @@ initial_events(struct sim *s)
 
 // }
 
-static void add_flows(struct topology *topo, int linear){
+static void add_flows(struct topology *topo, int test){
     /* DP 1 */
-    if (linear) {
+    if (test == LINEAR) {
         int i;
         for (i = 3; i < 103; ++i) {
             struct datapath *dp = (struct datapath*) topology_node(topo, i);
@@ -106,7 +154,7 @@ static void add_flows(struct topology *topo, int linear){
             dp_handle_flow_mod(dp, 0, f2, 0);    
         }
     }
-    else {
+    else if (test == SINGLE){
             struct datapath *dp = (struct datapath*) topology_node(topo, 0);
             struct flow *fl = flow_new();
             struct instruction_set is;
@@ -146,8 +194,55 @@ static void add_flows(struct topology *topo, int linear){
             flow_add_instructions(f2, is2);
             dp_handle_flow_mod(dp, 0, f2, 0);    
     }
+    else if (test == CORE_EDGE) {
 
-    
+    // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:3
+    // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:4
+    // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:2
+    // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:1
+        struct datapath *dp = (struct datapath*) topology_node(topo, 1);
+        int i;
+        for (i = 0; i < 4; ++i){
+            struct flow *fl = flow_new();
+            struct instruction_set is;
+            instruction_set_init(&is);
+            struct write_actions wa;
+            struct action_set as;
+            struct action gen_act;
+            action_set_init(&as);
+            
+            
+            /* Match */
+            set_eth_type(fl, 0x800);
+            if (i == 0){
+                action_output(&gen_act, 1);
+                set_masked_ipv4_src(fl, 00000040, 00000040);
+                set_masked_ipv4_dst(fl, 00000000, 00000020);
+            }
+            else if (i == 1){
+                action_output(&gen_act, 2);
+                set_masked_ipv4_src(fl, 00000000, 00000040);
+                set_masked_ipv4_dst(fl, 00000020, 00000020);
+            }
+            else if (i == 2){
+                action_output(&gen_act, 3);
+                set_masked_ipv4_src(fl, 00000000, 00000040);
+                set_masked_ipv4_dst(fl, 00000000, 00000020); 
+            }
+            else if (i == 3){
+                action_output(&gen_act, 4);
+                set_masked_ipv4_src(fl, 00000040, 00000040);
+                set_masked_ipv4_dst(fl, 00000020, 00000020);
+            }
+            action_set_add(&as, gen_act);
+            inst_write_actions(&wa, as);
+            add_write_actions(&is, wa);
+            flow_add_instructions(fl, is);
+            dp_handle_flow_mod(dp, 0, fl, 0);
+        }
+        printf("Doing nothing now\n");
+    }
+
     /* DP 2 */
     // dp = (struct datapath*) topology_node(topo, 2);
     // struct flow *fl2 = flow_new();
@@ -400,8 +495,8 @@ start(struct topology *topo)
     struct sim s;
     sim_init(&s, topo);
     c = redis_connect();
-    add_flows(topo, 1);
-    initial_events(&s);
+    add_flows(topo, CORE_EDGE);
+    initial_events(&s, CORE_EDGE);
     // create_random_events(&s);
     /* Pass the simulator to the timer */
     t.exec = timer_func;
