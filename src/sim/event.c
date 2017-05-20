@@ -11,11 +11,10 @@
 #include "event.h"
 
 struct event*
-event_new(uint64_t time, uint64_t id)
+event_new(uint64_t time)
 {
     struct event *ev = xmalloc(sizeof(struct event));
     ev->time = time;
-    ev->id = id;
     return ev;
 }
 

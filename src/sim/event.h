@@ -38,7 +38,6 @@ struct event {
     struct heap_node node;      /* ev_node.priority and ev_node.idx .    */
     uint8_t type;               /* Type of the event                     */
     uint64_t time;              /* Time of the event.                    */
-    uint64_t id;                /* Retrieve it in hash table of events.  */  
 };
 
 /*  A flow event represents 
@@ -55,7 +54,6 @@ struct event_instruction {
     struct event hdr;       
     uint64_t node_id;              /* The node to process the event.     */
     //struct instruction
-
 };
 
 /* Change to port configuration and/or status */
@@ -66,7 +64,7 @@ struct event_port {
     uint8_t status;
 };
 
-struct event* event_new(uint64_t time, uint64_t id);
+struct event* event_new(uint64_t time);
 void event_free(struct event* ev);
 struct event_flow* event_flow_new(uint64_t time, uint64_t node_id);
 
