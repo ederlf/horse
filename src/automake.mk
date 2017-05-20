@@ -20,6 +20,8 @@ libhorse_la_SOURCES = src/lib/action.h \
 		src/lib/netflow.h \
 		src/lib/netflow.c \
                 src/lib/packets.h \
+                src/lib/redis_ipc.h \
+                src/lib/redis_ipc.c \
                 src/lib/timer.h \
                 src/lib/timer.c \
                 src/lib/util.h \
