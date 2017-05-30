@@ -6,7 +6,7 @@ struct ev_loop *ev_loop_new(int id)
     struct ev_loop *evl = malloc(sizeof(struct ev_loop));
     evl->id = id;
     evl->base = event_base_new();
-    evl->stopped = 0;
+    evl->stopped = false;
     event_base_add_virtual(evl->base);
     return evl;
 }
@@ -30,7 +30,7 @@ void ev_loop_run(struct ev_loop *ev)
 
 void ev_loop_stop(struct ev_loop *ev)
 {
-    ev->stopped = 1;
+    ev->stopped = true;
     event_base_loopbreak(ev->base);
 }
 

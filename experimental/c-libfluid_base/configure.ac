@@ -10,8 +10,8 @@ AC_SUBST([LIBFLUID_BASE_SO_VERSION], [0:0:0])
 
 AC_CONFIG_FILES([Makefile libfluid_base.pc])
 
-PKG_CHECK_MODULES([libevent], [libevent >= 2.0.16-stable])
-PKG_CHECK_MODULES([libevent_pthreads], [libevent_pthreads >= 2.0.16-stable])
+PKG_CHECK_MODULES([libevent], [libevent >= 2.0.5-stable])
+PKG_CHECK_MODULES([libevent_pthreads], [libevent_pthreads >= 2.0.5-stable])
 
 AC_ARG_ENABLE([tls],
      AS_HELP_STRING(--disable-tls, Disable TLS support),

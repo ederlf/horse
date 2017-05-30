@@ -29,7 +29,7 @@ struct base_of_conn {
     struct ev_loop *evl;
     struct ofp_buffer *ofb;
     struct base_of_handler *ofh;
-    void* manager;
+    void *manager;
     int running;
     tc_ptr *timed_callbacks;
     struct leventbaseconn *lev_base; 

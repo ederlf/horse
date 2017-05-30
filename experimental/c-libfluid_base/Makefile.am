@@ -13,7 +13,7 @@ libfluid_base_la_SOURCES = fluid/base/evloop.h fluid/base/evloop.c\
 						   fluid/base/base_of_conn.h fluid/base/base_of_conn.c\
 						   fluid/base/base_of_client.h fluid/base/base_of_client.c\
 						   fluid/of_conn.h fluid/of_conn.c \
-						   fluid/of_server_settings.h fluid/of_server_settings.c\
+						   fluid/of_settings.h fluid/of_settings.c\
 						   fluid/base/of.h\
 							fluid/of_client.h fluid/of_client.c
 libfluid_base_la_LIBADD = $(libevent_core_LIBS) $(libevent_pthreads_LIBS)
@@ -28,7 +28,7 @@ nobase_libfluid_base_include_HEADERS = fluid/base/evloop.h\
 							   		   fluid/base/base_of_conn.h\
 							   		   fluid/base/base_of_client.h\
 							   		   fluid/of_conn.h\
-							   		   fluid/of_server_settings.h\
+							   		   fluid/of_settings.h\
 							   		   fluid/of_client.h
 
 pkgconfigdir = $(libdir)/pkgconfig

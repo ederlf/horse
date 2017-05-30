@@ -1,3 +1,0 @@
-#ifndef OF_SERVER_SETTINGS_H
-#define OF_SERVER_SETTINGS_H 1
-#endif
