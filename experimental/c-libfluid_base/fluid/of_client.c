@@ -11,6 +11,9 @@ static void free_data(void *data);
 static void connection_callback(struct of_conn *conn, 
                                 enum ofconn_event event);
 
+static void message_callback(struct of_conn* conn, 
+                             uint8_t type, void* data, size_t len);
+
 struct of_client *of_client_new(int id, 
                                      char* address, int port,
                                     struct of_settings *ofsc)
@@ -23,6 +26,7 @@ struct of_client *of_client_new(int id,
     ofc->base.ofh.base_message_callback = base_message_callback;
     ofc->base.ofh.free_data = free_data;
     ofc->connection_callback = connection_callback;
+    ofc->message_callback = message_callback;
     return ofc;
 }
 
@@ -166,7 +170,6 @@ static void base_connection_callback(struct base_of_conn* c,
     }
 
     int conn_id = c->id;
-    printf("%p\n", ofc);
     if (event_type == EVENT_UP) {
         if (ofc->ofsc->handshake) {
             struct ofp_hello msg;
@@ -180,7 +183,7 @@ static void base_connection_callback(struct base_of_conn* c,
         ofc->connection_callback(ofc->conn, OF_EVENT_STARTED);
     }
     else if (event_type == EVENT_DOWN) {
-        ofc->connection_callback(ofc->conn, EVENT_CLOSED);
+        ofc->connection_callback(ofc->conn, OF_EVENT_CLOSED);
     }
 }
 
@@ -191,10 +194,10 @@ static void free_data(void *data)
 
 static void* send_echo(void* arg) {
     struct of_conn *cc = (struct of_conn*) arg;
-
+    struct of_client *ofc = (struct of_client*) cc->conn->owner;
     if (!cc->alive) {
         of_conn_close(cc);
-        cc->ofhandler->connection_callback(cc, OF_EVENT_DEAD);
+        ofc->connection_callback(cc, OF_EVENT_DEAD);
         return NULL;
     }
 
@@ -205,7 +208,7 @@ static void* send_echo(void* arg) {
     ((uint16_t*) msg)[1] = htons(8);
     ((uint32_t*) msg)[1] = htonl(ECHO_XID);
 
-    cc->alive = 0;
+    cc->alive = false;
     of_conn_send(cc, msg, 8);
 
     return NULL;
@@ -219,4 +222,10 @@ static void connection_callback(struct of_conn *conn,
         of_client_stop_conn(ofc);
         of_client_start_conn(ofc);
     }
+}
+
+static void message_callback(struct of_conn* conn, 
+                             uint8_t type, void* data, size_t len)
+{
+    printf("Message type %d\n", type);
 }
