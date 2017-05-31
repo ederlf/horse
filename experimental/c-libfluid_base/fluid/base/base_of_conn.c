@@ -67,6 +67,7 @@ static void close_cb(int fd, short which, void *arg) {
 struct base_of_conn *base_of_conn_new(int id,
                         struct base_of_handler* ofhandler,
                         struct ev_loop* evloop,
+                        void *owner,
                         int fd)
 {
     struct base_of_conn *conn = malloc(sizeof(struct base_of_conn));
@@ -76,6 +77,7 @@ struct base_of_conn *base_of_conn_new(int id,
     conn->evl = evloop;
     conn->ofb = ofp_buffer_new();
     conn->manager = NULL;
+    conn->owner = owner;
     conn->ofh = ofhandler;
     conn->timed_callbacks = NULL;
     conn->lev_base = malloc(sizeof(struct leventbaseconn));

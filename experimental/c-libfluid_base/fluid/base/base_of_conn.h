@@ -30,6 +30,7 @@ struct base_of_conn {
     struct ofp_buffer *ofb;
     struct base_of_handler *ofh;
     void *manager;
+    void *owner;
     int running;
     tc_ptr *timed_callbacks;
     struct leventbaseconn *lev_base; 
@@ -47,6 +48,7 @@ struct base_of_handler {
 struct base_of_conn *base_of_conn_new(int id,
                         struct base_of_handler *ofhandler,
                         struct ev_loop* evloop,
+                        void *owner,
                         int fd);
 void base_of_conn_destroy(struct base_of_conn *conn);
 void base_of_conn_send(struct base_of_conn *conn, void* data, size_t len);

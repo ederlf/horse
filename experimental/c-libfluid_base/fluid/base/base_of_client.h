@@ -15,6 +15,8 @@ struct base_of_client {
     int port;
 };
 
+void base_of_client_init(struct base_of_client *oc, 
+                         int id, const char *address, int port);
 int base_of_client_start(struct base_of_client *conn, int block);
 void base_of_client_stop(struct base_of_client *conn);
 

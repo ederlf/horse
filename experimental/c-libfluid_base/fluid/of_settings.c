@@ -32,9 +32,10 @@ struct of_settings *of_settings_new()
     os->n_tables = 0;
     os->capabilities = 0;
     os->evloop = NULL;
+    return os;
 } 
 
-void supported_version(struct of_settings *os, const uint8_t version) {
+void ofsc_supported_version(struct of_settings *os, const uint8_t version) {
     // If the user sets the version by hand, then all supported versions must
     // be explicitly declared.
     if (!os->version_set_by_hand) {

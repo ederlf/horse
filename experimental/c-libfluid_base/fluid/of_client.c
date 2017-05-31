@@ -2,28 +2,28 @@
 #include "base/of.h"
 
 static void* send_echo(void* arg);
-static void base_message_callback(struct of_client *ofc, 
-                        struct base_of_conn* c, 
+static void base_message_callback(struct base_of_conn* c, 
                         void* data, size_t len);
-static void base_connection_callback(struct of_client *ofc, 
-                              struct base_of_conn* c, 
+static void base_connection_callback( struct base_of_conn* c, 
                               enum conn_event event_type);
 static void free_data(void *data);
 
+static void connection_callback(struct of_conn *conn, 
+                                enum ofconn_event event);
 
 struct of_client *of_client_new(int id, 
                                      char* address, int port,
                                     struct of_settings *ofsc)
 {
-    struct of_client *oc = malloc(sizeof(struct of_client));
-    oc->base.id = id;
-    memcpy(oc->base.address, address, strlen(address) + 1);
-    oc->base.port = port;
-    oc->ofsc = ofsc;
-    oc->conn = NULL;
-    oc->base.ofh.base_connection_callback = base_connection_callback;
-    oc->base.ofh.base_message_callback = base_message_callback;
-    oc->base.ofh.free_data = free_data;
+    struct of_client *ofc = malloc(sizeof(struct of_client));
+    base_of_client_init(&ofc->base, id, address, port);
+    ofc->ofsc = ofsc;
+    ofc->conn = NULL;
+    ofc->base.ofh.base_connection_callback = base_connection_callback;
+    ofc->base.ofh.base_message_callback = base_message_callback;
+    ofc->base.ofh.free_data = free_data;
+    ofc->connection_callback = connection_callback;
+    return ofc;
 }
 
 int of_client_start(struct of_client *oc, int block)
@@ -45,11 +45,11 @@ void of_client_stop(struct of_client *oc) {
     base_of_client_stop(&oc->base);
 }
 
-void base_message_callback(struct of_client *ofc, 
-                        struct base_of_conn* c, 
+static void base_message_callback(struct base_of_conn* c, 
                         void* data, size_t len) {
     uint8_t type = ((uint8_t*) data)[1];
     struct of_conn *cc = (struct of_conn*) c->manager;
+    struct of_client *ofc = (struct of_client*) c->owner;
     struct of_settings *ofsc = ofc->ofsc;
     // We trust that the other end is using the negotiated protocol
     // version. Should we?
@@ -151,13 +151,14 @@ void base_message_callback(struct of_client *ofc,
         return;
 }
 
-void base_connection_callback(struct of_client *ofc,
-                              struct base_of_conn* c, 
+static void base_connection_callback(struct base_of_conn* c, 
                               enum conn_event event_type) {
     /* If the connection was closed, destroy it.
     There's no need to notify the user, since a DOWN event already
     means a CLOSED event will happen and nothing should be expected from
     the connection. */
+    struct of_client *ofc = (struct of_client*) c->owner;
+
     if (event_type == EVENT_CLOSED) {
         base_of_client_base_connection_callback(c, event_type);
         // TODO: delete the OFConnection?
@@ -165,6 +166,7 @@ void base_connection_callback(struct of_client *ofc,
     }
 
     int conn_id = c->id;
+    printf("%p\n", ofc);
     if (event_type == EVENT_UP) {
         if (ofc->ofsc->handshake) {
             struct ofp_hello msg;
@@ -182,6 +184,10 @@ void base_connection_callback(struct of_client *ofc,
     }
 }
 
+static void free_data(void *data)
+{
+    base_of_client_free_data(data);
+}
 
 static void* send_echo(void* arg) {
     struct of_conn *cc = (struct of_conn*) arg;
@@ -203,4 +209,14 @@ static void* send_echo(void* arg) {
     of_conn_send(cc, msg, 8);
 
     return NULL;
+}
+
+static void connection_callback(struct of_conn *conn, 
+                                enum ofconn_event event_type)
+{
+    struct of_client *ofc = (struct of_client*) conn->conn->owner;
+    if(event_type == OF_EVENT_CLOSED){
+        of_client_stop_conn(ofc);
+        of_client_start_conn(ofc);
+    }
 }

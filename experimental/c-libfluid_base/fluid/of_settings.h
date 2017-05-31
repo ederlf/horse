@@ -20,11 +20,11 @@ struct of_settings {
         uint8_t n_tables;
         uint8_t auxiliary_id;
         uint32_t capabilities;
-        struct evloop *evloop;
+        struct ev_loop *evloop;
 };
 
 struct of_settings *of_settings_new(); 
-
+void ofsc_supported_version(struct of_settings *os, const uint8_t version);
 /**
     Return true if instance represents an OpenFlow controller, false for switch.
 */
