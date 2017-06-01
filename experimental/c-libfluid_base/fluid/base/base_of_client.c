@@ -10,6 +10,11 @@ void base_of_client_init(struct base_of_client *oc,
     oc->evloop = ev_loop_new(0);
 }
 
+void base_of_client_clean(struct base_of_client *oc)
+{
+    ev_loop_destroy(oc->evloop);
+}
+
 static void* try_connect(void* arg)
 {
     int sock;

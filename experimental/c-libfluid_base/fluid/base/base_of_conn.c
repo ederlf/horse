@@ -106,6 +106,10 @@ struct base_of_conn *base_of_conn_new(int id,
 void base_of_conn_destroy(struct base_of_conn *conn)
 {
     free(conn->lev_base);
+    if (conn->ofb){
+        ofp_buffer_destroy(conn->ofb);
+    }
+    free(conn);
 }
 
 static void notify_msg_cb(struct base_of_conn *conn, void* data, size_t n)
@@ -132,7 +136,7 @@ static void do_close(struct base_of_conn *conn)
             free(tc); 
         }
     }
-
+    vector_free(conn->timed_callbacks);
     // Stop the events and delete the buffers
     event_del(conn->lev_base->close_event);
     event_free(conn->lev_base->close_event);

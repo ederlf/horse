@@ -17,6 +17,7 @@ struct base_of_client {
 
 void base_of_client_init(struct base_of_client *oc, 
                          int id, const char *address, int port);
+void base_of_client_clean(struct base_of_client *oc);
 int base_of_client_start(struct base_of_client *conn, int block);
 void base_of_client_stop(struct base_of_client *conn);
 

@@ -10,6 +10,12 @@ struct of_conn *of_conn_new(struct base_of_conn *bconn)
     c->alive = 1;
     c->version = 0;
     c->application_data = NULL;
+    return c;
+}
+
+void of_conn_destroy(struct of_conn *c)
+{
+    free(c);
 }
 
 void of_conn_send(struct of_conn *c, void* data, size_t len)

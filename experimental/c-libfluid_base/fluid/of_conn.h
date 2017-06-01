@@ -54,6 +54,7 @@ struct of_conn {
 };
 
 struct of_conn *of_conn_new(struct base_of_conn *bconn);
+void of_conn_destroy(struct of_conn *c);
 void of_conn_send(struct of_conn *c, void* data, size_t len);
 void of_conn_add_timed_callback(struct of_conn *oc, void* (*cb)(void*),
                                       int interval,

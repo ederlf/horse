@@ -35,6 +35,11 @@ struct of_settings *of_settings_new()
     return os;
 } 
 
+void of_settings_destroy(struct of_settings *ofsc)
+{
+    free(ofsc);
+}
+
 void ofsc_supported_version(struct of_settings *os, const uint8_t version) {
     // If the user sets the version by hand, then all supported versions must
     // be explicitly declared.

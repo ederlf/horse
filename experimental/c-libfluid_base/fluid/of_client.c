@@ -32,6 +32,11 @@ struct of_client *of_client_new(int id,
 
 void of_client_destroy(struct of_client *oc)
 {
+    base_of_client_clean(&oc->base);
+    of_settings_destroy(oc->ofsc);
+    if (oc->conn){
+        of_conn_destroy(oc->conn);
+    }
     free(oc);
 }
 
@@ -45,8 +50,11 @@ void of_client_start_conn(struct of_client *oc){
 }
 
 void of_client_stop_conn(struct of_client *oc){
-    if (oc->conn != NULL)
+    if (oc->conn != NULL){
         of_conn_close(oc->conn);
+        of_conn_destroy(oc->conn);
+        oc->conn = NULL;
+    }
 }
 
 void of_client_stop(struct of_client *oc) {
@@ -115,7 +123,7 @@ static void base_message_callback(struct base_of_conn* c,
 
     if (ofsc->handshake && !ofsc->is_controller && type == OFPT_FEATURES_REQUEST) {
         struct ofp_switch_features reply;
-
+        memset(&reply, 0x0, sizeof(reply));
         cc->version = (((uint8_t*) data)[0]);
         cc->state = (STATE_RUNNING);
         reply.header.version = ((uint8_t*) data)[0];
@@ -184,7 +192,9 @@ static void base_connection_callback(struct base_of_conn* c,
             msg.header.xid = htonl(HELLO_XID);
             base_of_conn_send(c, &msg, 8);
         }
+
         ofc->conn = of_conn_new(c);
+        
         ofc->connection_callback(ofc->conn, OF_EVENT_STARTED);
     }
     else if (event_type == EVENT_DOWN) {

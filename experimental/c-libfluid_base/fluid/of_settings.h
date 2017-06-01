@@ -24,6 +24,7 @@ struct of_settings {
 };
 
 struct of_settings *of_settings_new(); 
+void of_settings_destroy(struct of_settings *ofsc);
 void ofsc_supported_version(struct of_settings *os, const uint8_t version);
 /**
     Return true if instance represents an OpenFlow controller, false for switch.

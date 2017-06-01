@@ -83,8 +83,10 @@ static inline struct ofp_buffer *ofp_buffer_new()
 
 static inline void ofp_buffer_destroy(struct ofp_buffer *ofb)
 {
-    if (ofb->data != NULL)
+    if (ofb->data != NULL){
         free(ofb->data);
+    }
+    free(ofb);
 }
 
 #endif
