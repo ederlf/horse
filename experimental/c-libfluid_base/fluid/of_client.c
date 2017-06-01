@@ -30,6 +30,11 @@ struct of_client *of_client_new(int id,
     return ofc;
 }
 
+void of_client_destroy(struct of_client *oc)
+{
+    free(oc);
+}
+
 int of_client_start(struct of_client *oc, int block)
 {
     return base_of_client_start(&oc->base, block);

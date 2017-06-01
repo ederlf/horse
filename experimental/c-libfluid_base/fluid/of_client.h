@@ -15,6 +15,7 @@ struct of_client {
 
 struct of_client *of_client_new(int id, char* address, int port,
              struct of_settings *ofsc);
+void of_client_destroy(struct of_client *oc);
 int of_client_start(struct of_client *oc, int block);
 void of_client_start_conn(struct of_client *oc);
 void of_client_stop_conn(struct of_client *oc);

@@ -4,8 +4,6 @@
 #include "base/base_of_conn.h"
 #include <inttypes.h>
 
-struct of_handler;
-
 enum state {
     /** Sent hello message, waiting for reply */
     STATE_HANDSHAKE,
@@ -52,51 +50,7 @@ struct of_conn {
     enum state state;
     uint8_t version;
     int alive;
-    struct of_handler *ofhandler;
     void* application_data;
-};
-
-struct of_handler {
-    /**
-    Callback for connection events.
-    
-    This method blocks the event loop on which the connection is running, 
-    preventing other connection's events from being handled. If you want to 
-    perform a very long operation, try to queue it and return.
-
-    The implementation must be thread-safe, because it will possibly be called
-    from several threads (on which connection events are being created).
-
-    @param conn the OFConnection on which the message was received
-    @param event_type the event type (see #Event)
-    */
-    void (*connection_callback) (struct of_conn* conn, enum ofconn_event event_type);
-
-    /**
-    Callback for new messages.
-    
-    This method blocks the event loop on which the connection is running, 
-    preventing other connection's events from being handled. If you want to 
-    perform a very long operation, try to queue it and return.
-
-    The implementation must be thread-safe, because it will possibly be called
-    from several threads (on which message events are being created).
-
-    By default, the message data will managed (freed) for you. If you want a 
-    zero-copy behavior, see OFServerSettings::keep_data_ownership.
-
-    @param conn the OFConnection on which the message was received
-    @param type OpenFlow message type
-    @param data binary message data
-    @param len message length
-    */
-    void (*message_callback)(struct of_conn* conn, uint8_t type, void* data, size_t len);
-    
-    /**
-    Free the data passed to OFHandler::message_callback.
-    */
-    void (*free_data)(void* data);
-
 };
 
 struct of_conn *of_conn_new(struct base_of_conn *bconn);
