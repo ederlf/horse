@@ -7,6 +7,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/action_list.c \
                 src/lib/action_set.h \
                 src/lib/action_set.c \
+                src/lib/event.h \
+                src/lib/event.c \
                 src/lib/flow.h \
                 src/lib/flow.c \
                 src/lib/heap.h \
@@ -20,8 +22,6 @@ libhorse_la_SOURCES = src/lib/action.h \
 		src/lib/netflow.h \
 		src/lib/netflow.c \
                 src/lib/packets.h \
-                src/lib/redis_ipc.h \
-                src/lib/redis_ipc.c \
                 src/lib/timer.h \
                 src/lib/timer.c \
                 src/lib/util.h \
@@ -50,8 +50,6 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/route_table.c \
                 src/net/topology.h \
                 src/net/topology.c \
-                src/sim/event.h \
-                src/sim/event.c \
                 src/sim/event_handler.h \
                 src/sim/event_handler.c \
                 src/sim/scheduler.h \

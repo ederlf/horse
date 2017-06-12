@@ -1,7 +1,7 @@
 #ifndef EVENT_HANDLER_H
 #define EVENT_HANDLER_H 1
 
-#include "event.h"
+#include "lib/event.h"
 #include "net/topology.h"
 #include "scheduler.h"
 

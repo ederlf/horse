@@ -11,7 +11,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H 1
 
-#include "event.h"
+#include "lib/event.h"
 #include "lib/heap.h"
 
 struct scheduler {

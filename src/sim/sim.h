@@ -12,7 +12,6 @@
 #define SIM_H 1
 
 #include "scheduler.h"
-#include "lib/redis_ipc.h"
 #include "net/topology.h"
 #include "lib/timer.h"
 
@@ -24,7 +23,6 @@ enum mode {
 struct sim {
     struct topology  *topo;     /* Topology of the simulation. */
     struct scheduler *sch;      /* Event scheduler.            */
-    struct redis_ipc *ri;
     bool mode;
 };
 

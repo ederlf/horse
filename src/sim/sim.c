@@ -272,56 +272,10 @@ static void add_flows(struct topology *topo, int test){
 }
 
 static void
-add_flows_ping(struct topology *topo){
-    /* DP 1 */
-    struct datapath *dp = (struct datapath*) topology_node(topo, 1);
-    struct flow *fl = flow_new();
-    fl->priority = 10;
-    struct instruction_set is;
-    instruction_set_init(&is);
-    // struct write_metadata wm;
-    // inst_write_metadata(&wm, 0xbeef);
-    // add_write_metadata(&is, wm);
-    /* Write actions */
-    struct write_actions wa;
-    struct action_set as;
-    struct action gen_act;
-    action_set_init(&as);
-    action_output(&gen_act, 1);
-    action_set_add(&as, gen_act);
-    // action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
-    // action_set_add(&as, gen_act);
-    inst_write_actions(&wa, as);
-    add_write_actions(&is, wa);
-    /* Match */
-    // set_in_port(fl, 1);
-    flow_add_instructions(fl, is);
-    dp_handle_flow_mod(dp, 0, fl, 0);
-    
-    /* Flow 2 */
-    struct write_actions wa2;
-    struct action_set as2;
-    struct action gen_act2;
-    struct instruction_set is2;
-    action_set_init(&as2);
-    instruction_set_init(&is2);
-    struct flow *f2 = flow_new();
-    f2->priority = 10;
-    action_output(&gen_act2, 1);
-    action_set_add(&as2, gen_act2);
-    inst_write_actions(&wa2, as2);
-    add_write_actions(&is2, wa2);
-    set_in_port(f2, 2);
-    flow_add_instructions(f2, is2);
-    dp_handle_flow_mod(dp, 0, f2, 0); 
-}
-
-static void
 sim_init(struct sim *s, struct topology *topo) 
 {
     s->topo = topo;
     s->sch = scheduler_new();
-    s->ri = redis_ipc_new(HOSTNAME, PORT);
     s->mode = DES;
 }
 
@@ -330,7 +284,6 @@ sim_close(struct sim *s)
 {
     scheduler_destroy(s->sch);
     topology_destroy(s->topo);
-    redis_ipc_destroy(s->ri);
 }
 
 
@@ -341,16 +294,16 @@ static pthread_mutex_t mutex1    = PTHREAD_MUTEX_INITIALIZER;
 int run = 0;
 int last_wrt = 0;
 
-static void update_stats(struct topology *topo, uint64_t time){
+// static void update_stats(struct topology *topo, uint64_t time){
 
-    struct node *cur_node, *tmp, *nodes;
-    nodes = topology_nodes(topo);
-    HASH_ITER(hh, nodes, cur_node, tmp) {
-        if (cur_node->type == DATAPATH){
-            dp_write_stats((struct datapath*) cur_node, time);
-        }
-    }
-}
+//     struct node *cur_node, *tmp, *nodes;
+//     nodes = topology_nodes(topo);
+//     HASH_ITER(hh, nodes, cur_node, tmp) {
+//         if (cur_node->type == DATAPATH){
+//             dp_write_stats((struct datapath*) cur_node, time);
+//         }
+//     }
+// }
 
 static void *
 des_mode(void * args){
@@ -358,7 +311,6 @@ des_mode(void * args){
     Waits for some event from controller or current time
     is larger than event time */
     struct sim *s = (struct sim*) args;
-    struct redisContext *c = s->ri->c;
     while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
@@ -374,9 +326,9 @@ des_mode(void * args){
         struct event *ev = scheduler_dispatch(s->sch);
         s->sch->clock = ev->time;
         printf("Clock DES %"PRIu64"\n", s->sch->clock);
-        publish_time(s->ri, s->sch->clock);
+        /* Time will be shared now */
         if (s->sch->clock - last_wrt > 1000000){
-            update_stats(s->topo, s->sch->clock);
+            // update_stats(s->topo, s->sch->clock);
             last_wrt = s->sch->clock;
         }
         // printf("Time %ld\n", s->sch->clock );
@@ -402,12 +354,12 @@ des_mode(void * args){
             // struct ev* evt = cur_ev;
             // Enqueue(evt);
             /* Gets the next event */
-            printf("DES Pushing to redis %d %ld\n", ev->type, ev->time);
-            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow));
+            // printf("DES Pushing to redis %d %ld\n", ev->type, ev->time);
+            // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow));
             event_free(ev);
             pthread_mutex_lock( &mutex1 );
             s->mode = CONTINUOUS;
-            redisCommand(c, "HSET dp_signal sig 0");
+            // redisCommand(c, "HSET dp_signal sig 0");
             /* Wake up timer */
             pthread_cond_signal( &condition_var );
             pthread_mutex_unlock( &mutex1 );
@@ -430,9 +382,7 @@ struct event *cur_ev = NULL;
 static void 
 cont_mode(void* args) 
 {
-    struct event_hdr *ev = NULL;
     struct sim *s = (struct sim*) args;
-    struct redisContext *c = s->ri->c;
     /* The code below is just a demonstration. */
     /* Increase time and check if there a DP event to execute */
     pthread_mutex_lock( &mutex1 );
@@ -441,9 +391,7 @@ cont_mode(void* args)
     }
     pthread_mutex_unlock( &mutex1 );
     s->sch->clock += 1000; /* Adds one milisecond */
-    publish_time(s->ri, s->sch->clock);
     printf("Clock %"PRIu64"\n", s->sch->clock);
-    redisReply *reply;
     printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, scheduler_is_empty(s->sch), s->sch->ev_queue->size);
     if (cur_ev == NULL && !scheduler_is_empty(s->sch)){
         cur_ev = scheduler_dispatch(s->sch);
@@ -457,41 +405,18 @@ cont_mode(void* args)
         }
         else if (cur_ev->type == EVENT_CTRL){
             // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
-            redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow)); 
+            // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow)); 
             event_free(cur_ev);
             cur_ev = NULL;
         }
         else if (cur_ev->type == EVENT_END && cur_ev->time <= s->sch->clock) {
             printf("It is over CONT\n");
-            redisCommand(c, "HSET dp_signal sig 1");  
+            // redisCommand(c, "HSET dp_signal sig 1");  
         }
     }
-    /* Check if controller is done */
+    /* TODO: Check if controller is done */
     // printf("Getting signal %d\n", cur_time);
-    reply = redisCommand(c,"HGET dp_signal sig");
-    if (reply){
-        printf("REPLY %s\n", reply->str);
-        if (strcmp("1", reply->str) == 0){
-            // printf("Received signal to awake %s\n", reply->str);
-            reply = redisCommand(c,"LPOP dp_queue");
-            struct event_flow *e = (struct event_flow*) reply->str;
-            e->hdr.type = EVENT_FLOW;
-            e->hdr.time = s->sch->clock;
-            e->flow.start_time = s->sch->clock;
-            e->flow.out_ports = NULL;
-            /* Send it to port 2*/
-            struct out_port *p = xmalloc(sizeof(struct out_port));
-            p->port = 2;
-            LL_APPEND(e->flow.out_ports, p);
-            scheduler_insert(s->sch, (struct event*)e);
-            printf("Adding flows\n");
-            add_flows_ping (s->topo);
-            pthread_mutex_lock( &mutex1 );
-            s->mode = DES;
-            pthread_cond_signal( &condition_var );
-            pthread_mutex_unlock( &mutex1 );
-        }
-    }
+    
 }
 
 void 

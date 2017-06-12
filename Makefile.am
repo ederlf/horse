@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign -Wno-syntax subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I./src -I./vendor -Wstrict-prototypes -Wall -Wextra -Werror  -fPIC -pthread  -lhiredis 
+AM_CFLAGS = -I./src -I./vendor -Wstrict-prototypes -Wall -Wextra -Werror  -fPIC -pthread 
 
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
