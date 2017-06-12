@@ -5,7 +5,7 @@
 
 static void 
 next_flow_event(struct scheduler *sch, struct topology *topo,
-                struct event_flow *cur_flow, uint32_t exit_port) {
+                struct sim_event_flow *cur_flow, uint32_t exit_port) {
     uint64_t dst_uuid;
     uint32_t dst_port, latency;
 
@@ -19,22 +19,22 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
         cur_flow->flow.end_time += latency;
         cur_flow->flow.match.in_port = dst_port;
         /* Create new flow event */
-        struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
+        struct sim_event_flow *new_flow = sim_event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
         memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
         new_flow->flow.out_ports = NULL;
         
-        scheduler_insert(sch, (struct event*) new_flow);
+        scheduler_insert(sch, (struct sim_event*) new_flow);
         // printf("Will create new event dst:%ld size %ld dst_port %d\n", dst_uuid, sch->ev_queue->size, dst_port);
     }
 }
 
 static void 
-next_ctrl_ev(struct scheduler *sch, struct event_flow *cur_flow)
+next_ctrl_ev(struct scheduler *sch, struct sim_event_flow *cur_flow)
 {
-    struct event_flow *new_flow = event_flow_new(cur_flow->flow.start_time                                          , cur_flow->node_id);
+    struct sim_event_flow *new_flow = sim_event_flow_new(cur_flow->flow.start_time                                          , cur_flow->node_id);
     new_flow->hdr.type = EVENT_CTRL;
     memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
-    scheduler_insert(sch, (struct event*) new_flow);
+    scheduler_insert(sch, (struct sim_event*) new_flow);
     // printf("Will create new event to controller from:%ld size %ld\n", cur_flow->node_id, sch->ev_queue->size);
 }
 
@@ -47,9 +47,9 @@ next_ctrl_ev(struct scheduler *sch, struct event_flow *cur_flow)
 
 static void 
 handle_netflow(struct scheduler *sch, struct topology *topo, 
-               struct event *ev) {
+               struct sim_event *ev) {
     struct out_port *op, *ports;
-    struct event_flow *ev_flow = (struct event_flow *)ev;
+    struct sim_event_flow *ev_flow = (struct sim_event_flow *)ev;
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node) {
@@ -73,7 +73,7 @@ handle_netflow(struct scheduler *sch, struct topology *topo,
 
 static void 
 handle_instruction(struct scheduler *sch, struct topology *topo,
-                     struct event *ev)
+                     struct sim_event *ev)
 {
     struct event_instruction *ev_inst = (struct event_instruction *) ev;
     printf("%p\n", topo);
@@ -83,7 +83,7 @@ handle_instruction(struct scheduler *sch, struct topology *topo,
 
 static void 
 handle_packet(struct scheduler *sch, struct topology *topo, 
-              struct event *ev)
+              struct sim_event *ev)
 {
     printf("%p\n", topo);
     printf("%d\n", ev->type);
@@ -91,7 +91,7 @@ handle_packet(struct scheduler *sch, struct topology *topo,
 }
 
 static void 
-handle_port(struct scheduler *sch, struct topology *topo, struct event *ev)
+handle_port(struct scheduler *sch, struct topology *topo, struct sim_event *ev)
 {
     struct event_port *ev_port = (struct event_port *) ev;
     printf("%p\n", topo);
@@ -99,7 +99,7 @@ handle_port(struct scheduler *sch, struct topology *topo, struct event *ev)
     UNUSED(sch);
 }
 
-static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology *topo, struct event *ev) = {
+static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology *topo, struct sim_event *ev) = {
     [EVENT_FLOW] = handle_netflow,
     [EVENT_PACKET] = handle_packet,
     [EVENT_INSTRUCTION] = handle_instruction,
@@ -107,7 +107,7 @@ static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology
 };
 
 void handle_event(struct scheduler *sch, struct topology *topo, 
-                  struct event *ev)
+                  struct sim_event *ev)
 {
     (*event_handler[ev->type]) (sch, topo, ev);
 }

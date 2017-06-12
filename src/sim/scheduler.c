@@ -36,16 +36,16 @@ scheduler_destroy(struct scheduler *sch)
 };
 
 void 
-scheduler_insert(struct scheduler *sch, struct event *ev)
+scheduler_insert(struct scheduler *sch, struct sim_event *ev)
 {
     heap_insert(sch->ev_queue, (struct heap_node*) ev, ev->time);
 }
 
 
-struct event*
+struct sim_event*
 scheduler_dispatch(struct scheduler *sch)
 {
-    struct event *ev = (struct event*) heap_delete(sch->ev_queue);
+    struct sim_event *ev = (struct sim_event*) heap_delete(sch->ev_queue);
     // sch->clock = ev->time;
     return ev;
 };
