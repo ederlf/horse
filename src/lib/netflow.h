@@ -13,13 +13,16 @@ enum tcp_flags {
     RST = 1 << 3,
 };
 
-struct vlan_stack {
-    struct vlan level[MAX_STACK_SIZE];
-    int top;
+struct tag {
+    uint16_t type;
+    union {
+        struct vlan vlan_tag;
+        struct mpls mpls_tag;
+    };
 };
 
-struct mpls_stack {
-    struct mpls level[MAX_STACK_SIZE];
+struct tag_stack {
+    struct tag level[MAX_STACK_SIZE];
     int top;
 };
 
@@ -36,8 +39,7 @@ struct netflow {
     uint64_t start_time;
     uint64_t end_time;
     struct flow_key match;      /* The fields belonging to a flow.      */
-    struct mpls_stack mpls_stk;
-    struct vlan_stack vlan_stk; 
+    struct tag_stack tags;
     uint8_t tcp_flags;          /* Bitmap of TCP flags present in the flow */
     struct out_port *out_ports; /* List of ports the flow may be sent */
     struct netflow *next;        /* A pointer to a possible following flow */
@@ -47,7 +49,9 @@ void netflow_init(struct netflow *nf);
 void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);
 void netflow_push_mpls(struct netflow *nf, uint16_t eth_type);
 void netflow_pop_vlan(struct netflow *nf);
+bool netflow_is_outer_mpls(struct netflow *nf);
 void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type);
+bool netflow_is_vlan_tagged(struct netflow *nf);
 void netflow_clean_out_ports(struct netflow *flow);
 void netflow_update_send_time(struct netflow *flow, uint32_t port_speed);
 

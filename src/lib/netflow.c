@@ -11,42 +11,61 @@ void
 netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
 {
     /* eth_type must be 0x8100 or 0x88a8 */
-    if ( nf->vlan_stk.top < (MAX_STACK_SIZE - 1) && 
-        (eth_type == ETH_TYPE_VLAN || eth_type == ETH_TYPE_VLAN_QinQ) ) {
-        bool empty = nf->vlan_stk.top == STACK_EMPTY? true: false;
-        nf->vlan_stk.top++;
+    int *top = &nf->tags.top;
+    struct tag *new;
+    if ( *top < (MAX_STACK_SIZE - 1) && 
+        (eth_type == ETH_TYPE_VLAN || 
+         eth_type == ETH_TYPE_VLAN_QinQ) ) {
+        bool empty = *top == STACK_EMPTY? true: false;
+        (*top)++;
+        new = &nf->tags.level[*top];
+        new->type = eth_type;
+
         if (!empty) {
             /* Copies the previous vlan tag to the new in the stack */
-            nf->vlan_stk.level[nf->vlan_stk.top].tag = nf->vlan_stk.level[nf->vlan_stk.top - 1].tag;
+            struct tag *prev = &nf->tags.level[*top -1];
+            if (prev->type == ETH_TYPE_VLAN || 
+                prev->type == ETH_TYPE_VLAN_QinQ ) {
+                new->vlan_tag.tag = prev->vlan_tag.tag;
+            }
         }
         else {
-            nf->vlan_stk.level[nf->vlan_stk.top].tag = 0;
+            new->vlan_tag.tag = 0;
         }
         /* set eth_type of vlan type */
-        nf->vlan_stk.level[nf->vlan_stk.top].ethertype = eth_type;
+        new->vlan_tag.ethertype = eth_type;
     }
 }
 
 void netflow_push_mpls(struct netflow *nf, uint16_t eth_type)
 {
+    int *top = &nf->tags.top;
+    struct tag *new;
     /* eth_type must be 0x8847 or 0x8848 */
-    if ( nf->mpls_stk.top < (MAX_STACK_SIZE - 1) && 
-        (eth_type == ETH_TYPE_MPLS || eth_type == ETH_TYPE_MPLS_MCAST) ) {
-        bool empty = nf->mpls_stk.top == STACK_EMPTY? true: false;
-        nf->mpls_stk.top++;
-        if (!empty) {
-            /* Copies the previous mpls to the new in the stack 
-             * No need to copy the match values as they are already 
-             * set to the old ones. */
-            nf->mpls_stk.level[nf->mpls_stk.top].fields = nf->mpls_stk.level[nf->mpls_stk.top-1].fields;
-            /* Set S bit to 0*/
-            nf->mpls_stk.level[nf->mpls_stk.top].fields &= ~MPLS_S_MASK;
-            nf->match.mpls_bos = 0;
-            /* TC and label keep the same values */
+    if ( *top < (MAX_STACK_SIZE - 1) && 
+        (eth_type == ETH_TYPE_MPLS || 
+         eth_type == ETH_TYPE_MPLS_MCAST) ) {
+        bool prev_empty = *top == STACK_EMPTY? true: false;
+        (*top)++;
+        new = &nf->tags.level[*top];
+        new->type = eth_type;
+
+        if (!prev_empty) {
+            struct tag *prev = &nf->tags.level[*top -1];
+            if(prev->type == ETH_TYPE_MPLS || 
+                prev->type == ETH_TYPE_MPLS_MCAST) {
+                /* Copies the previous mpls to the new in the stack 
+                 * No need to copy the match values as they are already 
+                 * set to the old ones. 
+                 * Set S bit to 0 */
+                new->mpls_tag.fields = prev->mpls_tag.fields;
+                new->mpls_tag.fields &= ~MPLS_S_MASK;
+                nf->match.mpls_bos = 0;
+            }
         }
         else {
             /* Set S bit to 1*/
-            nf->mpls_stk.level[nf->mpls_stk.top].fields = MPLS_S_MASK;
+            new->mpls_tag.fields = MPLS_S_MASK;
             nf->match.mpls_bos = 1;
         }
         /* Change eth_type to mpls type */
@@ -56,15 +75,18 @@ void netflow_push_mpls(struct netflow *nf, uint16_t eth_type)
 
 void netflow_pop_vlan(struct netflow *nf)
 {
-    if (nf->vlan_stk.top >= 0) {
-        /* Reset values */
-        nf->vlan_stk.level[nf->vlan_stk.top].tag = 0;
-        nf->vlan_stk.level[nf->vlan_stk.top].ethertype = 0;
-        nf->vlan_stk.top--;
-        if(nf->vlan_stk.top != STACK_EMPTY){
+    int *top = &nf->tags.top;
+    if (netflow_is_vlan_tagged(nf)) {
+        struct tag *t = &nf->tags.level[*top];
+        /* Reset type */
+        t->type = 0;
+        (*top)--;
+        if(netflow_is_vlan_tagged(nf)){
+            t = &nf->tags.level[*top];
             /* Set the vlan_vid and pcp */
-            nf->match.vlan_id = (nf->vlan_stk.level[nf->vlan_stk.top].tag  & VLAN_VID_MASK) >> VLAN_VID_SHIFT;
-            nf->match.vlan_pcp = (nf->vlan_stk.level[nf->vlan_stk.top].tag  & VLAN_PCP_MASK) >> VLAN_PCP_SHIFT;
+            nf->match.vlan_id = (t->vlan_tag.tag  & VLAN_VID_MASK) >> 
+                                 VLAN_VID_SHIFT;
+            nf->match.vlan_pcp = (t->vlan_tag.tag  & VLAN_PCP_MASK) >>                  VLAN_PCP_SHIFT;
         }
         else {
             nf->match.vlan_id = nf->match.vlan_pcp = 0;
@@ -74,22 +96,40 @@ void netflow_pop_vlan(struct netflow *nf)
 
 void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type)
 {
-    if (nf->mpls_stk.top >= 0) {
-        /* Reset values */
-        nf->mpls_stk.level[nf->mpls_stk.top].fields = 0;
-        nf->mpls_stk.top--;
-        /* Set ethertype */
+    int *top = &nf->tags.top;
+    if (*top >= 0) {
+        struct tag *t = &nf->tags.level[*top];
+        /* Reset type */
+        t->type = 0;
+        (*top)--;
         nf->match.eth_type = eth_type;
-        if(nf->mpls_stk.top != STACK_EMPTY){
+        if(netflow_is_outer_mpls(nf)){
             /* Set the match fields */
-            nf->match.mpls_label = (nf->mpls_stk.level[nf->mpls_stk.top].fields & MPLS_LABEL_MASK) >> MPLS_LABEL_SHIFT;
-            nf->match.mpls_tc = (nf->mpls_stk.level[nf->mpls_stk.top].fields & MPLS_TC_MASK) >> MPLS_TC_SHIFT;
-            nf->match.mpls_bos = (nf->mpls_stk.level[nf->mpls_stk.top].fields & MPLS_S_MASK) >> MPLS_S_SHIFT;
+            nf->match.mpls_label = (t->mpls_tag.fields & MPLS_LABEL_MASK) >>                    MPLS_LABEL_SHIFT;
+            nf->match.mpls_tc = (t->mpls_tag.fields & MPLS_TC_MASK) >>                    MPLS_TC_SHIFT;
+            nf->match.mpls_bos = (t->mpls_tag.fields & MPLS_S_MASK) >>                    MPLS_S_SHIFT;
         }
         else {
             nf->match.mpls_label = nf->match.mpls_tc = nf->match.mpls_bos = 0;
         }
     } 
+}
+
+/* Checks if the outermost tag is a VLAN */
+bool netflow_is_outer_mpls(struct netflow *nf)
+{
+    return  nf->tags.top != STACK_EMPTY && 
+            (nf->tags.level[nf->tags.top].type == ETH_TYPE_MPLS ||
+             nf->tags.level[nf->tags.top].type == ETH_TYPE_MPLS);
+}
+
+
+/* Checks if the outermost tag is a VLAN */
+bool netflow_is_vlan_tagged(struct netflow *nf)
+{
+    return  nf->tags.top != STACK_EMPTY && 
+            (nf->tags.level[nf->tags.top].type == ETH_TYPE_VLAN ||
+             nf->tags.level[nf->tags.top].type == ETH_TYPE_VLAN_QinQ);
 }
 
 void netflow_clean_out_ports(struct netflow *flow)
