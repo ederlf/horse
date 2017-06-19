@@ -4,11 +4,13 @@
 #include <uthash/utlist.h>
 
 static void 
-next_flow_event(struct scheduler *sch, struct topology *topo,
+next_flow_event(struct ev_handler *ev_hdl, 
                 struct sim_event_flow *cur_flow, uint32_t exit_port) {
     uint64_t dst_uuid;
     uint32_t dst_port, latency;
 
+    struct scheduler *sch = ev_hdl->sch;
+    struct topology *topo = ev_hdl->topo;
     // if (exit_port == CONTROLLER){
         
     //     scheduler_insert(sch, new_ev);  
@@ -29,10 +31,11 @@ next_flow_event(struct scheduler *sch, struct topology *topo,
 }
 
 static void 
-next_ctrl_ev(struct scheduler *sch, struct sim_event_flow *cur_flow)
+next_ctrl_ev(struct ev_handler *ev_hdl, struct sim_event_flow *cur_flow)
 {
+    struct scheduler *sch = ev_hdl->sch;
     struct sim_event_flow *new_flow = sim_event_flow_new(cur_flow->flow.start_time                                          , cur_flow->node_id);
-    new_flow->hdr.type = EVENT_CTRL;
+    new_flow->hdr.type = EVENT_PACKET_IN;
     memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
     scheduler_insert(sch, (struct sim_event*) new_flow);
     // printf("Will create new event to controller from:%ld size %ld\n", cur_flow->node_id, sch->ev_queue->size);
@@ -46,9 +49,9 @@ next_ctrl_ev(struct scheduler *sch, struct sim_event_flow *cur_flow)
  */
 
 static void 
-handle_netflow(struct scheduler *sch, struct topology *topo, 
-               struct sim_event *ev) {
+handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
     struct out_port *op, *ports;
+    struct topology *topo = ev_hdl->topo;
     struct sim_event_flow *ev_flow = (struct sim_event_flow *)ev;
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
@@ -61,10 +64,10 @@ handle_netflow(struct scheduler *sch, struct topology *topo,
         /* May have or not ports to send the flow */
         LL_FOREACH(ports, op) {
             if (op->port == CONTROLLER){
-                next_ctrl_ev(sch, ev_flow);
+                next_ctrl_ev(ev_hdl, ev_flow);
             }
             else {
-                next_flow_event(sch, topo, ev_flow, op->port);
+                next_flow_event(ev_hdl, ev_flow, op->port);
             }
         }
         netflow_clean_out_ports(&ev_flow->flow);
@@ -72,42 +75,46 @@ handle_netflow(struct scheduler *sch, struct topology *topo,
 }
 
 static void 
-handle_instruction(struct scheduler *sch, struct topology *topo,
-                     struct sim_event *ev)
+handle_instruction(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    struct event_instruction *ev_inst = (struct event_instruction *) ev;
-    printf("%p\n", topo);
-    printf("%d\n", ev_inst->hdr.type);
-    UNUSED(sch);
+    UNUSED(ev_hdl);
+    UNUSED(ev);
 }
 
 static void 
-handle_packet(struct scheduler *sch, struct topology *topo, 
-              struct sim_event *ev)
+handle_packet(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    printf("%p\n", topo);
-    printf("%d\n", ev->type);
-    UNUSED(sch);
+    UNUSED(ev_hdl);
+    UNUSED(ev);
 }
 
 static void 
-handle_port(struct scheduler *sch, struct topology *topo, struct sim_event *ev)
+handle_port(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    struct event_port *ev_port = (struct event_port *) ev;
-    printf("%p\n", topo);
-    printf("%d\n", ev_port->hdr.type);
-    UNUSED(sch);
+    UNUSED(ev_hdl);
+    UNUSED(ev);
 }
 
-static void (*event_handler[EVENTS_NUM]) (struct scheduler *sch, struct topology *topo, struct sim_event *ev) = {
+static void 
+handle_packet_in(struct ev_handler *ev_hdl, struct sim_event *ev)
+{
+    // struct of_manager *ofm = ev_hdl
+    struct sim_event_pkt_in *sim_pkt_in = (struct sim_event_pkt_in*) ev;
+
+}
+
+static void (*event_handler[EVENTS_NUM]) (struct ev_handler *ev_hdl, 
+                                          struct sim_event *ev) = {
     [EVENT_FLOW] = handle_netflow,
     [EVENT_PACKET] = handle_packet,
     [EVENT_INSTRUCTION] = handle_instruction,
-    [EVENT_PORT] = handle_port
+    [EVENT_PORT] = handle_port,
+    [EVENT_PACKET_IN] = handle_packet_in
+
 };
 
-void handle_event(struct scheduler *sch, struct topology *topo, 
+void handle_event(struct ev_handler *ev_hdl,
                   struct sim_event *ev)
 {
-    (*event_handler[ev->type]) (sch, topo, ev);
+    (*event_handler[ev->type]) (ev_hdl, ev);
 }

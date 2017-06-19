@@ -8,18 +8,12 @@
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
 
-#include "net/route_table.h"
-
 #include "sim.h"
-#include "event_handler.h"
 #include <unistd.h>
 #include <time.h>
 #include <uthash/utlist.h>
 
 #define EV_NUM 1000000
-#define HOSTNAME "127.0.0.1"
-#define PORT 6379
-
 
 enum tests {
     SINGLE = 0,
@@ -30,44 +24,27 @@ enum tests {
 static void *des_mode(void * args);
 static void cont_mode(void* args); 
 
-// Assumes 0 <= max <= RAND_MAX
-// Returns in the closed interval [0, max]
-static uint32_t random_at_most(uint32_t max) {
-  uint32_t num_bins = (uint32_t) max + 1;
-    uint32_t num_rand = (uint32_t) RAND_MAX + 1;
-    uint32_t bin_size = num_rand / num_bins;
-    uint32_t defect   = num_rand % num_bins;
-
-  uint32_t x;
-  do {
-   x = rand();
-  }
-  // This is carefully written not to overflow
-  while (num_rand - defect <= (uint32_t)x);
-
-  // Truncated division is intentional
-  return x/bin_size;
-}
-
 static void 
 initial_events(struct sim *s, int test, int cur_time)
 {
+    struct scheduler *sch = s->evh.sch;
+    struct topology *topo = s->evh.topo;
     if (test == LINEAR || test == SINGLE) {
         struct node *cur_node, *tmp;
-        HASH_ITER(hh, topology_nodes(s->topo), cur_node, tmp){
+        HASH_ITER(hh, topology_nodes(topo), cur_node, tmp){
             if (!node_is_buffer_empty(cur_node)){
                 struct netflow f = node_flow_pop(cur_node);
                 struct sim_event_flow *ev = sim_event_flow_new(f.start_time, cur_node->uuid);
                 ev->flow = f;
                  
-                scheduler_insert(s->sch, (struct sim_event*) ev);
+                scheduler_insert(sch, (struct sim_event*) ev);
             }
         }
         struct sim_event *ev; 
         ev = sim_event_new(UINT64_MAX - 1); 
-                scheduler_insert(s->sch, ev);
+                scheduler_insert(sch, ev);
         ev->type = EVENT_END;
-        scheduler_insert(s->sch, ev);
+        scheduler_insert(sch, ev);
     }
     else if (test == CORE_EDGE){
         struct netflow f;
@@ -85,7 +62,7 @@ initial_events(struct sim *s, int test, int cur_time)
             struct sim_event_flow *ev = sim_event_flow_new(i, 
                                                    1);
             ev->flow = f;
-            scheduler_insert(s->sch, (struct sim_event*) ev);
+            scheduler_insert(sch, (struct sim_event*) ev);
         }
         // printf("Will add some events bro\n");
     }
@@ -220,8 +197,7 @@ static void add_flows(struct topology *topo, int test){
             struct action_set as;
             struct action gen_act;
             action_set_init(&as);
-            
-            
+                      
             /* Match */
             set_eth_type(fl, 0x800);
             if (i == 0){
@@ -272,23 +248,29 @@ static void add_flows(struct topology *topo, int test){
 }
 
 static void
-sim_init(struct sim *s, struct topology *topo) 
+sim_init(struct sim *s, struct topology *topo, enum sim_mode mode) 
 {
-    s->topo = topo;
-    s->sch = scheduler_new();
-    s->mode = DES;
+    s->evh.topo = topo;
+    s->evh.sch = scheduler_new();
+    s->cont.exec = cont_mode;
+    init_timer(s->cont, (void*)s);
+    set_periodic_timer(/* 1 */1000);
+    if (s->mode == EMU_CTRL){
+        s->om = of_manager_new();
+        of_client_start(s->evh.om->of, false);
+    }
+    s->mode = mode;
+    pthread_create(&s->dataplane, (pthread_attr_t*)0, des_mode, (void*)&s);
 }
 
 static void 
 sim_close(struct sim *s)
 {
-    scheduler_destroy(s->sch);
-    topology_destroy(s->topo);
+    pthread_join(s->dataplane, 0);
+    scheduler_destroy(s->evh.sch);
+    topology_destroy(s->evh.topo);
 }
 
-
-static struct timer t;
-static pthread_t dataplane;  // thread in which user timer functions 
 static pthread_cond_t  condition_var   = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t mutex1    = PTHREAD_MUTEX_INITIALIZER;
 int run = 0;
@@ -311,25 +293,28 @@ des_mode(void * args){
     Waits for some event from controller or current time
     is larger than event time */
     struct sim *s = (struct sim*) args;
+    struct scheduler *sch = s->evh.sch;
     while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
         pthread_mutex_lock( &mutex1 );
-        while(s->mode){
+        while(sch->mode){
             // printf("Waiting\n");
             pthread_cond_wait( &condition_var, &mutex1 );
         }
         pthread_mutex_unlock( &mutex1 );
-        if (scheduler_is_empty(s->sch)){
+        if (scheduler_is_empty(sch)){
             continue;
         }
-        struct sim_event *ev = scheduler_dispatch(s->sch);
-        s->sch->clock = ev->time;
-        printf("Clock DES %"PRIu64"\n", s->sch->clock);
+        struct sim_event *ev = scheduler_dispatch(sch);
+        sch->clock = ev->time;
+
+        printf("Clock DES %"PRIu64"\n", sch->clock);
+        printf("%d\n", ev->type);
         /* Time will be shared now */
-        if (s->sch->clock - last_wrt > 1000000){
+        if (sch->clock - last_wrt > 1000000){
             // update_stats(s->topo, s->sch->clock);
-            last_wrt = s->sch->clock;
+            last_wrt = sch->clock;
         }
         // printf("Time %ld\n", s->sch->clock );
         // printf("Run %d\n", run);
@@ -347,10 +332,10 @@ des_mode(void * args){
         // }
         if (ev->type == EVENT_FLOW){
             /* Execute */
-            handle_event(s->sch, s->topo, ev);
+            handle_event(&s->evh, ev);
             sim_event_free(ev);
         }
-        else if( ev->type == EVENT_CTRL ){
+        else if( ev->type == EVENT_PACKET_IN ){
             // struct ev* evt = cur_ev;
             // Enqueue(evt);
             /* Gets the next event */
@@ -358,7 +343,7 @@ des_mode(void * args){
             // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow));
             sim_event_free(ev);
             pthread_mutex_lock( &mutex1 );
-            s->mode = CONTINUOUS;
+            sch->mode = CONTINUOUS;
             // redisCommand(c, "HSET dp_signal sig 0");
             /* Wake up timer */
             pthread_cond_signal( &condition_var );
@@ -371,7 +356,7 @@ des_mode(void * args){
     /* Awake the timer so it can stop */
     // pthread_mutex_lock( &mutex1 );
     printf("Over timer\n");
-    shutdown_timer(t);
+    shutdown_timer(s->cont);
     // pthread_cond_signal( &condition_var );
     // pthread_mutex_unlock( &mutex1 );
     return 0;
@@ -383,35 +368,42 @@ static void
 cont_mode(void* args) 
 {
     struct sim *s = (struct sim*) args;
+    struct scheduler *sch = s->evh.sch;
     /* The code below is just a demonstration. */
     /* Increase time and check if there a DP event to execute */
     pthread_mutex_lock( &mutex1 );
-    while(!s->mode){
+    while(!sch->mode){
         pthread_cond_wait( &condition_var, &mutex1 );
     }
     pthread_mutex_unlock( &mutex1 );
-    s->sch->clock += 1000; /* Adds one milisecond */
-    printf("Clock %"PRIu64"\n", s->sch->clock);
-    printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, scheduler_is_empty(s->sch), s->sch->ev_queue->size);
-    if (cur_ev == NULL && !scheduler_is_empty(s->sch)){
-        cur_ev = scheduler_dispatch(s->sch);
+    sch->clock += 1000; /* Adds one milisecond */
+    printf("Clock %"PRIu64"\n", sch->clock);
+    printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, 
+           scheduler_is_empty(sch), sch->ev_queue->size);
+    if (cur_ev == NULL && !scheduler_is_empty(sch)){
+        cur_ev = scheduler_dispatch(sch);
         
-        if (cur_ev->type == EVENT_FLOW && cur_ev->time <= s->sch->clock){
+        if (cur_ev->type == EVENT_FLOW && cur_ev->time <= sch->clock){
             /* Execute */
-            printf("CONT executing %ld %ld\n", cur_ev->time, s->sch->clock);
-            handle_event(s->sch, s->topo, cur_ev);
+            printf("CONT executing %ld %ld\n", cur_ev->time, sch->clock);
+            handle_event(&s->evh, cur_ev);
             sim_event_free(cur_ev);
             cur_ev = NULL;
         }
-        else if (cur_ev->type == EVENT_CTRL){
+        else if (cur_ev->type == EVENT_PACKET_IN){
             // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
             // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow)); 
             sim_event_free(cur_ev);
             cur_ev = NULL;
         }
-        else if (cur_ev->type == EVENT_END && cur_ev->time <= s->sch->clock) {
+        else if (cur_ev->type == EVENT_END && cur_ev->time <= sch->clock) {
             printf("It is over CONT\n");
-            // redisCommand(c, "HSET dp_signal sig 1");  
+            pthread_mutex_lock( &mutex1 );
+            sch->mode = DES;
+            // redisCommand(c, "HSET dp_signal sig 0");
+            /* Wake up timer */
+            pthread_cond_signal( &condition_var );
+            pthread_mutex_unlock( &mutex1 );
         }
     }
     /* TODO: Check if controller is done */
@@ -423,14 +415,10 @@ void
 start(struct topology *topo) 
 {
     struct sim s;
-    sim_init(&s, topo);
+    s.mode = EMU_CTRL;
+    sim_init(&s, topo, SIM_CTRL);
     add_flows(topo, SINGLE);
-    initial_events(&s, SINGLE, 0);
-    t.exec = cont_mode;
-    init_timer(t, (void*)&s);
-    set_periodic_timer(/* 200ms */1000);
-    pthread_create(&dataplane, (pthread_attr_t*)0, des_mode, (void*)&s);
-    pthread_join(dataplane, 0);
+    initial_events(&s, SINGLE, 0);    
     sim_close(&s);    
 }
 
