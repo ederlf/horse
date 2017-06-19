@@ -78,8 +78,8 @@ void netflow_pop_vlan(struct netflow *nf)
     int *top = &nf->tags.top;
     if (netflow_is_vlan_tagged(nf)) {
         struct tag *t = &nf->tags.level[*top];
-        /* Reset type */
-        t->type = 0;
+        /* Reset tag */
+        memset(t, 0x0, sizeof(struct tag));
         (*top)--;
         if(netflow_is_vlan_tagged(nf)){
             t = &nf->tags.level[*top];
@@ -98,9 +98,9 @@ void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type)
 {
     int *top = &nf->tags.top;
     if (*top >= 0) {
-        struct tag *t = &nf->tags.level[*top];
-        /* Reset type */
-        t->type = 0;
+        struct tag *t = &nf->tags.level[*top];  
+        /* Reset tag */
+        memset(t, 0x0, sizeof(struct tag));
         (*top)--;
         nf->match.eth_type = eth_type;
         if(netflow_is_outer_mpls(nf)){
@@ -130,6 +130,132 @@ bool netflow_is_vlan_tagged(struct netflow *nf)
     return  nf->tags.top != STACK_EMPTY && 
             (nf->tags.level[nf->tags.top].type == ETH_TYPE_VLAN ||
              nf->tags.level[nf->tags.top].type == ETH_TYPE_VLAN_QinQ);
+}
+
+
+static bool tags_empty(struct netflow *nf)
+{
+    return nf->tags.top == STACK_EMPTY;
+}
+
+
+static void vlan_to_pkt(struct tag *t, uint8_t *buff)
+{
+    memcpy(buff, &t->vlan_tag, sizeof(struct vlan)); 
+}
+
+static void mpls_to_pkt(struct tag *t, uint8_t *buff)
+{
+    memcpy(buff, &t->mpls_tag, sizeof(struct mpls)); 
+}
+
+/* Turns a netflow into a packet header 
+ * The buffer is not owned by the function that just fills
+ * it with the header contents. 
+ * Returns the number of bytes to be sent */
+size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
+{
+    size_t offset = 0;
+    uint8_t *pos = buffer;
+    struct flow_key m =  nf->match;
+    struct eth_header *eth;
+
+    eth = (struct eth_header*) pos;
+    eth->eth_type = m.eth_type;
+    memcpy(eth->eth_src, m.eth_dst, ETH_LEN);
+    memcpy(eth->eth_dst, m.eth_src, ETH_LEN);
+    eth->eth_type = m.eth_type;
+    offset += sizeof(struct eth_header);
+    pos += offset;
+
+    if (!tags_empty(nf)){
+        int i;
+        int tag_num = nf->tags.top + 1;
+        for(i = 0; i < tag_num; ++i) {
+            struct tag t = nf->tags.level[i]; 
+            if (t.type == ETH_TYPE_MPLS || 
+                t.type == ETH_TYPE_MPLS_MCAST){
+                mpls_to_pkt(&t, pos);
+                offset += sizeof(struct mpls);
+                pos += offset;
+            }
+            else if (t.type == ETH_TYPE_VLAN ||
+                     t.type == ETH_TYPE_VLAN_QinQ ) {
+                vlan_to_pkt(&t, pos);
+                offset += sizeof(struct vlan);
+                pos += offset;
+            }
+        }
+    }
+
+    if (m.eth_type == ETH_TYPE_ARP) {
+        struct arp_eth_header *arp = (struct arp_eth_header*) pos;
+        arp->arp_hrd = ARP_HW_TYPE_ETH; /* Ethernet */
+        arp->arp_pro = ETH_TYPE_IP;
+        arp->arp_hln = ETH_LEN; 
+        arp->arp_pln = sizeof(uint32_t); 
+        arp->arp_op = m.arp_op; 
+        memcpy(arp->arp_sha, m.arp_sha, ETH_LEN);
+        memcpy(arp->arp_sha, m.arp_tha, ETH_LEN);
+        arp->arp_spa = m.arp_spa;
+        arp->arp_tpa = m.arp_tpa;
+        return offset;
+    }
+    if (m.eth_type == ETH_TYPE_IP){
+        struct ip_header *ip = (struct ip_header*) pos;
+        memset(ip, 0x0, sizeof(struct ip_header));
+        ip->ip_tos = (ip->ip_tos | m.ip_dscp) << 1 | m.ip_ecn;
+        ip->ip_proto = m.ip_proto;
+        ip->ip_src = m.ipv4_src;
+        ip->ip_dst = m.ipv4_dst;
+        offset += sizeof(struct ip_header);
+        pos += offset;
+        goto l4;
+    }
+    if (m.eth_type == ETH_TYPE_IPV6){
+        struct ipv6_header *ipv6 = (struct ipv6_header*) pos;
+        memset(ipv6, 0x0, sizeof(struct ipv6_header));
+        ipv6->ipv6_next_hd = m.ip_proto;
+        memcpy(ipv6->ipv6_dst, m.ipv6_dst, IPV6_LEN);
+        memcpy(ipv6->ipv6_src, m.ipv6_src, IPV6_LEN);
+        offset += sizeof(struct ipv6_header);
+        pos += offset;
+        goto l4;
+    }
+
+    l4:
+    if (m.ip_proto == IP_PROTO_TCP) {
+        struct tcp_header *tcp = (struct tcp_header*) pos;
+        memset(tcp, 0x0, sizeof(struct tcp_header));
+        tcp->tcp_dst = m.tp_dst;
+        tcp->tcp_src = m.tp_src;
+        offset += sizeof(struct tcp_header);
+        pos += offset;
+        return offset;
+    }
+    if (m.ip_proto == IP_PROTO_UDP){
+        struct udp_header *udp = (struct udp_header*) pos;
+        memset(udp, 0x0, sizeof(struct udp_header));
+        udp->udp_dst = m.tp_dst;
+        udp->udp_src = m.tp_src;
+        offset += sizeof(struct udp_header);
+        pos += offset;
+        return offset;
+    }
+    if (m.ip_proto == IP_PROTO_ICMPV4 || m.ip_proto == IP_PROTO_ICMPV6) {
+        struct icmp_header *icmp = (struct icmp_header*) pos;
+        memset(icmp, 0x0, sizeof(struct icmp_header));
+        icmp->icmp_code = m.icmp_code;
+        icmp->icmp_type = m.icmp_code;
+        offset += sizeof(struct icmp_header);
+        pos += offset;
+    }
+
+    if (m.icmp_type == ICMPV6_NEIGH_SOL || m.icmp_type == ICMPV6_NEIGH_ADV) {
+        /* TODO */
+    }
+
+    return offset;
 }
 
 void netflow_clean_out_ports(struct netflow *flow)

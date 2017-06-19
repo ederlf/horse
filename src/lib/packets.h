@@ -2,6 +2,7 @@
 #define PACKET_H 1
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define ETH_LEN 6
 #define IPV6_LEN 16
@@ -13,6 +14,8 @@
 #define ETH_TYPE_VLAN_QinQ     0x88a8
 #define ETH_TYPE_MPLS          0x8847
 #define ETH_TYPE_MPLS_MCAST    0x8848
+
+#define ARP_HW_TYPE_ETH 1
 
 #define VLAN_VID_MASK 0x0fff
 #define VLAN_VID_SHIFT 0
@@ -34,6 +37,16 @@
 #define IP_PROTO_ICMPV4 1
 #define IP_PROTO_TCP 6
 #define IP_PROTO_UDP 17
+#define IP_PROTO_ICMPV6 58
+
+#define ICMPV6_NEIGH_SOL 135
+#define ICMPV6_NEIGH_ADV 136   
+
+struct eth_header {
+    uint8_t eth_dst[ETH_LEN];
+    uint8_t eth_src[ETH_LEN];
+    uint16_t eth_type;
+} __attribute__((packed));
 
 struct vlan {
     uint16_t ethertype;
@@ -43,5 +56,79 @@ struct vlan {
 struct mpls {
     uint32_t fields; 
 };
+
+struct ip_header {
+    uint8_t ip_ihl_ver;
+    uint8_t ip_tos;
+    uint16_t ip_tot_len;
+    uint16_t ip_id;
+    uint16_t ip_frag_off;
+    uint8_t ip_ttl;
+    uint8_t ip_proto;
+    uint16_t ip_csum;
+    uint32_t ip_src;
+    uint32_t ip_dst;
+};
+
+struct ipv6_header {
+    uint32_t ipv6_ver_tc_fl;
+    uint16_t ipv6_pay_len;
+    uint8_t  ipv6_next_hd;
+        uint8_t ipv6_hop_limit;
+    uint8_t ipv6_src[IPV6_LEN];
+    uint8_t  ipv6_dst[IPV6_LEN];
+};
+
+struct ipv6_nd_header{
+    uint32_t reserved;
+    uint8_t target_addr[IPV6_LEN];
+};
+
+struct ipv6_nd_options_hd{
+    uint8_t type;
+    uint8_t length;
+} __attribute__((packed));
+
+#define TCP_HEADER_LEN 20
+struct tcp_header {
+    uint16_t tcp_src;
+    uint16_t tcp_dst;
+    uint32_t tcp_seq;
+    uint32_t tcp_ack;
+    uint16_t tcp_ctl;
+    uint16_t tcp_winsz;
+    uint16_t tcp_csum;
+    uint16_t tcp_urg;
+}__attribute__((packed));
+
+#define UDP_HEADER_LEN 8
+struct udp_header {
+    uint16_t udp_src;
+    uint16_t udp_dst;
+    uint16_t udp_len;
+    uint16_t udp_csum;
+};
+
+#define ICMP_HEADER_LEN 4
+struct icmp_header {
+    uint8_t icmp_type;
+    uint8_t icmp_code;
+    uint16_t icmp_csum;
+};
+
+struct arp_eth_header {
+    /* Generic members. */
+    uint16_t arp_hrd;           /* Hardware type. */
+    uint16_t arp_pro;           /* Protocol type. */
+    uint8_t arp_hln;            /* Hardware address length. */
+    uint8_t arp_pln;            /* Protocol address length. */
+    uint16_t arp_op;            /* Opcode. */
+
+    /* Ethernet+IPv4 specific members. */
+    uint8_t arp_sha[ETH_LEN]; /* Sender hardware address. */
+    uint32_t arp_spa;           /* Sender protocol address. */
+    uint8_t arp_tha[ETH_LEN]; /* Target hardware address. */
+    uint32_t arp_tpa;           /* Target protocol address. */
+} __attribute__((packed));
 
 #endif

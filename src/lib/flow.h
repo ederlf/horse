@@ -35,9 +35,9 @@ struct flow_key {
     uint32_t in_port;
     uint64_t metadata;
     uint64_t tunnel_id;
-    uint16_t eth_type;
     uint8_t eth_dst[ETH_LEN];
     uint8_t eth_src[ETH_LEN];
+    uint16_t eth_type;
     uint16_t vlan_id;
     uint8_t vlan_pcp;
     uint32_t mpls_label;

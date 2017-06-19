@@ -49,6 +49,28 @@ struct sim_event_flow {
     struct netflow flow;
 };
 
+/* Flow event when a packet/flow is sent to the controller 
+   It does not have a node_id because it is not handled by a node */
+struct sim_event_pkt_in {
+    struct sim_event hdr;       
+    uint64_t dp_id;         /* The switch that generated the event.     */
+    uint32_t buffer_id;     /* ID assigned by datapath. */
+    uint16_t total_len;     /* Full length of frame. */
+    uint8_t reason;         /* Reason packet is being sent (one of OFPR_*) */
+    uint8_t table_id;       /* ID of the table that was looked up */
+    uint64_t cookie;        /* Cookie of the flow entry that was looked up. */
+    struct netflow flow;
+};
+
+struct sim_event_pkt_out {
+    struct sim_event hdr; 
+    uint64_t node_id;
+    uint32_t buffer_id;           /* ID assigned by datapath (OFP_NO_BUFFER
+                                     if none). */
+    uint32_t in_port;             /* Packet's input port  */
+    struct netflow flow;
+};
+
 /* A instruction from the control plane. */
 struct event_instruction {
     struct sim_event hdr;       

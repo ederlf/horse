@@ -57,34 +57,44 @@ set_field(struct action *act, struct netflow *nf)
             break;
         }
         case SET_VLAN_ID: {
-            uint16_t *tag = &nf->vlan_stk.level[nf->vlan_stk.top].tag;
-            nf->match.vlan_id = set.u16_field;
-            *tag = (*tag & ~VLAN_VID_MASK) | (nf->match.vlan_id & VLAN_VID_MASK);
+            if (netflow_is_vlan_tagged(nf)){
+                uint16_t *tag = &nf->tags.level[nf->tags.top].vlan_tag.tag;
+                nf->match.vlan_id = set.u16_field;
+                *tag = (*tag & ~VLAN_VID_MASK) | (nf->match.vlan_id & VLAN_VID_MASK);
+            }
             break;
         }
         case SET_VLAN_PCP: {
-            uint16_t *tag = &nf->vlan_stk.level[nf->vlan_stk.top].tag;
-            nf->match.vlan_pcp = set.u8_field;
-            *tag = (*tag & ~VLAN_PCP_MASK) | (nf->match.vlan_pcp << VLAN_PCP_SHIFT);
+            if (netflow_is_vlan_tagged(nf)){
+                uint16_t *tag = &nf->tags.level[nf->tags.top].vlan_tag.tag;
+                nf->match.vlan_pcp = set.u8_field;
+                *tag = (*tag & ~VLAN_PCP_MASK) | (nf->match.vlan_pcp << VLAN_PCP_SHIFT);
+            }
             break;
         }
         case SET_MPLS_LABEL: {
-            uint32_t *fields = &nf->mpls_stk.level[nf->mpls_stk.top].fields;
-            nf->match.mpls_label = set.u32_field;
-            *fields = (*fields & ~MPLS_LABEL_MASK) | ( (nf->match.mpls_label << MPLS_LABEL_SHIFT) & MPLS_LABEL_MASK);
+            if (netflow_is_outer_mpls(nf)){
+                uint32_t *fields = &nf->tags.level[nf->tags.top].mpls_tag.fields;
+                nf->match.mpls_label = set.u32_field;
+                *fields = (*fields & ~MPLS_LABEL_MASK) | ( (nf->match.mpls_label << MPLS_LABEL_SHIFT) & MPLS_LABEL_MASK);
+            }
             break;
         }
         case SET_MPLS_TC: {
-            uint32_t *fields = &nf->mpls_stk.level[nf->mpls_stk.top].fields;
-            nf->match.mpls_tc = set.u8_field;
-            *fields = (*fields & MPLS_TC_MASK) | ((nf->match.mpls_tc << MPLS_TC_SHIFT) & MPLS_TC_MASK);
+            if (netflow_is_outer_mpls(nf)){
+                uint32_t *fields = &nf->tags.level[nf->tags.top].mpls_tag.fields;
+                nf->match.mpls_tc = set.u8_field;
+                *fields = (*fields & MPLS_TC_MASK) | ((nf->match.mpls_tc << MPLS_TC_SHIFT) & MPLS_TC_MASK);
+            }
             break;
         }
         case SET_MPLS_BOS: {
-            uint32_t *fields = &nf->mpls_stk.level[nf->mpls_stk.top].fields;
-            nf->match.mpls_bos = set.u8_field;
-            *fields = (*fields & MPLS_S_MASK)
-                | ((nf->match.mpls_bos << MPLS_S_SHIFT) & MPLS_S_MASK);
+            if (netflow_is_outer_mpls(nf)){
+                uint32_t *fields = &nf->tags.level[nf->tags.top].mpls_tag.fields;
+                nf->match.mpls_bos = set.u8_field;
+                *fields = (*fields & MPLS_S_MASK) |
+                 ((nf->match.mpls_bos << MPLS_S_SHIFT) & MPLS_S_MASK);
+            }
             break;
         }
         case SET_IP_DSCP: {

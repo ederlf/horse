@@ -20,6 +20,8 @@ libhorse_la_SOURCES = src/lib/action.h \
 		src/lib/netflow.h \
 		src/lib/netflow.c \
                 src/lib/packets.h \
+                src/lib/of_pack.h \
+                src/lib/of_pack.c \
                 src/lib/openflow.h \
                 src/lib/sim_event.h \
                 src/lib/sim_event.c \
@@ -51,8 +53,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/route_table.c \
                 src/net/topology.h \
                 src/net/topology.c \
-                src/sim/conn_manager.h \
-                src/sim/conn_manager.c \
+                src/sim/of_manager.h \
+                src/sim/of_manager.c \
                 src/sim/event_handler.h \
                 src/sim/event_handler.c \
                 src/sim/scheduler.h \
