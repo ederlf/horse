@@ -67,6 +67,25 @@ int ntz(unsigned x) {
    return pop(~x & (x - 1));
 }
 
+// Assumes 0 <= max <= RAND_MAX
+// Returns in the closed interval [0, max]
+uint32_t random_at_most(uint32_t max) {
+  uint32_t num_bins = (uint32_t) max + 1;
+    uint32_t num_rand = (uint32_t) RAND_MAX + 1;
+    uint32_t bin_size = num_rand / num_bins;
+    uint32_t defect   = num_rand % num_bins;
+
+  uint32_t x;
+  do {
+   x = rand();
+  }
+  // This is carefully written not to overflow
+  while (num_rand - defect <= (uint32_t)x);
+
+  // Truncated division is intentional
+  return x/bin_size;
+}
+
 /* Return the size of the string for reuse */
 char* file_to_string(const char * file_name, size_t *size){
     FILE *fh = fopen(file_name, "r");
