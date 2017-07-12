@@ -11,13 +11,16 @@
 #include "datapath.h"
 #include "dp_actions.h"
 #include "lib/util.h" 
+#include <cfluid/of_settings.h>
 #include <uthash/utlist.h>
+
 
 /* Definition of a switch of the network */
 struct datapath {
     struct node base;
     uint64_t dp_id; /* Unique identification number of a switch in network*/ 
-    struct flow_table *tables[MAX_TABLES]; 
+    struct flow_table *tables[MAX_TABLES];
+    struct of_settings *dp_settings;
 };
 
 static void dp_recv_netflow(struct datapath *n, struct netflow *flow);
@@ -25,20 +28,24 @@ static void dp_send_netflow(struct datapath *n, struct netflow *flow);
 
 /* Creates a new datapath. 
 *
-*  A datapath starts without any port assigned.  
+*  A datapath starts without any port assigned.
+*  @ip is not the ip of the switch but of the controller it may connect. 
 */
 struct datapath* 
-dp_new(uint64_t dp_id)
+dp_new(uint64_t dp_id, char *ip, int port)
 {
     struct datapath *dp = xmalloc(sizeof(struct datapath));
     int i;
     node_init(&dp->base, DATAPATH);
     dp->base.handle_netflow = dp_handle_netflow;
+    /* TODO: Remove redundant dpid field */
     dp->dp_id = dp_id;
     /* Create flow tables*/
     for (i = 0; i < MAX_TABLES; ++i){
         dp->tables[i] = flow_table_new(i);
     }
+    dp->dp_settings = of_settings_new(ip, port, false);
+    dp->dp_settings->datapath_id = dp_id;
     return dp;
 }
 

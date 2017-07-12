@@ -170,7 +170,7 @@ void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
     size_t i;
     /* Create Datapaths */
     for (i = 0; i < ptopo->ndps; ++i){
-        struct datapath *dp = dp_new(ptopo->dps[i]);
+        struct datapath *dp = dp_new(ptopo->dps[i], "127.0.0.1", 6653);
         uint8_t mac[6] = {0,0,0,0,0,1};
         dp_add_port(dp, 1, mac, 1000000, 1000000);
         dp_add_port(dp, 2, mac, 1000000, 1000000);

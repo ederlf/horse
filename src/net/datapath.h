@@ -26,7 +26,7 @@
 
 struct datapath;
 
-struct datapath* dp_new(uint64_t dp_id);
+struct datapath* dp_new(uint64_t dp_id, char *ip, int port);
 
 void dp_destroy(struct datapath *dp);
 

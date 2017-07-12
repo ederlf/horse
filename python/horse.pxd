@@ -15,7 +15,7 @@ cdef extern from "sim/sim.h":
         pass
 
     # Datapath .h
-    datapath* dp_new(uint64_t)
+    datapath* dp_new(uint64_t, char*, int)
     void dp_destroy(datapath* dp)
     void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
     uint64_t dp_id(const datapath* dp)
