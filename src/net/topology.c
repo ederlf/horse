@@ -35,6 +35,7 @@ struct link {
 struct topology {
     struct node *nodes;             /* Hash table of network nodes. */
     struct link *links;             /* Hash table of links */
+    struct dp_node *dps;            /* Access datapath nodes by dpid */
     uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
     uint32_t n_dps;                 /* Number of datapaths. */
     uint32_t n_routers;             /* Number of routers. */
@@ -46,6 +47,7 @@ static void
 topology_init(struct topology* topo)
 {
     topo->nodes = NULL;
+    topo->dps = NULL;
     topo->n_dps = 0;
     topo->n_links = 0;
     topo->links = NULL;
@@ -61,6 +63,10 @@ struct topology* topology_new(void)
 void 
 topology_add_datapath(struct topology *topo, struct datapath* dp)
 {
+    struct dp_node *dn = xmalloc(sizeof (struct dp_node));
+    dn->dp_id = dp_id(dp);
+    dn->dp = dp;
+    HASH_ADD(hh, topo->dps, dp_id, sizeof(uint64_t), dn);
     HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) dp);
     topo->n_dps++;
 }
@@ -137,13 +143,13 @@ topology_destroy(struct topology *topo)
 {
     struct node *cur_node, *tmp;
     struct link *ltmp, *lcurr;
-
+    struct dp_node *dncur, *dntmp;
     /* Clean links */
     HASH_ITER(hh, topo->links, lcurr, ltmp) {
         HASH_DEL(topo->links, lcurr);  
         free(lcurr);
     }
-    /* Clean Datapaths */
+    /* Clean Nodes */
     HASH_ITER(hh, topo->nodes, cur_node, tmp) {
         HASH_DEL(topo->nodes, cur_node);  
         if (cur_node->type == DATAPATH){
@@ -152,6 +158,11 @@ topology_destroy(struct topology *topo)
         else if (cur_node->type == HOST){
             host_destroy((struct host*) cur_node);    
         }
+    }
+    /* Clean datapath map */
+    HASH_ITER(hh, topo->dps, dncur, dntmp) {
+        HASH_DEL(topo->dps, dncur);  
+        free(dncur);
     }
     free(topo);
 }
@@ -162,6 +173,14 @@ topology_node(const struct topology *topo, uint64_t uuid)
     struct node *n = NULL;
     HASH_FIND(hh, topo->nodes, &uuid, sizeof(uint64_t), n);
     return n;
+}
+
+struct datapath* 
+topology_datapath_by_dpid(const struct topology *topo, uint64_t dp_id)
+{
+    struct dp_node *dn;
+    HASH_FIND(hh, topo->dps, &dp_id, sizeof(uint64_t), dn);
+    return dn->dp;
 }
 
 static

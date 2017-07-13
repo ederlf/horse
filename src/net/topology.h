@@ -37,6 +37,9 @@ void topology_destroy(struct topology *topo);
 
 struct node* topology_node(const struct topology *topo, uint64_t uuid);
 
+struct datapath* topology_datapath_by_dpid(const struct topology *topo,
+                                             uint64_t dp_id);
+
 struct topology* from_json(char *json_file);
 
 /* Get struct members */
