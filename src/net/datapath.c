@@ -227,3 +227,9 @@ struct flow_table
 {
     return dp->tables[table_id];
 }
+
+struct of_settings
+*dp_settings(const struct datapath *dp)
+{
+    return dp->dp_settings;
+}
