@@ -5,6 +5,6 @@
 
 #define MAX_PACKET_IN_DATA 128
 
-uint8_t *of_packet_in(struct sim_event *ev);
+uint8_t *of_packet_in(struct sim_event *ev, size_t *len);
 
 #endif
