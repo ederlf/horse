@@ -13,6 +13,7 @@
 
 #include "lib/sim_event.h"
 #include "lib/heap.h"
+#include <pthread.h>
 
 enum scheduler_mode {
     DES = 0,
@@ -21,7 +22,8 @@ enum scheduler_mode {
 
 struct scheduler {
     uint64_t clock;          /* Current time of the simulation. */
-    struct heap *ev_queue;   /* Scheduled events.               */  
+    struct heap *ev_queue;   /* Scheduled events. */
+    pthread_mutex_t sch_mutex;                
     enum scheduler_mode mode;
 };
 

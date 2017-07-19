@@ -259,7 +259,7 @@ sim_init(struct sim *s, struct topology *topo, enum sim_mode mode)
     if (s->mode == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;
-        s->evh.om = of_manager_new();
+        s->evh.om = of_manager_new(s->evh.sch);
         /* Add of_settings to client */
         nodes = topology_nodes(topo);
         HASH_ITER(hh, nodes, cur_node, tmp) {
@@ -304,7 +304,6 @@ des_mode(void * args){
     is larger than event time */
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
-    printf("SCH %p\n", s);
     while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */

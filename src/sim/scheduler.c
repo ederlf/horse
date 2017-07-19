@@ -15,9 +15,10 @@ scheduler_new()
 {
     struct scheduler *sch = xmalloc(sizeof(struct scheduler));
     sch->clock = 0; /* Use time == now()? */
-    sch->mode = DES; /* Scheduler always starts like DES */
+    sch->mode = CONTINUOUS; /* Scheduler always starts like CONTINUOUS */
     sch->ev_queue = xmalloc(sizeof(struct heap));
     heap_init(sch->ev_queue);
+    pthread_mutex_init(&sch->sch_mutex, NULL);
     return sch;
 }
 
