@@ -26,10 +26,6 @@ struct sim {
     struct timer cont;          /* Timer for continuous mode   */
     pthread_t dataplane;
     enum sim_mode mode;
-    union {
-        struct of_manager *om; /* Real controllers */
-        //struct controller *ctrl; /* Simulated control */
-    };
 };
 
 void start(struct topology *topo);

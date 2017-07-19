@@ -1,4 +1,5 @@
 #include "event_handler.h"
+#include "lib/of_pack.h"
 #include "net/datapath.h"
 #include "net/host.h"
 #include <uthash/utlist.h>
@@ -34,11 +35,13 @@ static void
 next_ctrl_ev(struct ev_handler *ev_hdl, struct sim_event_flow *cur_flow)
 {
     struct scheduler *sch = ev_hdl->sch;
-    struct sim_event_flow *new_flow = sim_event_flow_new(cur_flow->flow.start_time                                          , cur_flow->node_id);
-    new_flow->hdr.type = EVENT_PACKET_IN;
-    memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
-    scheduler_insert(sch, (struct sim_event*) new_flow);
+    // struct sim_event_pkt_in *pkt_in = sim_event_flow_new(cur_flow->flow.start_time                                          , cur_flow->node_id);
+    // new_flow->hdr.type = EVENT_PACKET_IN;
+    // memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
+    // scheduler_insert(sch, (struct sim_event*) new_flow);
     // printf("Will create new event to controller from:%ld size %ld\n", cur_flow->node_id, sch->ev_queue->size);
+    UNUSED(sch);
+    UNUSED(cur_flow);
 }
 
 /**
@@ -63,7 +66,7 @@ handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
         ports = ev_flow->flow.out_ports;
         /* May have or not ports to send the flow */
         LL_FOREACH(ports, op) {
-            if (op->port == CONTROLLER){
+            if (op->port == CONTROLLER){    
                 next_ctrl_ev(ev_hdl, ev_flow);
             }
             else {
@@ -74,12 +77,6 @@ handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
     }
 }
 
-static void 
-handle_instruction(struct ev_handler *ev_hdl, struct sim_event *ev)
-{
-    UNUSED(ev_hdl);
-    UNUSED(ev);
-}
 
 static void 
 handle_packet(struct ev_handler *ev_hdl, struct sim_event *ev)
@@ -95,22 +92,30 @@ handle_port(struct ev_handler *ev_hdl, struct sim_event *ev)
     UNUSED(ev);
 }
 
-static void 
-handle_packet_in(struct ev_handler *ev_hdl, struct sim_event *ev)
+static void
+handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    // struct of_manager *ofm = ev_hdl
-    struct sim_event_pkt_in *sim_pkt_in = (struct sim_event_pkt_in*) ev;
+    UNUSED(ev_hdl);
+    UNUSED(ev);
+}
 
+static void 
+handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
+{
+    // struct sim_event_pkt_in *ev_pkt_in = (struct sim_event_pkt_in *) ev;
+    struct of_manager *om = ev_hdl->om;
+    struct sim_event_of *ev_of = (struct sim_event_of*) ev;
+
+    of_manager_send(om, ev_of->dp_id, ev_of->data, ev_of->len);
 }
 
 static void (*event_handler[EVENTS_NUM]) (struct ev_handler *ev_hdl, 
                                           struct sim_event *ev) = {
     [EVENT_FLOW] = handle_netflow,
     [EVENT_PACKET] = handle_packet,
-    [EVENT_INSTRUCTION] = handle_instruction,
     [EVENT_PORT] = handle_port,
-    [EVENT_PACKET_IN] = handle_packet_in
-
+    [EVENT_OF_MSG_IN] = handle_of_in,
+    [EVENT_OF_MSG_OUT] = handle_of_out
 };
 
 void handle_event(struct ev_handler *ev_hdl,

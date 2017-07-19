@@ -13,7 +13,8 @@ struct of_manager {
 
 
 struct of_manager *of_manager_new(void);
-void of_manager_send(struct of_manager *om, struct sim_event *ev);
+void of_manager_send(struct of_manager *om, uint64_t dpid, 
+                     uint8_t *buf, size_t len);
 void of_manager_message_cb(struct of_conn* conn, uint8_t type, 
                              void *data, size_t len);
 

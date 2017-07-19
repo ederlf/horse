@@ -22,7 +22,8 @@ void sim_event_free(struct sim_event* ev){
     free(ev);
 }
 
-struct sim_event_flow* sim_event_flow_new(uint64_t time, uint64_t node_id)
+struct sim_event_flow*
+sim_event_flow_new(uint64_t time, uint64_t node_id)
 {
     struct sim_event_flow *flow = xmalloc(sizeof(struct sim_event_flow));
     flow->hdr.time = time;
@@ -31,3 +32,29 @@ struct sim_event_flow* sim_event_flow_new(uint64_t time, uint64_t node_id)
     return flow;   
 }
 
+static struct sim_event_of* 
+of_msg_new(uint64_t time, uint64_t dp_id, 
+                         void *data, size_t len, uint8_t type)
+{
+    struct sim_event_of *msg = xmalloc(sizeof(struct sim_event_of));
+    msg->hdr.time = time;
+    msg->hdr.type = type;
+    msg->dp_id = dp_id;
+    msg->data = data;
+    msg->len = len;
+    return msg;        
+} 
+
+struct sim_event_of* 
+sim_event_of_msg_in_new(uint64_t time, uint64_t dp_id, 
+                         void *data, size_t len)
+{
+    return of_msg_new(time, dp_id, data, len, EVENT_OF_MSG_IN);      
+}
+
+struct sim_event_of* 
+sim_event_of_msg_out_new(uint64_t time, uint64_t dp_id, 
+                         void *data, size_t len)
+{
+    return of_msg_new(time, dp_id, data, len, EVENT_OF_MSG_OUT);      
+}

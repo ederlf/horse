@@ -255,12 +255,22 @@ sim_init(struct sim *s, struct topology *topo, enum sim_mode mode)
     s->cont.exec = cont_mode;
     init_timer(s->cont, (void*)s);
     set_periodic_timer(/* 1 */1000);
+    s->mode = mode;
     if (s->mode == EMU_CTRL){
-        s->om = of_manager_new();
+        struct node *cur_node, *tmp, *nodes;
+        struct datapath *dp;
+        s->evh.om = of_manager_new();
+        /* Add of_settings to client */
+        nodes = topology_nodes(topo);
+        HASH_ITER(hh, nodes, cur_node, tmp) {
+            if (cur_node->type == DATAPATH){
+                dp = (struct datapath*) cur_node;
+                of_client_add_ofsc(s->evh.om->of, dp_settings(dp));
+            }
+        }
         of_client_start(s->evh.om->of, false);
     }
-    s->mode = mode;
-    pthread_create(&s->dataplane, (pthread_attr_t*)0, des_mode, (void*)&s);
+    pthread_create(&s->dataplane, (pthread_attr_t*)0, des_mode, (void*)s);
 }
 
 static void 
@@ -294,6 +304,7 @@ des_mode(void * args){
     is larger than event time */
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
+    printf("SCH %p\n", s);
     while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
@@ -306,6 +317,7 @@ des_mode(void * args){
         if (scheduler_is_empty(sch)){
             continue;
         }
+
         struct sim_event *ev = scheduler_dispatch(sch);
         sch->clock = ev->time;
 
@@ -335,12 +347,13 @@ des_mode(void * args){
             handle_event(&s->evh, ev);
             sim_event_free(ev);
         }
-        else if( ev->type == EVENT_PACKET_IN ){
+        else if( ev->type == EVENT_OF_MSG_OUT){
             // struct ev* evt = cur_ev;
             // Enqueue(evt);
             /* Gets the next event */
             // printf("DES Pushing to redis %d %ld\n", ev->type, ev->time);
             // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow));
+            handle_event(&s->evh, ev);
             sim_event_free(ev);
             pthread_mutex_lock( &mutex1 );
             sch->mode = CONTINUOUS;
@@ -390,11 +403,13 @@ cont_mode(void* args)
             sim_event_free(cur_ev);
             cur_ev = NULL;
         }
-        else if (cur_ev->type == EVENT_PACKET_IN){
+        else if (cur_ev->type == EVENT_OF_MSG_OUT){
             // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
             // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow)); 
             sim_event_free(cur_ev);
             cur_ev = NULL;
+            printf("Packet in\n");
+            exit(0);
         }
         else if (cur_ev->type == EVENT_END && cur_ev->time <= sch->clock) {
             printf("It is over CONT\n");
@@ -415,8 +430,7 @@ void
 start(struct topology *topo) 
 {
     struct sim s;
-    s.mode = EMU_CTRL;
-    sim_init(&s, topo, SIM_CTRL);
+    sim_init(&s, topo, EMU_CTRL);
     add_flows(topo, SINGLE);
     initial_events(&s, SINGLE, 0);    
     sim_close(&s);    

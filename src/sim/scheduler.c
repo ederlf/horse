@@ -15,6 +15,7 @@ scheduler_new()
 {
     struct scheduler *sch = xmalloc(sizeof(struct scheduler));
     sch->clock = 0; /* Use time == now()? */
+    sch->mode = DES; /* Scheduler always starts like DES */
     sch->ev_queue = xmalloc(sizeof(struct heap));
     heap_init(sch->ev_queue);
     return sch;

@@ -14,9 +14,15 @@
 #include "lib/sim_event.h"
 #include "lib/heap.h"
 
+enum scheduler_mode {
+    DES = 0,
+    CONTINUOUS = 1
+};
+
 struct scheduler {
     uint64_t clock;          /* Current time of the simulation. */
     struct heap *ev_queue;   /* Scheduled events.               */  
+    enum scheduler_mode mode;
 };
 
 struct scheduler *scheduler_new(void);
