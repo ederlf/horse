@@ -43,6 +43,19 @@ scheduler_insert(struct scheduler *sch, struct sim_event *ev)
     heap_insert(sch->ev_queue, (struct heap_node*) ev, ev->time);
 }
 
+/* Just delete the event on top without returning it */
+void
+scheduler_delete(struct scheduler *sch)
+{
+    heap_delete(sch->ev_queue);
+}
+
+/* Get the first event in the queue */
+struct sim_event *
+scheduler_retrieve(struct scheduler *sch)
+{
+    return (struct sim_event*) heap_retrieve(sch->ev_queue);
+}
 
 struct sim_event*
 scheduler_dispatch(struct scheduler *sch)

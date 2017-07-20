@@ -285,6 +285,7 @@ static pthread_cond_t  condition_var   = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t mutex1    = PTHREAD_MUTEX_INITIALIZER;
 int run = 0;
 int last_wrt = 0;
+int last_ctrl = 0;
 
 // static void update_stats(struct topology *topo, uint64_t time){
 
@@ -321,7 +322,6 @@ des_mode(void * args){
         sch->clock = ev->time;
 
         printf("Clock DES %"PRIu64"\n", sch->clock);
-        printf("%d\n", ev->type);
         /* Time will be shared now */
         if (sch->clock - last_wrt > 1000000){
             // update_stats(s->topo, s->sch->clock);
@@ -346,17 +346,13 @@ des_mode(void * args){
             handle_event(&s->evh, ev);
             sim_event_free(ev);
         }
-        else if( ev->type == EVENT_OF_MSG_OUT){
-            // struct ev* evt = cur_ev;
-            // Enqueue(evt);
-            /* Gets the next event */
-            // printf("DES Pushing to redis %d %ld\n", ev->type, ev->time);
-            // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow));
+        else if( ev->type == EVENT_OF_MSG_OUT ||
+                ev->type == EVENT_OF_MSG_IN){
             handle_event(&s->evh, ev);
             sim_event_free(ev);
             pthread_mutex_lock( &mutex1 );
+            last_ctrl = sch->clock;
             sch->mode = CONTINUOUS;
-            // redisCommand(c, "HSET dp_signal sig 0");
             /* Wake up timer */
             pthread_cond_signal( &condition_var );
             pthread_mutex_unlock( &mutex1 );
@@ -367,7 +363,7 @@ des_mode(void * args){
     }
     /* Awake the timer so it can stop */
     // pthread_mutex_lock( &mutex1 );
-    printf("Over timer\n");
+    printf("Over timer %p\n", s);
     shutdown_timer(s->cont);
     // pthread_cond_signal( &condition_var );
     // pthread_mutex_unlock( &mutex1 );
@@ -375,6 +371,7 @@ des_mode(void * args){
 } 
 
 struct sim_event *cur_ev = NULL;
+uint64_t mode_interval = 10000; // in microseconds 
 
 static void 
 cont_mode(void* args) 
@@ -392,43 +389,52 @@ cont_mode(void* args)
     printf("Clock %"PRIu64"\n", sch->clock);
     printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, 
            scheduler_is_empty(sch), sch->ev_queue->size);
+
+    /* Get the event but delete it only if executed! */
     if (cur_ev == NULL && !scheduler_is_empty(sch)){
-        cur_ev = scheduler_dispatch(sch);
-        
+        cur_ev = scheduler_retrieve(sch);
+        printf("Event Type %d\n", cur_ev->type);
         if (cur_ev->type == EVENT_FLOW && cur_ev->time <= sch->clock){
             /* Execute */
             printf("CONT executing %ld %ld\n", cur_ev->time, sch->clock);
             handle_event(&s->evh, cur_ev);
+            scheduler_delete(sch);
             sim_event_free(cur_ev);
-            cur_ev = NULL;
         }
-        else if (cur_ev->type == EVENT_OF_MSG_OUT){
-            // printf("CONT Pushing controller queue %d\n", cur_ev->tm);
-            // redisCommand(c, "RPUSH ctrl_queue %b", ev, (size_t) sizeof(struct event_flow)); 
+        else if (cur_ev->type == EVENT_OF_MSG_OUT || 
+                 cur_ev->type == EVENT_OF_MSG_IN){
+            last_ctrl = sch->clock;
+            printf("MSG_IN\n");
+            handle_event(&s->evh, cur_ev);
+            scheduler_delete(sch);
             sim_event_free(cur_ev);
-            cur_ev = NULL;
-            printf("Packet in\n");
-            exit(0);
         }
         else if (cur_ev->type == EVENT_END && cur_ev->time <= sch->clock) {
             printf("It is over CONT\n");
             pthread_mutex_lock( &mutex1 );
             sch->mode = DES;
-            // redisCommand(c, "HSET dp_signal sig 0");
             /* Wake up timer */
             pthread_cond_signal( &condition_var );
             pthread_mutex_unlock( &mutex1 );
         }
+        cur_ev = NULL;
     }
-    /* TODO: Check if controller is done */
-    // printf("Getting signal %d\n", cur_time);
-    
+    /* Check if controller is idle for some time */
+    if (sch->clock - last_ctrl > mode_interval){
+        printf("Switching to DES\n");
+        pthread_mutex_lock( &mutex1 );
+        sch->mode = DES;
+        /* Wake up timer */
+        pthread_cond_signal( &condition_var );
+        pthread_mutex_unlock( &mutex1 );
+    }
 }
 
 void 
 start(struct topology *topo) 
 {
     struct sim s;
+    memset(&s, 0x0, sizeof(struct sim));
     sim_init(&s, topo, EMU_CTRL);
     add_flows(topo, SINGLE);
     initial_events(&s, SINGLE, 0);    

@@ -93,6 +93,11 @@ heap_delete(struct heap *h)
     return removed;
 }
 
+struct heap_node* heap_retrieve(struct heap *h)
+{
+    return h->array[1];
+}
+
 // static
 // void heap_display(struct heap *h) {
 //     size_t i;

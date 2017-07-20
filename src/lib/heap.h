@@ -28,6 +28,7 @@ void heap_init(struct heap *h);
 void heap_destroy(struct heap *h);
 void heap_insert(struct heap *h, struct heap_node *node, uint64_t priority);
 struct heap_node* heap_delete(struct heap *h);
+struct heap_node* heap_retrieve(struct heap *h);
 
 
 /*  idx is the position of the children in the heap 

@@ -31,6 +31,8 @@ struct scheduler *scheduler_new(void);
 bool scheduler_is_empty(struct scheduler *sch);
 void scheduler_destroy(struct scheduler *sch);
 void scheduler_insert(struct scheduler *sch, struct sim_event *ev);
+void scheduler_delete(struct scheduler *sch);
+struct sim_event *scheduler_retrieve(struct scheduler *sch);
 struct sim_event *scheduler_dispatch(struct scheduler *sch);
 
 
