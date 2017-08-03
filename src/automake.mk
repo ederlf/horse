@@ -20,8 +20,8 @@ libhorse_la_SOURCES = src/lib/action.h \
 		src/lib/netflow.h \
 		src/lib/netflow.c \
                 src/lib/packets.h \
-                src/lib/of_pack.h \
-                src/lib/of_pack.c \
+                src/lib/of_unpack.h \
+                src/lib/of_unpack.c \
                 src/lib/openflow.h \
                 src/lib/sim_event.h \
                 src/lib/sim_event.c \
@@ -37,6 +37,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/arp_table.c \
                 src/net/datapath.h \
                 src/net/datapath.c \
+                src/net/dp_control.h \
+                src/net/dp_control.c \
                 src/net/dp_actions.h \
                 src/net/dp_actions.c \
                 src/net/flow_table.h \ 

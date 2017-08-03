@@ -1,6 +1,6 @@
 #include "event_handler.h"
-#include "lib/of_pack.h"
 #include "net/datapath.h"
+#include "net/dp_control.h"
 #include "net/host.h"
 #include <uthash/utlist.h>
 
@@ -95,17 +95,22 @@ handle_port(struct ev_handler *ev_hdl, struct sim_event *ev)
 static void
 handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
+    /* Finds the datapath of the event
+    *  handle_control_msg(dp, msg); 
+    */
+    struct sim_event_of *ev_of = (struct sim_event_of*) ev;
+    struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
+                                                    ev_of->dp_id);
+    dp_control_handle_control_msg(dp, ev_of->data, ev_of->len, ev->time);
+    /* Might need to schedule a new event with an answer */
     UNUSED(ev_hdl);
-    UNUSED(ev);
 }
 
 static void 
 handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    // struct sim_event_pkt_in *ev_pkt_in = (struct sim_event_pkt_in *) ev;
     struct of_manager *om = ev_hdl->om;
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
-
     of_manager_send(om, ev_of->dp_id, ev_of->data, ev_of->len);
 }
 

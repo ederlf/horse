@@ -21,15 +21,7 @@ static void netflow_to_match(struct netflow *flow, of_match_t *match)
     OF_MATCH_MASK_IN_PORT_EXACT_SET(match);    
 }
 
-uint8_t *of_pack(of_object_t *msg, uint8_t type, size_t *len)
-{
-    UNUSED(msg);
-    UNUSED(type);
-    UNUSED(len);
-    return NULL;
-}
-
-uint8_t *of_packet_in(struct sim_event *ev, size_t *buf_len)
+uint8_t *of_packet_in(struct sim_event *ev)
 {
     uint8_t *buf;
     size_t len;
@@ -58,6 +50,5 @@ uint8_t *of_packet_in(struct sim_event *ev, size_t *buf_len)
     of_packet_in_total_len_set(of_packet_in, len);
     buf = OF_MESSAGE_TO_BUFFER(of_packet_in);
     of_packet_in_delete(of_packet_in);
-    *buf_len = len;
     return buf;
 }

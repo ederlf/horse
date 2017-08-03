@@ -105,6 +105,7 @@ static void add_flows(struct topology *topo, int test){
             struct flow *fl = flow_new();
             struct instruction_set is;
             instruction_set_init(&is);
+            printf("%p\n", dp);
             // struct write_metadata wm;
             // inst_write_metadata(&wm, 0xbeef);
             // add_write_metadata(&is, wm);
@@ -122,7 +123,7 @@ static void add_flows(struct topology *topo, int test){
             /* Match */
             set_in_port(fl, 1);
             flow_add_instructions(fl, is);
-            dp_handle_flow_mod(dp, 0, fl, 0);
+       //     dp_handle_flow_mod(dp, 0, fl, 0);
         
         /* Flow 2 */
             struct write_actions wa2;
@@ -138,11 +139,12 @@ static void add_flows(struct topology *topo, int test){
             add_write_actions(&is2, wa2);
             set_in_port(f2, 2);
             flow_add_instructions(f2, is2);
-            dp_handle_flow_mod(dp, 0, f2, 0);    
+         //   dp_handle_flow_mod(dp, 0, f2, 0);    
         }
     }
     else if (test == SINGLE){
             struct datapath *dp = (struct datapath*) topology_node(topo, 1);
+            printf("%p\n", dp);
             struct flow *fl = flow_new();
             struct instruction_set is;
             instruction_set_init(&is);
@@ -163,7 +165,7 @@ static void add_flows(struct topology *topo, int test){
             /* Match */
             set_in_port(fl, 1);
             flow_add_instructions(fl, is);
-            dp_handle_flow_mod(dp, 0, fl, 0);
+           // dp_handle_flow_mod(dp, 0, fl, 0);
         
         /* Flow 2 */
             // struct write_actions wa2;
@@ -188,6 +190,7 @@ static void add_flows(struct topology *topo, int test){
     // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:2
     // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:1
         struct datapath *dp = (struct datapath*) topology_node(topo, 1);
+        printf("%p\n", dp);
         int i;
         for (i = 0; i < 4; ++i){
             struct flow *fl = flow_new();
@@ -224,7 +227,7 @@ static void add_flows(struct topology *topo, int test){
             inst_write_actions(&wa, as);
             add_write_actions(&is, wa);
             flow_add_instructions(fl, is);
-            dp_handle_flow_mod(dp, 0, fl, 0);
+            //dp_handle_flow_mod(dp, 0, fl, 0);
         }
         printf("Doing nothing now\n");
     }
@@ -403,8 +406,8 @@ cont_mode(void* args)
         }
         else if (cur_ev->type == EVENT_OF_MSG_OUT || 
                  cur_ev->type == EVENT_OF_MSG_IN){
-            last_ctrl = sch->clock;
-            printf("MSG_IN\n");
+            last_ctrl = cur_ev->time;
+            printf("MSG_IN %ld\n", cur_ev->time);
             handle_event(&s->evh, cur_ev);
             scheduler_delete(sch);
             sim_event_free(cur_ev);

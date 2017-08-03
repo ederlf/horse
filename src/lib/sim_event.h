@@ -15,7 +15,6 @@
 #include "lib/heap.h"
 #include "lib/flow.h"
 #include "lib/netflow.h"
-#include <loci/loci.h>
 
 #define EVENTS_NUM 6
 

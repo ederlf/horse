@@ -60,7 +60,9 @@ scheduler_retrieve(struct scheduler *sch)
 struct sim_event*
 scheduler_dispatch(struct scheduler *sch)
 {
+    pthread_mutex_lock(&sch->sch_mutex);
     struct sim_event *ev = (struct sim_event*) heap_delete(sch->ev_queue);
+    pthread_mutex_unlock(&sch->sch_mutex);
     // sch->clock = ev->time;
     return ev;
 };

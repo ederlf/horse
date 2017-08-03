@@ -10,9 +10,11 @@
 
 #include "datapath.h"
 #include "dp_actions.h"
-#include "lib/util.h" 
+#include "lib/util.h"
+#include "lib/of_unpack.h" 
 #include <cfluid/of_settings.h>
 #include <uthash/utlist.h>
+
 
 
 /* Definition of a switch of the network */
@@ -202,11 +204,53 @@ dp_send_netflow(struct datapath *dp, struct netflow *flow)
     }
 }
 
-/* TODO: better to pass a struct that represents a flow_mod */
-void
-dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time)
+of_object_t*
+dp_handle_flow_mod(const struct datapath *dp, 
+                    of_object_t *obj, uint64_t time)
 {
-    add_flow(dp->tables[table_id], f, time);
+    struct flow_table *ft;  
+    struct flow *f = flow_new();
+    unpack_flow_mod(obj, f);
+
+    /*  Redundant switch here, 
+     *  but it is better than repeat code to handle the different
+     *  objects that loci has for the flow mod.
+     *  If there is a performance need, it is something to be revisited. 
+    */
+    ft = dp->tables[f->table_id];
+    switch (obj->object_id) {
+        case OF_FLOW_ADD:{
+            add_flow(ft, f, time);
+            break;
+        }
+        case OF_FLOW_MODIFY: {
+            modify_flow(ft, f, false, time);
+        }
+        case OF_FLOW_MODIFY_STRICT: {        
+            modify_flow(ft, f, true, time);
+            break;
+        }
+        case OF_FLOW_DELETE: {
+            delete_flow(ft, f, false);
+            break;
+        }
+        case OF_FLOW_DELETE_STRICT: {
+            delete_flow(ft, f, true);
+            break;
+        }
+        default: {
+            break;  
+        }
+    }
+    return NULL;
+}
+
+of_object_t* dp_handle_pkt_out(const struct datapath *dp, 
+                               of_packet_out_t *pkt)
+{
+    UNUSED(dp);
+    UNUSED(pkt);
+    return NULL;
 }
 
 uint64_t 
@@ -214,7 +258,6 @@ dp_uuid(const struct datapath* dp)
 {
     return dp->base.uuid;
 }
-
 
 uint64_t 
 dp_id(const struct datapath* dp)

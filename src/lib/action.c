@@ -114,4 +114,9 @@ action_output(struct action *output, uint32_t port)
     output->out.port = port;
 }
 
-
+void
+action_group(struct action *grp, uint32_t group_id)
+{
+    grp->type = ACT_GROUP;
+    grp->grp.group_id = group_id;
+}

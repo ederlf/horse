@@ -117,16 +117,21 @@ set_field(struct action *act, struct netflow *nf)
             nf->match.ipv4_src = set.u32_field;
             break;
         }
-        case SET_TCP_DST: 
-        case SET_UDP_DST: {
-            nf->match.tp_dst = set.u16_field;
+        case SET_TCP_DST: {
+            nf->match.tcp_dst = set.u16_field;
             break;
         }
-        case SET_TCP_SRC: 
-        case SET_UDP_SRC: {
-            nf->match.tp_src = set.u16_field;
+        case SET_TCP_SRC: {
+            nf->match.tcp_src = set.u16_field;
         }
-
+        case SET_UDP_DST: {
+            nf->match.udp_dst = set.u16_field;
+            break;
+        }
+        case SET_UDP_SRC: {
+            nf->match.udp_src = set.u16_field;
+            break;
+        }
         case SET_ARP_OP: {
             nf->match.arp_op = set.u16_field;
             break;

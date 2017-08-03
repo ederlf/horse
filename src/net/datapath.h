@@ -15,6 +15,7 @@
 #include "flow_table.h"
 #include "lib/netflow.h"
 #include <inttypes.h>
+#include <loci/loci.h>
 
 /* Total number of possible ports
 *  UINT32_MAX == 2 ^ 32 datapaths 
@@ -44,7 +45,11 @@ struct port* dp_port(const struct datapath *dp, uint32_t port_id);
 
 void dp_handle_netflow(struct node *n, struct netflow *flow);
 
-void dp_handle_flow_mod(const struct datapath *dp, uint8_t table_id, struct flow *f, uint64_t time);
+of_object_t* dp_handle_flow_mod(const struct datapath *dp, 
+                                of_flow_modify_t *obj, uint64_t time);
+
+of_object_t* dp_handle_pkt_out(const struct datapath *dp, 
+                               of_object_t *obj);
 
 /* Access functions*/
 uint64_t dp_uuid(const struct datapath* dp);

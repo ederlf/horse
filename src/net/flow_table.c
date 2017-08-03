@@ -163,8 +163,7 @@ add_flow(struct flow_table *ft, struct flow *f, uint64_t time)
 *          if flow in the hash table and equal priority
 *               modify flow
 */
-static 
-void
+static void
 mod_flow_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table *nxt_mft, *tmp;
@@ -187,8 +186,7 @@ mod_flow_strict(struct flow_table *ft, struct flow *f, uint64_t time)
     }
 }
 
-static 
-void
+static void
 mod_flow_non_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table *nxt_mft, *tmp;
@@ -217,7 +215,9 @@ mod_flow_non_strict(struct flow_table *ft, struct flow *f, uint64_t time)
     }
 }
 
-void modify_flow(struct flow_table *ft, struct flow *f, bool strict, uint64_t time)
+void 
+modify_flow(struct flow_table *ft, struct flow *f, 
+                 bool strict, uint64_t time)
 {
     if (strict){
         mod_flow_strict(ft, f, time);
@@ -236,9 +236,10 @@ void modify_flow(struct flow_table *ft, struct flow *f, bool strict, uint64_t ti
                 found = 1
 *   if not found
 *      return error
+*
+*   TODO: Consider time. Flow may not be present any more.
 */
-static 
-void
+static void
 del_flow_strict(struct flow_table *ft, struct flow *f)
 {
     struct mini_flow_table* nxt_mft, *tmp;
@@ -256,8 +257,9 @@ del_flow_strict(struct flow_table *ft, struct flow *f)
     }
 }
 
-static 
-void
+
+/* TODO: Consider time. Flow may not be present any more. */
+static void
 del_flow_non_strict(struct flow_table *ft, struct flow *f)
 {
     struct mini_flow_table *nxt_mft, *tmp;

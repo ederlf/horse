@@ -159,6 +159,7 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
     uint8_t *pos = buffer;
     struct flow_key m =  nf->match;
     struct eth_header *eth;
+    uint8_t icmp_type, icmp_code;
 
     eth = (struct eth_header*) pos;
     eth->eth_type = m.eth_type;
@@ -227,8 +228,8 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
     if (m.ip_proto == IP_PROTO_TCP) {
         struct tcp_header *tcp = (struct tcp_header*) pos;
         memset(tcp, 0x0, sizeof(struct tcp_header));
-        tcp->tcp_dst = m.tp_dst;
-        tcp->tcp_src = m.tp_src;
+        tcp->tcp_dst = m.tcp_dst;
+        tcp->tcp_src = m.tcp_src;
         offset += sizeof(struct tcp_header);
         pos += offset;
         return offset;
@@ -236,22 +237,30 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
     if (m.ip_proto == IP_PROTO_UDP){
         struct udp_header *udp = (struct udp_header*) pos;
         memset(udp, 0x0, sizeof(struct udp_header));
-        udp->udp_dst = m.tp_dst;
-        udp->udp_src = m.tp_src;
+        udp->udp_dst = m.udp_dst;
+        udp->udp_src = m.udp_src;
         offset += sizeof(struct udp_header);
         pos += offset;
         return offset;
     }
-    if (m.ip_proto == IP_PROTO_ICMPV4 || m.ip_proto == IP_PROTO_ICMPV6) {
+    if (m.ip_proto == IP_PROTO_ICMPV4) {
         struct icmp_header *icmp = (struct icmp_header*) pos;
         memset(icmp, 0x0, sizeof(struct icmp_header));
-        icmp->icmp_code = m.icmp_code;
-        icmp->icmp_type = m.icmp_code;
+        icmp->icmp_code = icmp_type = m.icmpv4_code;
+        icmp->icmp_type = icmp_code = m.icmpv4_code;
+        offset += sizeof(struct icmp_header);
+        pos += offset;
+    }
+    if (m.ip_proto == IP_PROTO_ICMPV6) {
+        struct icmp_header *icmp = (struct icmp_header*) pos;
+        memset(icmp, 0x0, sizeof(struct icmp_header));
+        icmp->icmp_code = icmp_type = m.icmpv6_code;
+        icmp->icmp_type = icmp_code = m.icmpv6_code;
         offset += sizeof(struct icmp_header);
         pos += offset;
     }
 
-    if (m.icmp_type == ICMPV6_NEIGH_SOL || m.icmp_type == ICMPV6_NEIGH_ADV) {
+    if (icmp_type == ICMPV6_NEIGH_SOL || icmp_type == ICMPV6_NEIGH_ADV) {
         /* TODO */
     }
 

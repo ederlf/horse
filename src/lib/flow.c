@@ -28,6 +28,7 @@ struct flow*
 flow_new(void)
 {
     struct flow *f = xmalloc(sizeof(struct flow));
+    f->table_id = 0; 
     f->priority = 0;
     f->cookie = 0;
     f->pkt_cnt = 0;
@@ -53,36 +54,7 @@ flow_destroy(struct flow *f)
 bool 
 flow_key_cmp(struct flow_key *a, struct flow_key *b)
 {
-    return  (a->in_port == b->in_port) &&
-            (a->metadata == b->metadata) &&
-            (a->tunnel_id == b->tunnel_id) &&
-            (a->eth_type == b->eth_type) &&
-            (memcmp(a->eth_dst, b->eth_dst, 6) == 0) &&
-            (memcmp(a->eth_src, b->eth_src, 6) == 0) &&
-            (a->vlan_id == b->vlan_id) &&
-            (a->vlan_pcp == b->vlan_pcp) &&
-            (a->mpls_label == b->mpls_label) &&
-            (a->mpls_bos == b->mpls_bos) &&
-            (a->mpls_tc == b->mpls_tc) &&
-            (a->ip_dscp == b->ip_dscp) &&
-            (a->ip_ecn == b->ip_ecn) &&
-            (a->ip_proto == b->ip_proto) &&
-            (a->ipv4_dst == b->ipv4_dst) &&
-            (a->ipv4_src == b->ipv4_src) &&
-            (a->tp_dst == b->tp_dst) &&
-            (a->tp_src == b->tp_src) &&
-            (a->arp_op == b->arp_op) &&
-            (a->icmp_type == b->icmp_type) &&
-            (a->icmp_code == b->icmp_code) &&
-            (a->arp_spa == b->arp_spa) &&
-            (a->arp_tpa == b->arp_tpa) &&
-            (memcmp(a->arp_sha, b->arp_sha, 6) == 0) &&
-            (memcmp(a->arp_tha, b->arp_tha, 6) == 0) &&
-            (memcmp(a->ipv6_dst, b->ipv6_dst, 16) == 0) &&
-            (memcmp(a->ipv6_src, b->ipv6_src, 16) == 0) &&
-            (memcmp(a->ipv6_nd_target, b->ipv6_nd_target, 16) == 0) &&
-            (memcmp(a->ipv6_nd_sll, b->ipv6_nd_sll, 6) == 0) &&
-            (memcmp(a->ipv6_nd_tll, b->ipv6_nd_tll, 6) == 0);
+    return  ( memcmp(a, b, sizeof(struct flow_key) ) == 0);
 } 
 
 void 
@@ -204,31 +176,59 @@ set_ipv4_src(struct flow *f, uint32_t ipv4_src)
 }
 
 void 
-set_tp_dst(struct flow *f, uint16_t tp_dst)
+set_tcp_dst(struct flow *f, uint16_t tcp_dst)
 {
-    f->key.tp_dst = tp_dst;
-    f->mask.tp_dst = ALL_UINT16_MASK;
+    f->key.tcp_dst = tcp_dst;
+    f->mask.tcp_dst = ALL_UINT16_MASK;
 }
 
 void 
-set_tp_src(struct flow *f, uint16_t tp_src)
+set_tcp_src(struct flow *f, uint16_t tcp_src)
 {
-    f->key.tp_src = tp_src;
-    f->mask.tp_src = ALL_UINT16_MASK;
+    f->key.tcp_src = tcp_src;
+    f->mask.tcp_src = ALL_UINT16_MASK;
 }
 
 void 
-set_icmp_type(struct flow *f, uint8_t icmp_type)
+set_sctp_dst(struct flow *f, uint16_t sctp_dst)
 {
-    f->key.icmp_type = icmp_type;
-    f->mask.icmp_type = ALL_UINT8_MASK;
+    f->key.sctp_dst = sctp_dst;
+    f->mask.sctp_dst = ALL_UINT16_MASK;
 }
 
 void 
-set_icmp_code(struct flow *f, uint8_t icmp_code)
+set_sctp_src(struct flow *f, uint16_t sctp_src)
 {
-    f->key.icmp_code = icmp_code;
-    f->mask.icmp_code = ALL_UINT8_MASK;
+    f->key.sctp_src = sctp_src;
+    f->mask.sctp_src = ALL_UINT16_MASK;
+}
+
+void 
+set_udp_dst(struct flow *f, uint16_t udp_dst)
+{
+    f->key.udp_dst = udp_dst;
+    f->mask.udp_dst = ALL_UINT16_MASK;
+}
+
+void set_udp_src(struct flow *f, uint16_t udp_src)
+{
+    f->key.udp_src = udp_src;
+    f->mask.udp_src = ALL_UINT16_MASK;   
+}
+
+
+void 
+set_icmpv4_type(struct flow *f, uint8_t icmpv4_type)
+{
+    f->key.icmpv4_type = icmpv4_type;
+    f->mask.icmpv4_type = ALL_UINT8_MASK;
+}
+
+void 
+set_icmpv4_code(struct flow *f, uint8_t icmpv4_code)
+{
+    f->key.icmpv4_code = icmpv4_code;
+    f->mask.icmpv4_code = ALL_UINT8_MASK;
 }
 
 void set_arp_op(struct flow *f, uint16_t arp_op)
@@ -277,6 +277,27 @@ set_ipv6_src(struct flow *f, uint8_t ipv6_src[16])
 {
     memcpy(f->key.ipv6_src, ipv6_src, 16);
     memset(f->mask.ipv6_src, 0xff, 16);
+}
+
+void 
+set_ipv6_flabel(struct flow *f, uint32_t ipv6_flabel)
+{
+    f->key.ipv6_flabel = ipv6_flabel;
+    f->mask.ipv6_flabel = ALL_UINT32_MASK;
+}
+
+void 
+set_icmpv6_type(struct flow *f, uint8_t icmpv6_type)
+{
+    f->key.icmpv6_type = icmpv6_type;
+    f->mask.icmpv6_type = ALL_UINT8_MASK;
+}
+
+void 
+set_icmpv6_code(struct flow *f, uint8_t icmpv6_code)
+{
+    f->key.icmpv6_code = icmpv6_code;
+    f->mask.icmpv6_code = ALL_UINT8_MASK;
 }
 
 void 
@@ -450,17 +471,24 @@ apply_all_mask(struct flow *flow, struct flow_key *mask)
     flow->key.ip_proto &= mask->ip_proto;
     set_masked_ipv4_dst(flow, flow->key.ipv4_dst, mask->ipv4_dst);
     set_masked_ipv4_src(flow, flow->key.ipv4_src, mask->ipv4_src);
-    flow->key.tp_dst &= mask->tp_dst;
-    flow->key.tp_src &= mask->tp_src;
+    flow->key.tcp_dst &= mask->tcp_dst;
+    flow->key.tcp_src &= mask->tcp_src;
+    flow->key.sctp_dst &= mask->sctp_dst;
+    flow->key.sctp_src &= mask->sctp_src;
+    flow->key.udp_dst &= mask->udp_dst;
+    flow->key.udp_src &= mask->udp_src;
     flow->key.arp_op &= mask->arp_op;
-    flow->key.icmp_type &= mask->icmp_type;
-    flow->key.icmp_code &= mask->icmp_code;
+    flow->key.icmpv4_type &= mask->icmpv4_type;
+    flow->key.icmpv4_code &= mask->icmpv4_code;
     set_masked_arp_spa(flow, flow->key.arp_spa, mask->arp_spa);
     set_masked_arp_tpa(flow, flow->key.arp_tpa, mask->arp_tpa);
     set_masked_arp_sha(flow, flow->key.arp_sha, mask->arp_sha);
     set_masked_arp_tha(flow, flow->key.arp_tha, mask->arp_tha);
     set_masked_ipv6_dst(flow, flow->key.ipv6_dst, mask->ipv6_dst);
     set_masked_ipv6_src(flow, flow->key.ipv6_src, mask->ipv6_src);
+    flow->key.ipv6_flabel &= mask->ipv6_flabel;
+    flow->key.icmpv6_type &= mask->icmpv6_type;
+    flow->key.icmpv6_code &= mask->icmpv6_code;
     set_masked_ipv6_nd_target(flow, flow->key.ipv6_nd_target, mask->ipv6_nd_target);
     set_masked_ipv6_nd_sll(flow, flow->key.ipv6_nd_sll, mask->ipv6_nd_sll);
     set_masked_ipv6_nd_tll(flow, flow->key.ipv6_nd_tll, mask->ipv6_nd_tll);
