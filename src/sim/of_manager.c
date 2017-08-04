@@ -12,6 +12,14 @@ struct of_manager *of_manager_new(struct scheduler *sch)
     return om;
 }
 
+void 
+of_manager_destroy(struct of_manager *om)
+{
+    of_client_stop(om->of);
+    of_client_destroy(om->of);
+    free(om);
+}
+
 void of_manager_send(struct of_manager *om, uint64_t dpid, 
                      uint8_t *buf, size_t len)
 {
@@ -32,9 +40,12 @@ void of_manager_message_cb(struct of_conn* conn, uint8_t type,
     uint64_t time = om->sch->clock;
     uint64_t dp_id = conn->id;
 
+    /* PERF: Need to copy the data because libfluid 
+        frees it after the callback returns */
+    uint8_t *copy_data = xmalloc(len);
+    memcpy(copy_data, data, len);
     struct sim_event_of *msg = sim_event_of_msg_in_new(time, dp_id, 
-                                                       data, len);
-
+                                                       copy_data, len);
     printf("INSERINDO Mensagem Type %d time %ld\n", type, time);
     scheduler_insert(om->sch, (struct sim_event*) msg);
     printf("ADICIONEI Mensagem \n");

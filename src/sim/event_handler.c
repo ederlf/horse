@@ -102,6 +102,7 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
     struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
                                                     ev_of->dp_id);
     dp_control_handle_control_msg(dp, ev_of->data, ev_of->len, ev->time);
+    free(ev_of->data);
     /* Might need to schedule a new event with an answer */
     UNUSED(ev_hdl);
 }

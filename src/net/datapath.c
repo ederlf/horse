@@ -59,6 +59,7 @@ void dp_destroy(struct datapath *dp)
          flow_table_destroy(dp->tables[i]);
     }
     node_destroy_ports(&dp->base);
+    // of_settings_destroy(dp->dp_settings);
     free(dp);
 }
 

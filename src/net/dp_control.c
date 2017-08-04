@@ -229,6 +229,7 @@ of_object_t *
 dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
                    size_t len, uint64_t time) {
 
+    of_object_t *err = NULL; 
     of_object_t *obj = of_object_new_from_message(msg, len);
     
     switch (obj->object_id) {
@@ -240,7 +241,8 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
         case OF_FLOW_MODIFY_STRICT: 
         case OF_FLOW_DELETE:
         case OF_FLOW_DELETE_STRICT: { 
-            return dp_handle_flow_mod(dp, obj, time);
+            err = dp_handle_flow_mod(dp, obj, time); 
+            break;
         }
         case OF_PORT_STATS_REQUEST: {
 
@@ -264,13 +266,11 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
 
         }
         default: {
-            return 0; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
+            break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
         }
     }
-
-    UNUSED(obj);
-    UNUSED(dp);
-    return 0;
+    of_object_delete(obj);
+    return err;
     /* NOTE: It is assumed that if a handler returns with error, it did not use
              any part of the control message, thus it can be freed up.
              If no error is returned however, the message must be freed inside

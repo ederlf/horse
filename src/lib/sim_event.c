@@ -33,8 +33,8 @@ sim_event_flow_new(uint64_t time, uint64_t node_id)
 }
 
 static struct sim_event_of* 
-of_msg_new(uint64_t time, uint64_t dp_id, 
-                         void *data, size_t len, uint8_t type)
+of_msg_new(uint64_t time, uint64_t dp_id, void *data, 
+           size_t len, uint8_t type)
 {
     struct sim_event_of *msg = xmalloc(sizeof(struct sim_event_of));
     msg->hdr.time = time;

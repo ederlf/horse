@@ -359,16 +359,16 @@ unpack_instructions(of_list_instruction_t *insts, struct instruction_set *is)
     uint16_t inst_type;
     int rv; 
     of_list_action_t *action_list;
-    of_instruction_t *inst = of_object_new (OF_VERSION_1_3);
+    of_instruction_t inst; //= of_object_new (OF_VERSION_1_3);
     instruction_set_init(is);
-     OF_LIST_INSTRUCTION_ITER (insts, inst, rv) {
-        of_wire_buffer_u16_get (inst->wbuf, 0, &inst_type);
+     OF_LIST_INSTRUCTION_ITER (insts, &inst, rv) {
+        of_wire_buffer_u16_get (inst.wbuf, 0, &inst_type);
 
         switch (inst_type) {
             case OFPIT_GOTO_TABLE: {
                 uint8_t table_id;
                 struct goto_table gt;
-                of_instruction_goto_table_table_id_get (inst, &table_id);
+                of_instruction_goto_table_table_id_get(&inst, &table_id);
                 inst_goto_table(&gt, table_id);               
                 add_goto_table(is, gt);
                 break;
@@ -376,23 +376,31 @@ unpack_instructions(of_list_instruction_t *insts, struct instruction_set *is)
             case OFPIT_WRITE_METADATA: {
                 uint64_t metadata;
                 struct write_metadata wm;
-                of_instruction_write_metadata_metadata_get (inst, &metadata);
+                of_instruction_write_metadata_metadata_get(&inst, &metadata);
                 inst_write_metadata(&wm, metadata); 
                 add_write_metadata(is, wm);
                 break;
             }
             case OFPIT_WRITE_ACTIONS: {
+                struct write_actions wa;
                 struct action_set as;
                 action_set_init(&as);
-                action_list = of_instruction_apply_actions_actions_get (inst);
+                action_list = of_instruction_apply_actions_actions_get(&inst);
                 unpack_actions(set, action_list, as);
+                inst_write_actions(&wa, as);
+                add_write_actions(is, wa);
+                of_object_delete(action_list);
                 break;
             }
             case OFPIT_APPLY_ACTIONS: {
+                struct apply_actions aa;
                 struct action_list al;
                 action_list_init(&al);
-                action_list = of_instruction_apply_actions_actions_get (inst);
+                action_list = of_instruction_apply_actions_actions_get(&inst);
                 unpack_actions(list, action_list, al);
+                inst_apply_actions(&aa, al);
+                add_apply_actions(is, aa);
+                of_object_delete(action_list);
                 break;
             }
             case OFPIT_CLEAR_ACTIONS: {
@@ -444,7 +452,7 @@ unpack_flow_mod(of_object_t *obj, struct flow *f)
         return -1;
     }    
     unpack_instructions(insts, &f->insts);
-
+    of_object_delete(insts);
     return 0;
 }
 

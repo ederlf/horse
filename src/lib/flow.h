@@ -92,7 +92,6 @@ struct flow {
 };
 
 struct flow *flow_new(void);
-void flow_clean_instructions(struct flow *f);
 void flow_destroy(struct flow *f);
 bool flow_key_cmp(struct flow_key *a, struct flow_key *b);
 void flow_add_instructions(struct flow *f, struct instruction_set is);

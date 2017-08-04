@@ -40,14 +40,18 @@ scheduler_destroy(struct scheduler *sch)
 void 
 scheduler_insert(struct scheduler *sch, struct sim_event *ev)
 {
+    pthread_mutex_unlock(&sch->sch_mutex);
     heap_insert(sch->ev_queue, (struct heap_node*) ev, ev->time);
+    pthread_mutex_unlock(&sch->sch_mutex);
 }
 
 /* Just delete the event on top without returning it */
 void
 scheduler_delete(struct scheduler *sch)
 {
+    pthread_mutex_lock(&sch->sch_mutex);
     heap_delete(sch->ev_queue);
+    pthread_mutex_unlock(&sch->sch_mutex);
 }
 
 /* Get the first event in the queue */

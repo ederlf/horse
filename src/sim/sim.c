@@ -96,159 +96,159 @@ initial_events(struct sim *s, int test, int cur_time)
 
 // }
 
-static void add_flows(struct topology *topo, int test){
-    /* DP 1 */
-    if (test == LINEAR) {
-        int i;
-        for (i = 3; i < 103; ++i) {
-            struct datapath *dp = (struct datapath*) topology_node(topo, i);
-            struct flow *fl = flow_new();
-            struct instruction_set is;
-            instruction_set_init(&is);
-            printf("%p\n", dp);
-            // struct write_metadata wm;
-            // inst_write_metadata(&wm, 0xbeef);
-            // add_write_metadata(&is, wm);
-            /* Write actions */
-            struct write_actions wa;
-            struct action_set as;
-            struct action gen_act;
-            action_set_init(&as);
-            action_output(&gen_act, 2);
-            action_set_add(&as, gen_act);
-            // action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
-            // action_set_add(&as, gen_act);
-            inst_write_actions(&wa, as);
-            add_write_actions(&is, wa);
-            /* Match */
-            set_in_port(fl, 1);
-            flow_add_instructions(fl, is);
-       //     dp_handle_flow_mod(dp, 0, fl, 0);
+// static void add_flows(struct topology *topo, int test){
+//     /* DP 1 */
+//     if (test == LINEAR) {
+//         int i;
+//         for (i = 3; i < 103; ++i) {
+//             struct datapath *dp = (struct datapath*) topology_node(topo, i);
+//             struct flow *fl = flow_new();
+//             struct instruction_set is;
+//             instruction_set_init(&is);
+//             printf("%p\n", dp);
+//             // struct write_metadata wm;
+//             // inst_write_metadata(&wm, 0xbeef);
+//             // add_write_metadata(&is, wm);
+//             /* Write actions */
+//             struct write_actions wa;
+//             struct action_set as;
+//             struct action gen_act;
+//             action_set_init(&as);
+//             action_output(&gen_act, 2);
+//             action_set_add(&as, gen_act);
+//             // action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
+//             // action_set_add(&as, gen_act);
+//             inst_write_actions(&wa, as);
+//             add_write_actions(&is, wa);
+//             /* Match */
+//             set_in_port(fl, 1);
+//             flow_add_instructions(fl, is);
+//        //     dp_handle_flow_mod(dp, 0, fl, 0);
         
-        /* Flow 2 */
-            struct write_actions wa2;
-            struct action_set as2;
-            struct action gen_act2;
-            struct instruction_set is2;
-            action_set_init(&as2);
-            instruction_set_init(&is2);
-            struct flow *f2 = flow_new();
-            action_output(&gen_act2, 1);
-            action_set_add(&as2, gen_act2);
-            inst_write_actions(&wa2, as2);
-            add_write_actions(&is2, wa2);
-            set_in_port(f2, 2);
-            flow_add_instructions(f2, is2);
-         //   dp_handle_flow_mod(dp, 0, f2, 0);    
-        }
-    }
-    else if (test == SINGLE){
-            struct datapath *dp = (struct datapath*) topology_node(topo, 1);
-            printf("%p\n", dp);
-            struct flow *fl = flow_new();
-            struct instruction_set is;
-            instruction_set_init(&is);
-            // struct write_metadata wm;
-            // inst_write_metadata(&wm, 0xbeef);
-            // add_write_metadata(&is, wm);
-            /* Write actions */
-            struct write_actions wa;
-            struct action_set as;
-            struct action gen_act;
-            action_set_init(&as);
-            action_output(&gen_act, CONTROLLER);
-            action_set_add(&as, gen_act);
-            // action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
-            // action_set_add(&as, gen_act);
-            inst_write_actions(&wa, as);
-            add_write_actions(&is, wa);
-            /* Match */
-            set_in_port(fl, 1);
-            flow_add_instructions(fl, is);
-           // dp_handle_flow_mod(dp, 0, fl, 0);
+//         /* Flow 2 */
+//             struct write_actions wa2;
+//             struct action_set as2;
+//             struct action gen_act2;
+//             struct instruction_set is2;
+//             action_set_init(&as2);
+//             instruction_set_init(&is2);
+//             struct flow *f2 = flow_new();
+//             action_output(&gen_act2, 1);
+//             action_set_add(&as2, gen_act2);
+//             inst_write_actions(&wa2, as2);
+//             add_write_actions(&is2, wa2);
+//             set_in_port(f2, 2);
+//             flow_add_instructions(f2, is2);
+//          //   dp_handle_flow_mod(dp, 0, f2, 0);    
+//         }
+//     }
+//     else if (test == SINGLE){
+//             struct datapath *dp = (struct datapath*) topology_node(topo, 1);
+//             printf("%p\n", dp);
+//             struct flow *fl = flow_new();
+//             struct instruction_set is;
+//             instruction_set_init(&is);
+//             // struct write_metadata wm;
+//             // inst_write_metadata(&wm, 0xbeef);
+//             // add_write_metadata(&is, wm);
+//             /* Write actions */
+//             struct write_actions wa;
+//             struct action_set as;
+//             struct action gen_act;
+//             action_set_init(&as);
+//             action_output(&gen_act, CONTROLLER);
+//             action_set_add(&as, gen_act);
+//             // action_set_field_u16(&gen_act, SET_IP_PROTO, 6);
+//             // action_set_add(&as, gen_act);
+//             inst_write_actions(&wa, as);
+//             add_write_actions(&is, wa);
+//             /* Match */
+//             set_in_port(fl, 1);
+//             flow_add_instructions(fl, is);
+//            // dp_handle_flow_mod(dp, 0, fl, 0);
         
-        /* Flow 2 */
-            // struct write_actions wa2;
-            // struct action_set as2;
-            // struct action gen_act2;
-            // struct instruction_set is2;
-            // action_set_init(&as2);
-            // instruction_set_init(&is2);
-            // struct flow *f2 = flow_new();
-            // action_output(&gen_act2, 1);
-            // action_set_add(&as2, gen_act2);
-            // inst_write_actions(&wa2, as2);
-            // add_write_actions(&is2, wa2);
-            // set_in_port(f2, 2);
-            // flow_add_instructions(f2, is2);
-            // dp_handle_flow_mod(dp, 0, f2, 0);    
-    }
-    else if (test == CORE_EDGE) {
+//         /* Flow 2 */
+//             // struct write_actions wa2;
+//             // struct action_set as2;
+//             // struct action gen_act2;
+//             // struct instruction_set is2;
+//             // action_set_init(&as2);
+//             // instruction_set_init(&is2);
+//             // struct flow *f2 = flow_new();
+//             // action_output(&gen_act2, 1);
+//             // action_set_add(&as2, gen_act2);
+//             // inst_write_actions(&wa2, as2);
+//             // add_write_actions(&is2, wa2);
+//             // set_in_port(f2, 2);
+//             // flow_add_instructions(f2, is2);
+//             // dp_handle_flow_mod(dp, 0, f2, 0);    
+//     }
+//     else if (test == CORE_EDGE) {
 
-    // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:3
-    // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:4
-    // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:2
-    // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:1
-        struct datapath *dp = (struct datapath*) topology_node(topo, 1);
-        printf("%p\n", dp);
-        int i;
-        for (i = 0; i < 4; ++i){
-            struct flow *fl = flow_new();
-            struct instruction_set is;
-            instruction_set_init(&is);
-            struct write_actions wa;
-            struct action_set as;
-            struct action gen_act;
-            action_set_init(&as);
+//     // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:3
+//     // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:4
+//     // ip,nw_src=0.0.0.0/0.0.0.64,nw_dst=0.0.0.32/0.0.0.32 actions=output:2
+//     // ip,nw_src=0.0.0.64/0.0.0.64,nw_dst=0.0.0.0/0.0.0.32 actions=output:1
+//         struct datapath *dp = (struct datapath*) topology_node(topo, 1);
+//         printf("%p\n", dp);
+//         int i;
+//         for (i = 0; i < 4; ++i){
+//             struct flow *fl = flow_new();
+//             struct instruction_set is;
+//             instruction_set_init(&is);
+//             struct write_actions wa;
+//             struct action_set as;
+//             struct action gen_act;
+//             action_set_init(&as);
                       
-            /* Match */
-            set_eth_type(fl, 0x800);
-            if (i == 0){
-                action_output(&gen_act, 1);
-                set_masked_ipv4_src(fl, 00000040, 00000040);
-                set_masked_ipv4_dst(fl, 00000000, 00000020);
-            }
-            else if (i == 1){
-                action_output(&gen_act, 2);
-                set_masked_ipv4_src(fl, 00000000, 00000040);
-                set_masked_ipv4_dst(fl, 00000020, 00000020);
-            }
-            else if (i == 2){
-                action_output(&gen_act, 3);
-                set_masked_ipv4_src(fl, 00000000, 00000040);
-                set_masked_ipv4_dst(fl, 00000000, 00000020); 
-            }
-            else if (i == 3){
-                action_output(&gen_act, 4);
-                set_masked_ipv4_src(fl, 00000040, 00000040);
-                set_masked_ipv4_dst(fl, 00000020, 00000020);
-            }
-            action_set_add(&as, gen_act);
-            inst_write_actions(&wa, as);
-            add_write_actions(&is, wa);
-            flow_add_instructions(fl, is);
-            //dp_handle_flow_mod(dp, 0, fl, 0);
-        }
-        printf("Doing nothing now\n");
-    }
+//             /* Match */
+//             set_eth_type(fl, 0x800);
+//             if (i == 0){
+//                 action_output(&gen_act, 1);
+//                 set_masked_ipv4_src(fl, 00000040, 00000040);
+//                 set_masked_ipv4_dst(fl, 00000000, 00000020);
+//             }
+//             else if (i == 1){
+//                 action_output(&gen_act, 2);
+//                 set_masked_ipv4_src(fl, 00000000, 00000040);
+//                 set_masked_ipv4_dst(fl, 00000020, 00000020);
+//             }
+//             else if (i == 2){
+//                 action_output(&gen_act, 3);
+//                 set_masked_ipv4_src(fl, 00000000, 00000040);
+//                 set_masked_ipv4_dst(fl, 00000000, 00000020); 
+//             }
+//             else if (i == 3){
+//                 action_output(&gen_act, 4);
+//                 set_masked_ipv4_src(fl, 00000040, 00000040);
+//                 set_masked_ipv4_dst(fl, 00000020, 00000020);
+//             }
+//             action_set_add(&as, gen_act);
+//             inst_write_actions(&wa, as);
+//             add_write_actions(&is, wa);
+//             flow_add_instructions(fl, is);
+//             //dp_handle_flow_mod(dp, 0, fl, 0);
+//         }
+//         printf("Doing nothing now\n");
+//     }
 
-    /* DP 2 */
-    // dp = (struct datapath*) topology_node(topo, 2);
-    // struct flow *fl2 = flow_new();
-    // instruction_set_init(&is);
-    // struct apply_actions aa;
-    // struct action_list al;
-    // action_list_init(&al);
-    // action_output(&gen_act, 2);
-    // action_list_add(&al, gen_act);
-    // inst_apply_actions(&aa, al);
-    // add_apply_actions(&is, aa);
-    // /* Match */
-    // set_in_port(fl2, 2);
-    // set_eth_type(fl2, 0x800);
-    // flow_add_instructions(fl2, is);
-    // dp_handle_flow_mod(dp, 0, fl2, 0);
-}
+//     /* DP 2 */
+//     // dp = (struct datapath*) topology_node(topo, 2);
+//     // struct flow *fl2 = flow_new();
+//     // instruction_set_init(&is);
+//     // struct apply_actions aa;
+//     // struct action_list al;
+//     // action_list_init(&al);
+//     // action_output(&gen_act, 2);
+//     // action_list_add(&al, gen_act);
+//     // inst_apply_actions(&aa, al);
+//     // add_apply_actions(&is, aa);
+//     // /* Match */
+//     // set_in_port(fl2, 2);
+//     // set_eth_type(fl2, 0x800);
+//     // flow_add_instructions(fl2, is);
+//     // dp_handle_flow_mod(dp, 0, fl2, 0);
+// }
 
 static void
 sim_init(struct sim *s, struct topology *topo, enum sim_mode mode) 
@@ -282,6 +282,7 @@ sim_close(struct sim *s)
     pthread_join(s->dataplane, 0);
     scheduler_destroy(s->evh.sch);
     topology_destroy(s->evh.topo);
+    of_manager_destroy(s->evh.om);
 }
 
 static pthread_cond_t  condition_var   = PTHREAD_COND_INITIALIZER;
@@ -361,6 +362,7 @@ des_mode(void * args){
             pthread_mutex_unlock( &mutex1 );
         }
         else if (ev->type == EVENT_END) {
+            sim_event_free(ev);
             break;
         }
     }
@@ -374,7 +376,7 @@ des_mode(void * args){
 } 
 
 struct sim_event *cur_ev = NULL;
-uint64_t mode_interval = 10000; // in microseconds 
+uint64_t mode_interval = 1000000; // in microseconds 
 
 static void 
 cont_mode(void* args) 
@@ -439,7 +441,7 @@ start(struct topology *topo)
     struct sim s;
     memset(&s, 0x0, sizeof(struct sim));
     sim_init(&s, topo, EMU_CTRL);
-    add_flows(topo, SINGLE);
+    // add_flows(topo, SINGLE);
     initial_events(&s, SINGLE, 0);    
     sim_close(&s);    
 }
