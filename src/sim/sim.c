@@ -35,8 +35,7 @@ initial_events(struct sim *s, int test, int cur_time)
             if (!node_is_buffer_empty(cur_node)){
                 struct netflow f = node_flow_pop(cur_node);
                 struct sim_event_flow *ev = sim_event_flow_new(f.start_time, cur_node->uuid);
-                ev->flow = f;
-                 
+                ev->flow = f;  
                 scheduler_insert(sch, (struct sim_event*) ev);
             }
         }
@@ -289,7 +288,7 @@ static pthread_cond_t  condition_var   = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t mutex1    = PTHREAD_MUTEX_INITIALIZER;
 int run = 0;
 int last_wrt = 0;
-int last_ctrl = 0;
+uint64_t last_ctrl = 0;
 
 // static void update_stats(struct topology *topo, uint64_t time){
 
@@ -391,17 +390,17 @@ cont_mode(void* args)
     }
     pthread_mutex_unlock( &mutex1 );
     sch->clock += 1000; /* Adds one milisecond */
-    printf("Clock %"PRIu64"\n", sch->clock);
-    printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, 
-           scheduler_is_empty(sch), sch->ev_queue->size);
+    // printf("Clock %"PRIu64"\n", sch->clock);
+    // printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, 
+    //        scheduler_is_empty(sch), sch->ev_queue->size);
 
     /* Get the event but delete it only if executed! */
     if (cur_ev == NULL && !scheduler_is_empty(sch)){
         cur_ev = scheduler_retrieve(sch);
-        printf("Event Type %d\n", cur_ev->type);
+        // printf("Event Type %d\n", cur_ev->type);
         if (cur_ev->type == EVENT_FLOW && cur_ev->time <= sch->clock){
             /* Execute */
-            printf("CONT executing %ld %ld\n", cur_ev->time, sch->clock);
+            printf("CONT executing %d %ld %ld\n", cur_ev->type, cur_ev->time, sch->clock);
             handle_event(&s->evh, cur_ev);
             scheduler_delete(sch);
             sim_event_free(cur_ev);
@@ -409,7 +408,7 @@ cont_mode(void* args)
         else if (cur_ev->type == EVENT_OF_MSG_OUT || 
                  cur_ev->type == EVENT_OF_MSG_IN){
             last_ctrl = cur_ev->time;
-            printf("MSG_IN %ld\n", cur_ev->time);
+            printf("MSG_OF %s %ld\n", cur_ev->type == 4? "OUT":"IN", cur_ev->time);
             handle_event(&s->evh, cur_ev);
             scheduler_delete(sch);
             sim_event_free(cur_ev);
@@ -426,7 +425,8 @@ cont_mode(void* args)
     }
     /* Check if controller is idle for some time */
     if (sch->clock - last_ctrl > mode_interval){
-        printf("Switching to DES\n");
+        printf("Switching to DES %ld, %ld, %ld\n", sch->clock, last_ctrl, 
+               sch->clock - last_ctrl);
         pthread_mutex_lock( &mutex1 );
         sch->mode = DES;
         /* Wake up timer */

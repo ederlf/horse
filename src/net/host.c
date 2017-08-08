@@ -273,7 +273,7 @@ host_add_app(struct host *h, uint16_t type)
 }
 
 void 
-host_start_app(struct host *h, uint16_t type, uint32_t start_time, void* args)
+host_start_app(struct host *h, uint16_t type, uint64_t start_time, void* args)
 {
     struct app *app;
     struct netflow flow;
@@ -283,6 +283,7 @@ host_start_app(struct host *h, uint16_t type, uint32_t start_time, void* args)
         flow.start_time = start_time;
         host_send_netflow(h, &flow);
         node_flow_push((struct node*) h, flow);
+        printf("Flow Start time %ld\n", flow.start_time);
         printf("%x\n", flow.next->match.eth_type);
     }
 }

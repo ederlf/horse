@@ -20,7 +20,7 @@ void host_handle_netflow(struct node *n, struct netflow *flow);
 /* Apps */
 void host_add_app(struct host *h, uint16_t type);
 void host_start_app(struct host *h, uint16_t type, 
-                    uint32_t start_time, void*args);
+                    uint64_t start_time, void*args);
 /* Access functions */
 struct port* host_port(const struct host *h, uint32_t port_id);
 uint64_t host_uuid(const struct host* h);

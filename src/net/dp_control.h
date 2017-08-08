@@ -29,14 +29,13 @@
  *
  * Author: Zoltán Lajos Kis <zoltan.lajos.kis@ericsson.com>
  *
- * Copyright (c) 2017, Eder Leao Fernandes, United Kingdom
+ * Copyright (c) 2017, Eder Leao Fernandes, <e.leao@qmul.ac.uk>
  */
 
 #ifndef DP_CONTROL_H
 #define DP_CONTROL_H 1
 
 #include "datapath.h"
-#include <loci/loci.h>
 /****************************************************************************
  * Datapath control channel related functions.
  ****************************************************************************/

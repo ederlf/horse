@@ -46,6 +46,7 @@
 // #include "openflow/openflow.h"
 
 #include "dp_control.h"
+#include <loci/loci.h>
 
 /* Handles barrier request messages. */
 // static ofl_err
@@ -229,7 +230,6 @@ of_object_t *
 dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
                    size_t len, uint64_t time) {
 
-    of_object_t *err = NULL; 
     of_object_t *obj = of_object_new_from_message(msg, len);
     
     switch (obj->object_id) {
@@ -241,7 +241,7 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
         case OF_FLOW_MODIFY_STRICT: 
         case OF_FLOW_DELETE:
         case OF_FLOW_DELETE_STRICT: { 
-            err = dp_handle_flow_mod(dp, obj, time); 
+            return dp_handle_flow_mod(dp, obj, time); 
             break;
         }
         case OF_PORT_STATS_REQUEST: {
@@ -263,14 +263,14 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
 
         }
         case OF_PORT_DESC_STATS_REQUEST: {
-
+            return dp_handle_port_desc(dp, obj);
         }
         default: {
             break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
         }
     }
-    of_object_delete(obj);
-    return err;
+    // of_object_delete(obj);
+    return NULL;
     /* NOTE: It is assumed that if a handler returns with error, it did not use
              any part of the control message, thus it can be freed up.
              If no error is returned however, the message must be freed inside

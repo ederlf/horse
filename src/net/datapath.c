@@ -11,11 +11,10 @@
 #include "datapath.h"
 #include "dp_actions.h"
 #include "lib/util.h"
+#include "lib/openflow.h"
 #include "lib/of_unpack.h" 
 #include <cfluid/of_settings.h>
 #include <uthash/utlist.h>
-
-
 
 /* Definition of a switch of the network */
 struct datapath {
@@ -86,7 +85,6 @@ execute_action_list(struct action_list *al, struct netflow *flow)
     }
 }
 
-
 static void 
 execute_action_set(struct action_set *as, struct netflow *flow){
 
@@ -145,7 +143,8 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
     uint8_t table_id;
     struct flow_table *table;
     struct flow *f;
-    
+    /* Buffering to be implemented */
+    flow->metadata.buffer_id = OFP_NO_BUFFER;
     uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
@@ -157,7 +156,7 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
         flow->match.metadata = 0;
         /* Enter pipeline */
         table = dp->tables[0];
-        table_id = 0;
+        table_id = flow->metadata.table_id = 0;
         while(table){
             f = flow_table_lookup(table, &flow->match, flow->start_time);
             table = NULL;
@@ -167,10 +166,11 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
                 /* Increase the flow counters */
                 f->pkt_cnt += flow->pkt_cnt;
                 f->byte_cnt += flow->byte_cnt;
+                flow->metadata.cookie = f->cookie;
                 /* Execute instructions */
                 execute_instructions(&f->insts, &next_table_id, flow, &acts);
                 if (next_table_id > table_id){
-                    table_id = next_table_id;
+                    table_id = flow->metadata.table_id = next_table_id;
                     table = dp->tables[table_id];
                 }
                 else {
@@ -246,7 +246,75 @@ dp_handle_flow_mod(const struct datapath *dp,
     return NULL;
 }
 
-of_object_t* dp_handle_pkt_out(const struct datapath *dp, 
+of_object_t* 
+dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
+{
+    uint32_t xid;
+    of_port_desc_t *of_port_desc = NULL;
+    of_list_port_desc_t *of_list_port_desc = NULL;
+    of_mac_addr_t mac;
+    struct port *cur_port, *tmp;
+    
+    of_port_desc_stats_request_t *req = (of_port_desc_stats_request_t*) obj; 
+    of_port_desc_stats_reply_t *reply;
+
+    if ((reply = of_port_desc_stats_reply_new(obj->version)) == NULL) {
+        fprintf(stderr, "%s\n", "Failed to create port desc reply object");
+        return NULL;
+    }
+
+    of_port_desc_stats_request_xid_get(req, &xid);
+    of_port_desc_stats_reply_xid_set(reply, xid);
+
+    /* Allocates memory for of_port_desc */
+    of_port_desc = of_port_desc_new(OF_VERSION_1_3);
+    if (of_port_desc == NULL){
+        fprintf(stderr, "%s\n", "Failed to create a port desc object");
+        return NULL;
+    }
+
+    /* Allocates memory for of_list_port_desc */
+    of_list_port_desc = of_list_port_desc_new(OF_VERSION_1_3);
+    if (of_list_port_desc == NULL)
+    {
+        fprintf(stderr, "%s\n", "Failed to create a list port desc object");
+        of_port_desc_delete(of_port_desc);
+        return NULL;
+    }
+
+    HASH_ITER(hh, dp->base.ports, cur_port, tmp) {
+        of_port_desc_port_no_set(of_port_desc, cur_port->port_id);
+        memcpy(&mac, cur_port->eth_address, ETH_LEN);
+        of_port_desc_hw_addr_set(of_port_desc, mac);
+        of_port_desc_name_set(of_port_desc, cur_port->name);
+        of_port_desc_config_set(of_port_desc, cur_port->config);
+        of_port_desc_state_set(of_port_desc, cur_port->state);
+        of_port_desc_curr_set(of_port_desc, cur_port->curr);
+        of_port_desc_advertised_set(of_port_desc, cur_port->advertised);
+        of_port_desc_supported_set(of_port_desc, cur_port->supported);
+        of_port_desc_peer_set(of_port_desc, cur_port->peer);
+        of_port_desc_curr_speed_set(of_port_desc, cur_port->curr_speed);
+        of_port_desc_max_speed_set(of_port_desc, cur_port->max_speed);
+
+        if (of_list_port_desc_append(of_list_port_desc, of_port_desc) < 0) { 
+             fprintf(stderr, "%s\n", "Failure adding port desc to list");
+             return NULL;
+        }
+    }
+
+    if (of_port_desc_stats_reply_entries_set(reply, of_list_port_desc) < 0) {
+        fprintf(stderr, "%s\n", "Failure to add list of ports to stats reply" );
+        return NULL;
+    }
+
+    of_port_desc_delete(of_port_desc);
+    of_list_port_desc_delete(of_list_port_desc);
+
+    return reply;
+}
+
+of_object_t* 
+dp_handle_pkt_out(const struct datapath *dp, 
                                of_packet_out_t *pkt)
 {
     UNUSED(dp);

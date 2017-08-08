@@ -21,34 +21,36 @@ static void netflow_to_match(struct netflow *flow, of_match_t *match)
     OF_MATCH_MASK_IN_PORT_EXACT_SET(match);    
 }
 
-uint8_t *of_packet_in(struct sim_event *ev)
+uint8_t *of_packet_in(struct netflow *f, size_t *len)
 {
-    uint8_t *buf;
-    size_t len;
+    uint32_t pkt_len;
+    uint8_t *buf = NULL;
     of_packet_in_t *of_packet_in;
     of_match_t     match;
-    struct sim_event_pkt_in *pkt_in = (struct sim_event_pkt_in*) (ev);
     of_octets_t of_octets;
 
     of_octets.data = xmalloc(MAX_PACKET_IN_DATA);
-    netflow_to_match(&pkt_in->flow, &match);
+    netflow_to_match(f, &match);
     of_packet_in = of_packet_in_new(OF_VERSION_1_3);
-    of_packet_in_buffer_id_set(of_packet_in, pkt_in->buffer_id);
-    of_packet_in_reason_set(of_packet_in, pkt_in->reason);
-    of_packet_in_table_id_set(of_packet_in, pkt_in->table_id);
-    of_packet_in_cookie_set(of_packet_in, pkt_in->cookie);
+    of_packet_in_buffer_id_set(of_packet_in, f->metadata.buffer_id);
+    of_packet_in_reason_set(of_packet_in, f->metadata.reason);
+    of_packet_in_table_id_set(of_packet_in, f->metadata.table_id);
+    of_packet_in_cookie_set(of_packet_in, f->metadata.cookie);
     if (of_packet_in_match_set(of_packet_in, &match) != OF_ERROR_NONE){
         return NULL;
     }
-    len = netflow_to_pkt(&pkt_in->flow, of_octets.data);
-    of_octets.bytes = len;
+    pkt_len = netflow_to_pkt(f, of_octets.data);
+    printf("Needs to send packet_out %d\n", of_packet_in->length);
+    of_octets.bytes = pkt_len;
     if ((of_packet_in_data_set(of_packet_in, &of_octets)) != OF_ERROR_NONE) {
         printf("Failed to write packet data to packet-in message\n");
         of_packet_in_delete(of_packet_in);
         return NULL;
     }
-    of_packet_in_total_len_set(of_packet_in, len);
-    buf = OF_MESSAGE_TO_BUFFER(of_packet_in);
+    of_packet_in_total_len_set(of_packet_in, pkt_len);
+    *len = of_packet_in->length;
+    of_object_wire_buffer_steal((of_object_t*) of_packet_in, &buf);
+    // buf = (uint8_t*) WBUF_BUF(OF_OBJECT_TO_WBUF(of_packet_in));
     of_packet_in_delete(of_packet_in);
     return buf;
 }

@@ -1,4 +1,6 @@
 #include "event_handler.h"
+#include "lib/of_pack.h"
+#include "lib/openflow.h"
 #include "net/datapath.h"
 #include "net/dp_control.h"
 #include "net/host.h"
@@ -31,19 +33,6 @@ next_flow_event(struct ev_handler *ev_hdl,
     }
 }
 
-static void 
-next_ctrl_ev(struct ev_handler *ev_hdl, struct sim_event_flow *cur_flow)
-{
-    struct scheduler *sch = ev_hdl->sch;
-    // struct sim_event_pkt_in *pkt_in = sim_event_flow_new(cur_flow->flow.start_time                                          , cur_flow->node_id);
-    // new_flow->hdr.type = EVENT_PACKET_IN;
-    // memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
-    // scheduler_insert(sch, (struct sim_event*) new_flow);
-    // printf("Will create new event to controller from:%ld size %ld\n", cur_flow->node_id, sch->ev_queue->size);
-    UNUSED(sch);
-    UNUSED(cur_flow);
-}
-
 /**
  * create just a single function to handle flows.
  * Static methods for send and receive.
@@ -66,8 +55,19 @@ handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
         ports = ev_flow->flow.out_ports;
         /* May have or not ports to send the flow */
         LL_FOREACH(ports, op) {
-            if (op->port == CONTROLLER){    
-                next_ctrl_ev(ev_hdl, ev_flow);
+            /* Schedule a packet in message */
+            if (op->port == CONTROLLER){
+                size_t len;
+                /* node can only be a datapath */
+                struct datapath *dp = (struct datapath*) node;
+                ev_flow->flow.metadata.reason = OFPR_ACTION;
+                uint8_t *data = of_packet_in(&ev_flow->flow, &len);
+                /* Create an of out event */
+                struct sim_event_of *ev_of;
+                ev_of = sim_event_of_msg_out_new(ev->time, 
+                                                 dp_id(dp), data, 
+                                                 len);
+                scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
             }
             else {
                 next_flow_event(ev_hdl, ev_flow, op->port);
@@ -98,13 +98,24 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
     /* Finds the datapath of the event
     *  handle_control_msg(dp, msg); 
     */
+    of_object_t *ret;
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
     struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
                                                     ev_of->dp_id);
-    dp_control_handle_control_msg(dp, ev_of->data, ev_of->len, ev->time);
+    ret = dp_control_handle_control_msg(dp, ev_of->data, 
+                                        ev_of->len, ev->time);
+    /* In case there is a reply */
+    if (ret != NULL){
+        struct sim_event_of *ev_of;
+        uint8_t *data;
+        size_t len = ret->length;
+        of_object_wire_buffer_steal(ret, &data);
+        ev_of = sim_event_of_msg_out_new(ev->time, 
+                                        dp_id(dp), data, 
+                                        len);
+        scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of); 
+    }
     free(ev_of->data);
-    /* Might need to schedule a new event with an answer */
-    UNUSED(ev_hdl);
 }
 
 static void 
@@ -112,6 +123,7 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
     struct of_manager *om = ev_hdl->om;
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
+    printf("Will send message to controller\n");
     of_manager_send(om, ev_of->dp_id, ev_of->data, ev_of->len);
 }
 

@@ -32,17 +32,27 @@ struct out_port {
     struct out_port *next;
 };
 
+
+/* Metadata of a netflow from the datapath */
+struct dp_meta {
+    uint32_t buffer_id;     /* ID assigned by datapath. */
+    uint8_t reason;         /* Reason packet is being sent (one of OFPR_*) */
+    uint8_t table_id;       /* ID of the table that was looked up */
+    uint64_t cookie;        /* Cookie of the flow entry that was looked up. */
+};
+
 /* Description of a network flow */
 struct netflow {
-    uint64_t pkt_cnt;           /* Number of packets in the flow.       */
-    uint64_t byte_cnt;          /* Total number of packets in the flow. */
+    uint64_t pkt_cnt;           /* Number of packets in the flow.           */
+    uint64_t byte_cnt;          /* Total number of packets in the flow.     */
     uint64_t start_time;
     uint64_t end_time;
-    struct flow_key match;      /* The fields belonging to a flow.      */
+    struct flow_key match;      /* The fields belonging to a flow.          */
     struct tag_stack tags;
-    uint8_t tcp_flags;          /* Bitmap of TCP flags present in the flow */
-    struct out_port *out_ports; /* List of ports the flow may be sent */
-    struct netflow *next;        /* A pointer to a possible following flow */
+    uint8_t tcp_flags;          /* Bitmap of TCP flags present in the flow  */
+    struct dp_meta metadata;    /* Any additional information. e.g: pkt out */
+    struct out_port *out_ports; /* List of ports the flow may be sent       */
+    struct netflow *next;       /* A pointer to a possible following flow   */
 };
 
 void netflow_init(struct netflow *nf);

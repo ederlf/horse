@@ -19,6 +19,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/json_topology.c \
 		src/lib/netflow.h \
 		src/lib/netflow.c \
+                src/lib/of_pack.h \
+                src/lib/of_pack.c \
                 src/lib/packets.h \
                 src/lib/of_unpack.h \
                 src/lib/of_unpack.c \

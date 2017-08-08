@@ -1,9 +1,14 @@
 #include "netflow.h"
 #include <uthash/utlist.h>
+#include <arpa/inet.h>
 
 void netflow_init(struct netflow *nf)
 {
     memset(nf, 0x0, sizeof(struct netflow));
+    /* Cannot guarantee that the representation 
+     *  of a NULL pointer is all bits 0, so initialize
+     *  the pointer. 
+    */
     nf->next = NULL;
 }
 
@@ -163,9 +168,9 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
 
     eth = (struct eth_header*) pos;
     eth->eth_type = m.eth_type;
-    memcpy(eth->eth_src, m.eth_dst, ETH_LEN);
-    memcpy(eth->eth_dst, m.eth_src, ETH_LEN);
-    eth->eth_type = m.eth_type;
+    memcpy(eth->eth_src, m.eth_src, ETH_LEN);
+    memcpy(eth->eth_dst, m.eth_dst, ETH_LEN);
+    eth->eth_type = htons(m.eth_type);
     offset += sizeof(struct eth_header);
     pos += offset;
 
@@ -191,15 +196,16 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
 
     if (m.eth_type == ETH_TYPE_ARP) {
         struct arp_eth_header *arp = (struct arp_eth_header*) pos;
-        arp->arp_hrd = ARP_HW_TYPE_ETH; /* Ethernet */
-        arp->arp_pro = ETH_TYPE_IP;
+        arp->arp_hrd = htons(ARP_HW_TYPE_ETH); /* Ethernet */
+        arp->arp_pro = htons(ETH_TYPE_IP);
         arp->arp_hln = ETH_LEN; 
         arp->arp_pln = sizeof(uint32_t); 
-        arp->arp_op = m.arp_op; 
+        arp->arp_op = htons(m.arp_op); 
         memcpy(arp->arp_sha, m.arp_sha, ETH_LEN);
         memcpy(arp->arp_sha, m.arp_tha, ETH_LEN);
-        arp->arp_spa = m.arp_spa;
-        arp->arp_tpa = m.arp_tpa;
+        arp->arp_spa = htonl(m.arp_spa);
+        arp->arp_tpa = htonl(m.arp_tpa);
+        offset += sizeof(struct arp_eth_header);
         return offset;
     }
     if (m.eth_type == ETH_TYPE_IP){

@@ -63,17 +63,21 @@ struct ipv6_info {
  *  the first version of the simulator. */
  
 struct port {
-    uint32_t port_id;              /* Identification number.     */
-    uint32_t speed;                /* Total speed in kbps.       */
-    uint32_t curr_speed;           /* Current speed in kbps.     */
-    uint8_t config;                /* Administrative state.      */
-    uint8_t state;                 /* Interface up or down.      */ 
+    uint32_t port_id;              /* Identification number.        */
+    uint32_t peer;                 /* Features advertised by peer   */ 
+    uint32_t max_speed;            /* Total speed in kbps.      */
+    uint32_t curr;                 /* Current features              */
+    uint32_t curr_speed;           /* Current speed in kbps.        */
+    uint32_t advertised;           /* Features currently advertised */
+    uint32_t supported;            /* Features supported by the port.*/
+    uint8_t config;                /* Administrative state.          */
+    uint8_t state;                 /* Interface up or down.          */ 
     char name[MAX_PORT_NAME];
-    struct port_stats stats;       /* Current port statistics.   */
-    uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address. */
+    struct port_stats stats;       /* Current port statistics.       */
+    uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address.     */
     struct ipv4_info *ipv4_addr;   /* Port may have an IPv4 assigned */ 
     struct ipv6_info *ipv6_addr;   /* Port may have an IPv6 assigned */
-    UT_hash_handle hh;             /* Make the struct hashable   */
+    UT_hash_handle hh;             /* Make the struct hashable       */
 };
 
 struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);

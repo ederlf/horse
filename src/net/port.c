@@ -22,7 +22,7 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t spee
     p->config |= PORT_UP;
     p->state |= PORT_LIVE;
     /* TODO: Set port speed */
-    p->speed = speed;
+    p->max_speed = speed;
     p->curr_speed = curr_speed;
     return p;
 }

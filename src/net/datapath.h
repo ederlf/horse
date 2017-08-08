@@ -48,6 +48,9 @@ void dp_handle_netflow(struct node *n, struct netflow *flow);
 of_object_t* dp_handle_flow_mod(const struct datapath *dp, 
                                 of_flow_modify_t *obj, uint64_t time);
 
+of_object_t* dp_handle_port_desc(const struct datapath *dp, 
+                                 of_object_t *obj);
+
 of_object_t* dp_handle_pkt_out(const struct datapath *dp, 
                                of_object_t *obj);
 
