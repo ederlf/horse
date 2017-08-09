@@ -16,6 +16,8 @@
 #define ETH_TYPE_MPLS_MCAST    0x8848
 
 #define ARP_HW_TYPE_ETH 1
+#define ARP_OP_REQUEST 1
+#define ARP_OP_REPLY 2
 
 #define VLAN_VID_MASK 0x0fff
 #define VLAN_VID_SHIFT 0

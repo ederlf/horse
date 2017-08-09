@@ -6,31 +6,44 @@
 #include "net/host.h"
 #include <uthash/utlist.h>
 
-static void 
-next_flow_event(struct ev_handler *ev_hdl, 
-                struct sim_event_flow *cur_flow, uint32_t exit_port) {
+static void
+next_flow_event(struct ev_handler *ev_hdl, struct node* node, 
+                struct netflow *nf, struct out_port *ports){
     uint64_t dst_uuid;
     uint32_t dst_port, latency;
-
+    struct out_port *op;
     struct scheduler *sch = ev_hdl->sch;
     struct topology *topo = ev_hdl->topo;
-    // if (exit_port == CONTROLLER){
-        
-    //     scheduler_insert(sch, new_ev);  
-    // }
-    if (topology_next_hop(topo, cur_flow->node_id, exit_port, 
+    /* May have or not ports to send the flow */
+    LL_FOREACH(ports, op) {
+        /* Schedule a packet in message */
+        if (op->port == CONTROLLER) {
+            size_t len;
+            /* node can only be a datapath */
+            struct datapath *dp = (struct datapath*) node;
+            nf->metadata.reason = OFPR_ACTION;
+            uint8_t *data = of_packet_in(nf, &len);
+            /* Create an of out event */
+            struct sim_event_of *ev_of;
+            ev_of = sim_event_of_msg_out_new(nf->start_time, 
+                                             dp_id(dp), data, 
+                                             len);
+            scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
+        }
+        else if (topology_next_hop(topo, node->uuid, op->port, 
                            &dst_uuid, &dst_port, &latency)) {
-        /* Set completion time and in_port*/
-        cur_flow->flow.end_time += latency;
-        cur_flow->flow.match.in_port = dst_port;
-        /* Create new flow event */
-        struct sim_event_flow *new_flow = sim_event_flow_new(cur_flow->flow.start_time                                          , dst_uuid);
-        memcpy(&new_flow->flow, &cur_flow->flow, sizeof(struct netflow));
-        new_flow->flow.out_ports = NULL;
-        
-        scheduler_insert(sch, (struct sim_event*) new_flow);
-        // printf("Will create new event dst:%ld size %ld dst_port %d\n", dst_uuid, sch->ev_queue->size, dst_port);
+            /* Set completion time and in_port*/
+            nf->end_time += latency;
+            nf->match.in_port = dst_port;
+            /* Create new flow event */
+            struct sim_event_flow *new_flow; 
+            new_flow = sim_event_flow_new(nf->start_time, dst_uuid);
+            memcpy(&new_flow->flow, nf, sizeof(struct netflow));
+            new_flow->flow.out_ports = NULL;
+            scheduler_insert(sch, (struct sim_event*) new_flow);
+        }
     }
+    netflow_clean_out_ports(nf);
 }
 
 /**
@@ -42,7 +55,7 @@ next_flow_event(struct ev_handler *ev_hdl,
 
 static void 
 handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
-    struct out_port *op, *ports;
+    struct out_port *ports;
     struct topology *topo = ev_hdl->topo;
     struct sim_event_flow *ev_flow = (struct sim_event_flow *)ev;
     /* Retrieve node to handle the flow */
@@ -53,27 +66,7 @@ handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
         // printf("POOORT %d\n", f->match.in_port);
         node->handle_netflow(node, &ev_flow->flow);
         ports = ev_flow->flow.out_ports;
-        /* May have or not ports to send the flow */
-        LL_FOREACH(ports, op) {
-            /* Schedule a packet in message */
-            if (op->port == CONTROLLER){
-                size_t len;
-                /* node can only be a datapath */
-                struct datapath *dp = (struct datapath*) node;
-                ev_flow->flow.metadata.reason = OFPR_ACTION;
-                uint8_t *data = of_packet_in(&ev_flow->flow, &len);
-                /* Create an of out event */
-                struct sim_event_of *ev_of;
-                ev_of = sim_event_of_msg_out_new(ev->time, 
-                                                 dp_id(dp), data, 
-                                                 len);
-                scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
-            }
-            else {
-                next_flow_event(ev_hdl, ev_flow, op->port);
-            }
-        }
-        netflow_clean_out_ports(&ev_flow->flow);
+        next_flow_event(ev_hdl, node, &ev_flow->flow, ports);
     }
 }
 
@@ -99,11 +92,17 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
     *  handle_control_msg(dp, msg); 
     */
     of_object_t *ret;
+    struct netflow nf;
+    nf.out_ports = NULL;
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
     struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
                                                     ev_of->dp_id);
     ret = dp_control_handle_control_msg(dp, ev_of->data, 
-                                        ev_of->len, ev->time);
+                                        &nf, ev_of->len, ev->time);
+   
+    if (nf.out_ports != NULL) {
+        next_flow_event(ev_hdl, (struct node*) dp, &nf, nf.out_ports);
+    }
     /* In case there is a reply */
     if (ret != NULL){
         struct sim_event_of *ev_of;
@@ -113,9 +112,10 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
         ev_of = sim_event_of_msg_out_new(ev->time, 
                                         dp_id(dp), data, 
                                         len);
-        scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of); 
+        scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
+        of_object_delete(ret);
     }
-    free(ev_of->data);
+    ev_of->data = NULL;
 }
 
 static void 

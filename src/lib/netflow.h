@@ -63,6 +63,7 @@ bool netflow_is_outer_mpls(struct netflow *nf);
 void netflow_pop_mpls(struct netflow *nf, uint16_t eth_type);
 bool netflow_is_vlan_tagged(struct netflow *nf);
 size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer);
+void pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len);
 void netflow_clean_out_ports(struct netflow *flow);
 void netflow_update_send_time(struct netflow *flow, uint32_t port_speed);
 

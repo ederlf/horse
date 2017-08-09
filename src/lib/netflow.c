@@ -10,6 +10,7 @@ void netflow_init(struct netflow *nf)
      *  the pointer. 
     */
     nf->next = NULL;
+    nf->out_ports = NULL;
 }
 
 void 
@@ -42,7 +43,8 @@ netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
     }
 }
 
-void netflow_push_mpls(struct netflow *nf, uint16_t eth_type)
+void 
+netflow_push_mpls(struct netflow *nf, uint16_t eth_type)
 {
     int *top = &nf->tags.top;
     struct tag *new;
@@ -167,7 +169,6 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
     uint8_t icmp_type, icmp_code;
 
     eth = (struct eth_header*) pos;
-    eth->eth_type = m.eth_type;
     memcpy(eth->eth_src, m.eth_src, ETH_LEN);
     memcpy(eth->eth_dst, m.eth_dst, ETH_LEN);
     eth->eth_type = htons(m.eth_type);
@@ -271,6 +272,119 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
     }
 
     return offset;
+}
+
+void 
+pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
+{
+    size_t offset = 0;
+    struct flow_key *m =  &nf->match;
+    struct eth_header *eth;
+    // uint8_t icmp_type, icmp_code;
+
+    eth = (struct eth_header*) buffer;
+    m->eth_type = ntohs(eth->eth_type);
+    memcpy(m->eth_src, eth->eth_src, ETH_LEN);
+    memcpy(m->eth_dst, eth->eth_src, ETH_LEN);
+    offset += sizeof(struct eth_header);
+
+    /* VLAN */
+    if (m->eth_type == ETH_TYPE_VLAN ||
+        m->eth_type == ETH_TYPE_VLAN_QinQ) {
+
+        int *top = &nf->tags.top;
+        struct vlan *vlan;
+        struct tag *new;
+        
+        if (pkt_len < offset + sizeof(struct vlan)) {
+            return;
+        }
+        
+        vlan = (struct vlan *)(buffer + offset);
+        m->vlan_id  = (ntohs(vlan->tag) & VLAN_VID_MASK) >> VLAN_VID_SHIFT;
+        m->vlan_pcp = (ntohs(vlan->tag) & VLAN_PCP_MASK) >> VLAN_PCP_SHIFT;
+        m->eth_type = ntohs(vlan->ethertype);
+        
+        /* Add a vlan tag */
+        (*top)++;
+        new = &nf->tags.level[*top];
+        new->type = m->eth_type;
+        memcpy(&new->vlan_tag, vlan, sizeof(struct vlan));
+
+        offset += sizeof(struct vlan);
+    }
+
+    /* skip through rest of VLAN tags */
+    while (m->eth_type  == ETH_TYPE_VLAN ||
+           m->eth_type  == ETH_TYPE_VLAN_QinQ) {
+
+        int *top = &nf->tags.top;
+        struct vlan *vlan;
+        struct tag *new;
+        
+        if (pkt_len < offset + sizeof(struct vlan)) {
+            return;
+        }
+        
+        m->eth_type = ntohs(vlan->ethertype);
+        /* Add a vlan tag */
+        if (*top < MAX_STACK_SIZE) {
+            (*top)++;
+            new = &nf->tags.level[*top];
+            new->type = m->eth_type;
+            memcpy(&new->vlan_tag, vlan, sizeof(struct vlan));    
+        }
+        else {
+            return;
+        }       
+        offset += sizeof(struct vlan);
+    }
+
+    /* MPLS */
+    if (m->eth_type== ETH_TYPE_MPLS || m->eth_type== ETH_TYPE_MPLS_MCAST) {
+            struct mpls *mpls;
+            if (pkt_len < offset + sizeof(struct mpls)) {
+                return;
+            }
+            mpls = (struct mpls *)(buffer + offset);
+            m->mpls_label = (ntohl(mpls->fields) & 
+                          MPLS_LABEL_MASK) >> MPLS_LABEL_SHIFT;
+            m->mpls_tc =    (ntohl(mpls->fields) & 
+                             MPLS_TC_MASK) >> MPLS_TC_SHIFT;
+            m->mpls_bos =  (ntohl(mpls->fields) & 
+                            MPLS_S_MASK) >> MPLS_S_SHIFT;
+            offset += sizeof(struct mpls);
+            /* no processing past MPLS */
+            return;
+    }
+
+    /* ARP */
+    if (m->eth_type == ETH_TYPE_ARP) {
+        if (pkt_len < offset + sizeof(struct arp_eth_header)) {
+            return;
+        }
+        struct arp_eth_header *arp;
+        arp = (struct arp_eth_header *)(buffer + offset);
+        offset += sizeof(struct arp_eth_header);
+
+        if (ntohs(arp->arp_hrd) == 1 &&
+            ntohs(arp->arp_pro) == ETH_TYPE_IP &&
+            arp->arp_hln == ETH_LEN &&
+            arp->arp_pln == 4) {
+            uint16_t arp_op = ntohs(arp->arp_op); 
+            if ( arp_op <= 0xff) {
+                m->arp_op = arp_op;
+            }
+            if (arp_op == ARP_OP_REQUEST ||
+                arp_op == ARP_OP_REPLY) {
+                m->arp_spa = htonl(arp->arp_spa);
+                m->arp_tpa = htonl(arp->arp_tpa);
+                memcpy(m->arp_sha, arp->arp_sha, ETH_LEN);
+                memcpy(m->arp_tha, arp->arp_tha, ETH_LEN);
+            }
+        }
+        return;
+    }
 }
 
 void netflow_clean_out_ports(struct netflow *flow)

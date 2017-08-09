@@ -228,20 +228,20 @@
 /* Dispatches control messages to appropriate handler functions. */
 of_object_t *
 dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
-                   size_t len, uint64_t time) {
-
-    of_object_t *obj = of_object_new_from_message(msg, len);
+                              struct netflow *nf, size_t len, uint64_t time) {
     
+    of_object_t *obj = of_object_new_from_message(msg, len);
+    of_object_t* ret = NULL;
     switch (obj->object_id) {
         case OF_PACKET_OUT: {
-            return dp_handle_pkt_out(dp, obj);
+            return dp_handle_pkt_out(dp, obj, nf);
         }
         case OF_FLOW_ADD: 
         case OF_FLOW_MODIFY:
         case OF_FLOW_MODIFY_STRICT: 
         case OF_FLOW_DELETE:
         case OF_FLOW_DELETE_STRICT: { 
-            return dp_handle_flow_mod(dp, obj, time); 
+            ret = dp_handle_flow_mod(dp, obj, time);
             break;
         }
         case OF_PORT_STATS_REQUEST: {
@@ -263,14 +263,15 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
 
         }
         case OF_PORT_DESC_STATS_REQUEST: {
-            return dp_handle_port_desc(dp, obj);
+            ret = dp_handle_port_desc(dp, obj);
+            break;
         }
         default: {
             break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
         }
     }
-    // of_object_delete(obj);
-    return NULL;
+    of_object_delete(obj);
+    return ret;
     /* NOTE: It is assumed that if a handler returns with error, it did not use
              any part of the control message, thus it can be freed up.
              If no error is returned however, the message must be freed inside

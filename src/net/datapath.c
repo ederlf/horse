@@ -186,10 +186,25 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
 void
 dp_send_netflow(struct datapath *dp, struct netflow *flow)
 {   
-    struct out_port *op;
+    struct out_port *op, *tmp;
     struct out_port *ports = flow->out_ports;
-    LL_FOREACH(ports, op) {
-        struct port *p = dp_port(dp, op->port);
+    LL_FOREACH_SAFE(ports, op, tmp) {
+        struct port *p, *tmp_port; 
+        /* Handle flooding */
+        if (op->port == OFPP_FLOOD) {
+            LL_DELETE(ports, op);
+            free(op);
+            HASH_ITER(hh, dp->base.ports, p, tmp_port) {
+                if (p->port_id != flow->match.in_port) {
+                    struct out_port *new_port = xmalloc(sizeof(struct out_port));
+                    new_port->port = p->port_id;
+                    LL_APPEND(ports, new_port);    
+                }
+            }
+            /* Get back to the loop and process all the ports added*/
+            continue;
+        }
+        p = dp_port(dp, op->port);
         if (p != NULL) {
             uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
             if (upnlive){
@@ -309,16 +324,22 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
 
     of_port_desc_delete(of_port_desc);
     of_list_port_desc_delete(of_list_port_desc);
-
+    // of_port_desc_stats_request_delete(req);
     return reply;
 }
 
 of_object_t* 
-dp_handle_pkt_out(const struct datapath *dp, 
-                               of_packet_out_t *pkt)
+dp_handle_pkt_out(struct datapath *dp, 
+                    of_object_t *obj, struct netflow *nf)
 {
-    UNUSED(dp);
-    UNUSED(pkt);
+    struct action_list al;
+    printf("Received Packet out\n");
+    netflow_init(nf);
+    action_list_init(&al);
+    unpack_packet_out(obj, nf, &al);
+    execute_action_list(&al, nf);
+    /* TODO: Buffering */
+    dp_send_netflow(dp, nf);
     return NULL;
 }
 

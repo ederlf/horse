@@ -456,3 +456,22 @@ unpack_flow_mod(of_object_t *obj, struct flow *f)
     return 0;
 }
 
+int 
+unpack_packet_out(of_object_t *obj, struct netflow* f, struct action_list *al)
+{
+    of_octets_t octets[1];
+    uint8_t *pkt;
+    of_packet_out_t *pkt_out = (of_packet_out_t*) obj;
+    of_list_action_t *action_list = of_packet_out_actions_get(pkt_out);
+    of_packet_out_buffer_id_get(pkt_out, &f->metadata.buffer_id);
+    of_packet_out_in_port_get(pkt_out, &f->match.in_port);
+    of_packet_out_data_get(pkt_out, octets);
+    unpack_actions(list, action_list, *al);
+    pkt = (uint8_t*) octets->data;
+    if (pkt != NULL){
+        pkt_to_netflow(pkt, f, octets->bytes);
+    }
+    of_object_delete(action_list);
+    return 0;
+}
+

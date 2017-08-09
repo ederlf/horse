@@ -29,6 +29,7 @@ void of_manager_send(struct of_manager *om, uint64_t dpid,
     if (conn != NULL) {
         of_conn_send(conn, buf, len);
     }
+    free(buf);
 }
 
 void of_manager_message_cb(struct of_conn* conn, uint8_t type, 

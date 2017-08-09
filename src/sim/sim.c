@@ -400,17 +400,17 @@ cont_mode(void* args)
         // printf("Event Type %d\n", cur_ev->type);
         if (cur_ev->type == EVENT_FLOW && cur_ev->time <= sch->clock){
             /* Execute */
+            scheduler_delete(sch);
             printf("CONT executing %d %ld %ld\n", cur_ev->type, cur_ev->time, sch->clock);
             handle_event(&s->evh, cur_ev);
-            scheduler_delete(sch);
             sim_event_free(cur_ev);
         }
         else if (cur_ev->type == EVENT_OF_MSG_OUT || 
                  cur_ev->type == EVENT_OF_MSG_IN){
             last_ctrl = cur_ev->time;
+            scheduler_delete(sch);
             printf("MSG_OF %s %ld\n", cur_ev->type == 4? "OUT":"IN", cur_ev->time);
             handle_event(&s->evh, cur_ev);
-            scheduler_delete(sch);
             sim_event_free(cur_ev);
         }
         else if (cur_ev->type == EVENT_END && cur_ev->time <= sch->clock) {
