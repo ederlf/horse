@@ -285,7 +285,7 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
     eth = (struct eth_header*) buffer;
     m->eth_type = ntohs(eth->eth_type);
     memcpy(m->eth_src, eth->eth_src, ETH_LEN);
-    memcpy(m->eth_dst, eth->eth_src, ETH_LEN);
+    memcpy(m->eth_dst, eth->eth_dst, ETH_LEN);
     offset += sizeof(struct eth_header);
 
     /* VLAN */
