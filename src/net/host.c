@@ -91,7 +91,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
                 struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
                 memset(e, 0x0, sizeof(struct arp_table_entry));
                 e->ip = flow->match.arp_spa;
-                memcpy(e->eth_addr, flow->match.arp_sha, ETH_LEN);
+                memcpy(e->eth_addr, flow->match.eth_src, ETH_LEN);
                 e->iface = flow->match.in_port;
                 arp_table_add_entry(&h->ep.at, e);
             }
@@ -127,6 +127,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
                 uint64_t start_time = flow->start_time;
                 uint64_t end_time = flow->end_time;
                 *flow = node_flow_pop((struct node*) h);
+                printf("ICMP %d %d\n", flow->match.icmpv4_type, flow->match.icmpv4_code);
                 /* Update the start and end time with the previous ones */ 
                 flow->start_time = start_time;
                 flow->end_time = end_time;

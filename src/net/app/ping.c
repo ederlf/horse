@@ -24,8 +24,8 @@ int ping_handle_netflow(struct netflow *flow)
 }
 
 static void 
-ping_request(struct netflow* flow, uint32_t ip_dst){
-    memset(flow, 0x0, sizeof(struct netflow));
+ping_request(struct netflow *flow, uint32_t ip_dst){
+    netflow_init(flow);
     flow->match.eth_type = ETH_TYPE_IP;
     flow->match.ip_proto = IP_PROTO_ICMPV4;
     flow->match.ipv4_dst = ip_dst;
@@ -39,10 +39,8 @@ struct netflow ping_start(uint64_t start, void* ip_dst){
     struct netflow n;
     uint32_t *ip = (uint32_t*) ip_dst;
     /* Creates ping request */
-    memset(&n, 0x0, sizeof(struct netflow));
     ping_request(&n, *ip);
     n.start_time = start;
-    // printf("TIME %ld IP %d %ld\n", start, *ip, sizeof(struct netflow));
     return n;
 }
 

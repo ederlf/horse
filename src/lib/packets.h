@@ -36,6 +36,15 @@
 #define MPLS_LABEL_MASK 0xfffff000
 #define MPLS_LABEL_SHIFT 12
 
+#define IP_ECN_MASK 0x03
+#define IP_DSCP_MASK 0xfc
+
+#define IP_DONT_FRAGMENT  0x4000 /* Don't fragment. */
+#define IP_MORE_FRAGMENTS 0x2000 /* More fragments. */
+#define IP_FRAG_OFF_MASK  0x1fff /* Fragment offset. */
+#define IP_IS_FRAGMENT(ip_frag_off) \
+        ((ip_frag_off) & htons(IP_MORE_FRAGMENTS | IP_FRAG_OFF_MASK))
+
 #define IP_PROTO_ICMPV4 1
 #define IP_PROTO_TCP 6
 #define IP_PROTO_UDP 17
@@ -43,6 +52,7 @@
 
 #define ICMPV6_NEIGH_SOL 135
 #define ICMPV6_NEIGH_ADV 136   
+
 
 struct eth_header {
     uint8_t eth_dst[ETH_LEN];
@@ -53,11 +63,11 @@ struct eth_header {
 struct vlan {
     uint16_t ethertype;
     uint16_t tag;
-};
+}__attribute__((packed));;
 
 struct mpls {
     uint32_t fields; 
-};
+}__attribute__((packed));;
 
 struct ip_header {
     uint8_t ip_ihl_ver;
@@ -70,7 +80,7 @@ struct ip_header {
     uint16_t ip_csum;
     uint32_t ip_src;
     uint32_t ip_dst;
-};
+}__attribute__((packed));;
 
 struct ipv6_header {
     uint32_t ipv6_ver_tc_fl;
@@ -79,12 +89,12 @@ struct ipv6_header {
         uint8_t ipv6_hop_limit;
     uint8_t ipv6_src[IPV6_LEN];
     uint8_t  ipv6_dst[IPV6_LEN];
-};
+}__attribute__((packed));;
 
 struct ipv6_nd_header{
     uint32_t reserved;
     uint8_t target_addr[IPV6_LEN];
-};
+}__attribute__((packed));;
 
 struct ipv6_nd_options_hd{
     uint8_t type;
@@ -109,14 +119,14 @@ struct udp_header {
     uint16_t udp_dst;
     uint16_t udp_len;
     uint16_t udp_csum;
-};
+}__attribute__((packed));;
 
 #define ICMP_HEADER_LEN 4
 struct icmp_header {
     uint8_t icmp_type;
     uint8_t icmp_code;
     uint16_t icmp_csum;
-};
+}__attribute__((packed));
 
 struct arp_eth_header {
     /* Generic members. */

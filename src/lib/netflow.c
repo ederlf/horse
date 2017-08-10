@@ -163,18 +163,14 @@ static void mpls_to_pkt(struct tag *t, uint8_t *buff)
 size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
 {
     size_t offset = 0;
-    uint8_t *pos = buffer;
     struct flow_key m =  nf->match;
     struct eth_header *eth;
-    uint8_t icmp_type, icmp_code;
 
-    eth = (struct eth_header*) pos;
+    eth = (struct eth_header*) buffer;
     memcpy(eth->eth_src, m.eth_src, ETH_LEN);
     memcpy(eth->eth_dst, m.eth_dst, ETH_LEN);
     eth->eth_type = htons(m.eth_type);
     offset += sizeof(struct eth_header);
-    pos += offset;
-
     if (!tags_empty(nf)){
         int i;
         int tag_num = nf->tags.top + 1;
@@ -182,21 +178,21 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
             struct tag t = nf->tags.level[i]; 
             if (t.type == ETH_TYPE_MPLS || 
                 t.type == ETH_TYPE_MPLS_MCAST){
-                mpls_to_pkt(&t, pos);
+                mpls_to_pkt(&t, buffer + offset);
                 offset += sizeof(struct mpls);
-                pos += offset;
+
             }
             else if (t.type == ETH_TYPE_VLAN ||
                      t.type == ETH_TYPE_VLAN_QinQ ) {
-                vlan_to_pkt(&t, pos);
+                vlan_to_pkt(&t, buffer + offset);
                 offset += sizeof(struct vlan);
-                pos += offset;
             }
         }
     }
 
     if (m.eth_type == ETH_TYPE_ARP) {
-        struct arp_eth_header *arp = (struct arp_eth_header*) pos;
+        struct arp_eth_header *arp = (struct arp_eth_header*) (buffer + 
+                                                               offset);
         arp->arp_hrd = htons(ARP_HW_TYPE_ETH); /* Ethernet */
         arp->arp_pro = htons(ETH_TYPE_IP);
         arp->arp_hln = ETH_LEN; 
@@ -210,64 +206,59 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         return offset;
     }
     if (m.eth_type == ETH_TYPE_IP){
-        struct ip_header *ip = (struct ip_header*) pos;
+        struct ip_header *ip = (struct ip_header*) (buffer + offset);
         memset(ip, 0x0, sizeof(struct ip_header));
+        /* Set version */
+        ip->ip_ihl_ver = (1 << 6) | 5;   
         ip->ip_tos = (ip->ip_tos | m.ip_dscp) << 1 | m.ip_ecn;
         ip->ip_proto = m.ip_proto;
-        ip->ip_src = m.ipv4_src;
-        ip->ip_dst = m.ipv4_dst;
+        ip->ip_src = htonl(m.ipv4_src);
+        ip->ip_dst = htonl(m.ipv4_dst);
         offset += sizeof(struct ip_header);
-        pos += offset;
         goto l4;
     }
     if (m.eth_type == ETH_TYPE_IPV6){
-        struct ipv6_header *ipv6 = (struct ipv6_header*) pos;
+        struct ipv6_header *ipv6 = (struct ipv6_header*) (buffer + offset);
         memset(ipv6, 0x0, sizeof(struct ipv6_header));
         ipv6->ipv6_next_hd = m.ip_proto;
         memcpy(ipv6->ipv6_dst, m.ipv6_dst, IPV6_LEN);
         memcpy(ipv6->ipv6_src, m.ipv6_src, IPV6_LEN);
         offset += sizeof(struct ipv6_header);
-        pos += offset;
         goto l4;
     }
 
     l4:
     if (m.ip_proto == IP_PROTO_TCP) {
-        struct tcp_header *tcp = (struct tcp_header*) pos;
+        struct tcp_header *tcp = (struct tcp_header*) (buffer + offset);
         memset(tcp, 0x0, sizeof(struct tcp_header));
         tcp->tcp_dst = m.tcp_dst;
         tcp->tcp_src = m.tcp_src;
         offset += sizeof(struct tcp_header);
-        pos += offset;
-        return offset;
     }
     if (m.ip_proto == IP_PROTO_UDP){
-        struct udp_header *udp = (struct udp_header*) pos;
+        struct udp_header *udp = (struct udp_header*) (buffer + offset);
         memset(udp, 0x0, sizeof(struct udp_header));
         udp->udp_dst = m.udp_dst;
         udp->udp_src = m.udp_src;
         offset += sizeof(struct udp_header);
-        pos += offset;
-        return offset;
     }
     if (m.ip_proto == IP_PROTO_ICMPV4) {
-        struct icmp_header *icmp = (struct icmp_header*) pos;
+        struct icmp_header *icmp = (struct icmp_header*) (buffer + offset);
         memset(icmp, 0x0, sizeof(struct icmp_header));
-        icmp->icmp_code = icmp_type = m.icmpv4_code;
-        icmp->icmp_type = icmp_code = m.icmpv4_code;
+        icmp->icmp_code  = m.icmpv4_code;
+        icmp->icmp_type  = m.icmpv4_type;
         offset += sizeof(struct icmp_header);
-        pos += offset;
     }
     if (m.ip_proto == IP_PROTO_ICMPV6) {
-        struct icmp_header *icmp = (struct icmp_header*) pos;
+        struct icmp_header *icmp = (struct icmp_header*) (buffer + offset);
         memset(icmp, 0x0, sizeof(struct icmp_header));
-        icmp->icmp_code = icmp_type = m.icmpv6_code;
-        icmp->icmp_type = icmp_code = m.icmpv6_code;
+        icmp->icmp_code = m.icmpv6_code;
+        icmp->icmp_type = m.icmpv6_type;
         offset += sizeof(struct icmp_header);
-        pos += offset;
     }
 
-    if (icmp_type == ICMPV6_NEIGH_SOL || icmp_type == ICMPV6_NEIGH_ADV) {
+    if (m.icmpv6_type == ICMPV6_NEIGH_SOL || 
+        m.icmpv6_type == ICMPV6_NEIGH_ADV) {
         /* TODO */
     }
 
@@ -383,6 +374,39 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
                 memcpy(m->arp_tha, arp->arp_tha, ETH_LEN);
             }
         }
+        return;
+    }
+    /* Network Layer */
+    else if (m->eth_type == ETH_TYPE_IP) {
+        if (pkt_len < offset + sizeof(struct ip_header)) {
+            return;
+        }
+        struct ip_header *ipv4;
+        ipv4 = (struct ip_header *)(buffer + offset);
+        offset += sizeof(struct ip_header);
+
+        m->ipv4_src = ntohl(ipv4->ip_src);
+        m->ipv4_dst = ntohl(ipv4->ip_dst);
+        m->ip_proto = ipv4->ip_proto;
+        m->ip_ecn = ipv4->ip_tos & IP_ECN_MASK;
+        m->ip_dscp = ipv4->ip_tos >> 2;
+        
+        if (IP_IS_FRAGMENT(ipv4->ip_frag_off)) {
+            /* No further processing for fragmented IPv4 */
+            return;
+        }
+    }
+
+    if (m->ip_proto == IP_PROTO_ICMPV4) {
+
+        if (pkt_len < offset + sizeof(struct icmp_header)) {
+            return;
+        }
+        struct icmp_header *icmp;
+        icmp = (struct icmp_header *) (buffer + offset);
+        offset += sizeof(struct icmp_header);
+        m->icmpv4_code = icmp->icmp_code;
+        m->icmpv4_type = icmp->icmp_type;
         return;
     }
 }
