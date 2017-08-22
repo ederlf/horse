@@ -199,7 +199,7 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         arp->arp_pln = sizeof(uint32_t); 
         arp->arp_op = htons(m.arp_op); 
         memcpy(arp->arp_sha, m.arp_sha, ETH_LEN);
-        memcpy(arp->arp_sha, m.arp_tha, ETH_LEN);
+        memcpy(arp->arp_tha, m.arp_tha, ETH_LEN);
         arp->arp_spa = htonl(m.arp_spa);
         arp->arp_tpa = htonl(m.arp_tpa);
         offset += sizeof(struct arp_eth_header);
@@ -248,6 +248,14 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         icmp->icmp_code  = m.icmpv4_code;
         icmp->icmp_type  = m.icmpv4_type;
         offset += sizeof(struct icmp_header);
+        if (icmp->icmp_type == ECHO || icmp->icmp_type == ECHO_REPLY)
+        {
+            struct icmp_echo_reply *echo_rep = (struct icmp_echo_reply*) (buffer + offset);
+            echo_rep->identifier= htons(nf->icmp_info.identifier);
+            echo_rep->seq_number = htons(nf->icmp_info.seq_number);
+            memcpy(echo_rep->data, nf->icmp_info.data, 48);
+            offset += sizeof(struct icmp_echo_reply);
+        }
     }
     if (m.ip_proto == IP_PROTO_ICMPV6) {
         struct icmp_header *icmp = (struct icmp_header*) (buffer + offset);
@@ -407,6 +415,14 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
         offset += sizeof(struct icmp_header);
         m->icmpv4_code = icmp->icmp_code;
         m->icmpv4_type = icmp->icmp_type;
+        if (m->icmpv4_type == ECHO || m->icmpv4_type == ECHO_REPLY)
+        {
+            struct icmp_echo_reply *echo_rep = (struct icmp_echo_reply*) (buffer + offset);
+            nf->icmp_info.identifier = ntohs(echo_rep->identifier);
+            nf->icmp_info.seq_number = ntohs(echo_rep->seq_number);
+            memcpy(nf->icmp_info.data, echo_rep->data, 48);
+            offset += sizeof(struct icmp_echo_reply);
+        }
         return;
     }
 }

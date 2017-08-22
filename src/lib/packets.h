@@ -119,13 +119,25 @@ struct udp_header {
     uint16_t udp_dst;
     uint16_t udp_len;
     uint16_t udp_csum;
-}__attribute__((packed));;
+}__attribute__((packed));
+
+enum ping_types {
+    ECHO_REPLY = 0,
+    DST_UNREACHABLE = 3,
+    ECHO = 8,
+};
 
 #define ICMP_HEADER_LEN 4
 struct icmp_header {
     uint8_t icmp_type;
     uint8_t icmp_code;
     uint16_t icmp_csum;
+}__attribute__((packed));
+
+struct icmp_echo_reply {
+    uint16_t identifier;
+    uint16_t seq_number;
+    uint8_t data[48];
 }__attribute__((packed));
 
 struct arp_eth_header {

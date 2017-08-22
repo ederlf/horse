@@ -234,7 +234,7 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
     of_object_t* ret = NULL;
     switch (obj->object_id) {
         case OF_PACKET_OUT: {
-            return dp_handle_pkt_out(dp, obj, nf);
+            return dp_handle_pkt_out(dp, obj, nf, time);
         }
         case OF_FLOW_ADD: 
         case OF_FLOW_MODIFY:

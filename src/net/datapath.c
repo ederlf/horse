@@ -329,12 +329,10 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
 }
 
 of_object_t* 
-dp_handle_pkt_out(struct datapath *dp, 
-                    of_object_t *obj, struct netflow *nf)
+dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uint64_t time)
 {
     struct action_list al;
-    printf("Received Packet out\n");
-    netflow_init(nf);
+    nf->start_time = nf->end_time = time;
     action_list_init(&al);
     unpack_packet_out(obj, nf, &al);
     execute_action_list(&al, nf);

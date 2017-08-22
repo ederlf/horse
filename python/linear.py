@@ -23,14 +23,15 @@ for i in range(1, k):
     sw.add_port(2, "00:00:00:00:02:00")
     topo.add_node(sw)
     if i == 1:
-        topo.add_link(sw, h1, 1, 1, latency=randint(0,9))
+        topo.add_link(sw, h1, 1, 1, 0) #latency=randint(0,9))
     if i == k - 1:
-        topo.add_link(sw, h2, 2, 1, latency=randint(0,9))
+        topo.add_link(sw, h2, 2, 1, 0) #latency=randint(0,9))
     if last_switch:
         topo.add_link(last_switch, sw, 2, 1)
     last_switch = sw
 
-h1.ping("10.0.0.2", 0)
+h1.ping("10.0.0.2", 5000000)
+h2.ping("10.0.0.1", 10000000)
 topo.start()
 
 

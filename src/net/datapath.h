@@ -51,8 +51,8 @@ of_object_t* dp_handle_flow_mod(const struct datapath *dp,
 of_object_t* dp_handle_port_desc(const struct datapath *dp, 
                                  of_object_t *obj);
 
-of_object_t* dp_handle_pkt_out(struct datapath *dp, 
-                               of_object_t *obj, struct netflow *nf);
+of_object_t* dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, 
+                               struct netflow *nf, uint64_t time);
 
 /* Access functions*/
 uint64_t dp_uuid(const struct datapath* dp);

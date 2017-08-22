@@ -21,7 +21,7 @@ sim_event_new(uint64_t time)
 void sim_event_free(struct sim_event* ev){
     free(ev);
 }
-
+ 
 struct sim_event_flow*
 sim_event_flow_new(uint64_t time, uint64_t node_id)
 {
@@ -57,4 +57,16 @@ sim_event_of_msg_out_new(uint64_t time, uint64_t dp_id,
                          void *data, size_t len)
 {
     return of_msg_new(time, dp_id, data, len, EVENT_OF_MSG_OUT);      
+}
+
+struct sim_event_app_start*
+sim_event_app_start_new(uint64_t time, uint64_t node_id, struct exec *exec)
+{
+    struct sim_event_app_start *ev = xmalloc(sizeof(
+                                             struct sim_event_app_start));
+    ev->hdr.time = time;
+    ev->hdr.type = EVENT_APP_START;
+    ev->node_id = node_id;
+    ev->exec = exec;
+    return ev;
 }

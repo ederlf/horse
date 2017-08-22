@@ -19,11 +19,14 @@ void host_handle_netflow(struct node *n, struct netflow *flow);
 
 /* Apps */
 void host_add_app(struct host *h, uint16_t type);
-void host_start_app(struct host *h, uint16_t type, 
-                    uint64_t start_time, void*args);
+void host_add_app_exec(struct host *h, uint64_t id, uint16_t type, 
+                  uint64_t start_time, void *args, size_t arg_size);
+struct netflow host_execute_app(struct host *h, struct exec *exec);
 /* Access functions */
 struct port* host_port(const struct host *h, uint32_t port_id);
 uint64_t host_uuid(const struct host* h);
+struct app *host_apps(const struct host *h);
+struct exec *host_execs(const struct host *h);
 
 #endif
 

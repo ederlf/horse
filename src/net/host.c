@@ -13,7 +13,9 @@
 struct host {
     struct legacy_node ep; /* Node is an endpoint */
     /* Hash Map of applications */
-    struct app* apps;
+    struct app *apps;
+    /* List of apps to be executed */
+    struct exec *execs;
 };
 
 static int host_recv_netflow(struct host *h, struct netflow *flow);
@@ -26,6 +28,7 @@ host_new(void)
     legacy_node_init(&h->ep, HOST);
     h->ep.base.handle_netflow = host_handle_netflow;
     h->apps = NULL;
+    h->execs = NULL;
     return h;
 }
 
@@ -37,13 +40,16 @@ host_destroy(struct host *h)
 }
 
 void 
-host_add_port(struct host *h, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
+host_add_port(struct host *h, uint32_t port_id, 
+              uint8_t eth_addr[ETH_LEN], uint32_t speed, 
+              uint32_t curr_speed)
 {   
     node_add_port( (struct node*) h, port_id, eth_addr, speed, curr_speed);
 }
 
 void
-host_set_intf_ipv4(struct host *h, uint32_t port_id, uint32_t addr, uint32_t netmask){
+host_set_intf_ipv4(struct host *h, uint32_t port_id, 
+                   uint32_t addr, uint32_t netmask){
     struct port *p = host_port(h, port_id);
     port_add_v4addr(p, addr, netmask);
     /* Add entry to route table */
@@ -77,17 +83,18 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
     /* Return 0 if destination is other */
     if (memcmp(p->eth_address, eth_dst, ETH_LEN) && 
         memcmp(bcast_eth_addr, eth_dst, ETH_LEN)){
-        printf("Leaving " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(eth_dst));
+        // printf("Leaving " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(eth_dst));
         return 0;
     }
     /* Handle ARP */
     if (flow->match.eth_type == ETH_TYPE_ARP){
         /* ARP request */
         if (flow->match.arp_op == ARP_REQUEST){
-            printf("Received ARP Request from %x\n", flow->match.arp_spa);
+            // printf("Received ARP Request from %x %ld\n", flow->match.arp_spa, flow->start_time);
             struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, flow->match.arp_spa);
             /* Learns MAC of the requester */
             if (!ae){
+                // printf("Learning %p\n", ae);
                 struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
                 memset(e, 0x0, sizeof(struct arp_table_entry));
                 e->ip = flow->match.arp_spa;
@@ -96,12 +103,12 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
                 arp_table_add_entry(&h->ep.at, e);
             }
             /* Craft reply */
-            uint8_t *eth_dst = flow->match.eth_src;
             uint32_t ip_dst = flow->match.arp_spa;
+            memcpy(flow->match.arp_sha, p->eth_address, ETH_LEN);
+            memcpy(flow->match.arp_tha, flow->match.eth_src, ETH_LEN);
             memcpy(flow->match.eth_dst, flow->match.eth_src, ETH_LEN);
             memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
-            memcpy(flow->match.arp_sha, p->eth_address, ETH_LEN);
-            memcpy(flow->match.arp_tha, eth_dst, ETH_LEN);
+            
             flow->match.arp_spa = flow->match.arp_tpa;
             flow->match.arp_tpa = ip_dst;
             flow->match.arp_op = ARP_REPLY;
@@ -110,12 +117,12 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             op->port = flow->match.in_port;
             LL_APPEND(flow->out_ports, op);
             netflow_update_send_time(flow, p->curr_speed); 
-            printf("destination eth address " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(flow->match.eth_src));
+            // printf("destination eth address " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(flow->match.eth_src));
         }
         /* ARP Reply */
         else if (flow->match.arp_op == ARP_REPLY) {
             /* Add ARP table */
-            printf("Received ARP reply %lu.%lu\n",  flow->end_time / 1000, flow->end_time % 1000);
+            // printf("Received ARP reply %lu.%lums %ld\n", flow->end_time / 1000, flow->end_time % 1000, flow->start_time);
             struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
             memset(e, 0x0, sizeof(struct arp_table_entry));
             e->ip = flow->match.arp_spa;
@@ -124,13 +131,12 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             arp_table_add_entry(&h->ep.at, e);
             /* Check the stack for a flow waiting for the ARP reply */
             if (!node_is_buffer_empty((struct node*) h)){
-                uint64_t start_time = flow->start_time;
+                // uint64_t start_time = flow->start_time;
                 uint64_t end_time = flow->end_time;
                 *flow = node_flow_pop((struct node*) h);
-                printf("ICMP %d %d\n", flow->match.icmpv4_type, flow->match.icmpv4_code);
                 /* Update the start and end time with the previous ones */ 
-                flow->start_time = start_time;
-                flow->end_time = end_time;
+                flow->start_time = flow->end_time = end_time;
+                // flow->end_time = end_time;
                 /* Fill l2 information */
                 struct out_port *op;
                 LL_FOREACH(flow->out_ports, op) {
@@ -171,7 +177,7 @@ host_recv_netflow(struct host *n, struct netflow *flow)
     uint16_t type;
     struct host *h = (struct host*) n;
     struct app *app;
-    printf("Received HOST %ld %x\n", h->ep.base.uuid, flow->match.eth_type);
+    // printf("Received HOST %ld %x\n", h->ep.base.uuid, flow->match.eth_type);
     /* Check MAC and IP addresses. Only returns true if
        both have the node destination MAC and IP       */
     if (l2_recv_netflow(h, flow)) {
@@ -202,13 +208,14 @@ host_send_l3(struct host *h, struct netflow *flow){
     op->port = re->iface;
     LL_APPEND(flow->out_ports, op); 
     /* IP to search in the ARP table */
+    // printf("Destination is %x\n", flow->match.ipv4_dst);
     return re->gateway == 0? flow->match.ipv4_dst: re->gateway;   
 }
 
 static void
 host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
     struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, ip);
-    printf("Looking up MAC for ip %x %p\n", ip, ae);
+    // printf("Looking up MAC for ip %x %p\n", ip, ae);
     if (ae){
         /* Fill Missing information */
         struct out_port *op;
@@ -225,10 +232,10 @@ host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
         /*  ARP request before the flow*/
         uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 
                                             0xff, 0xff, 0xff};
-        printf("Needs to send ARP %x\n", ip);
+        // printf("Needs to send ARP %x\n", ip);
         /* Craft request */
         struct netflow arp_req;
-        memset(&arp_req, 0x0, sizeof(struct netflow));
+        netflow_init(&arp_req);
         arp_req.match.eth_type = ETH_TYPE_ARP;
         /**
          * TODO: Have to create multiple ARPS for broadcast.
@@ -247,6 +254,7 @@ host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
         }
         /* Set Destination address */
         memcpy(arp_req.match.eth_dst, bcast_eth_addr, ETH_LEN); 
+        // printf("IP requested %x\n", ip);
         arp_req.match.arp_tpa = ip;
         arp_req.match.arp_op = ARP_REQUEST;
         arp_req.start_time = flow->start_time;
@@ -269,24 +277,39 @@ void host_send_netflow(struct host *h, struct netflow *flow)
 void 
 host_add_app(struct host *h, uint16_t type)
 {
-    struct app* a =  app_creator(type);
+    struct app *a =  app_creator(type);
     HASH_ADD(hh, h->apps, type, sizeof(uint16_t), a);
 }
 
 void 
-host_start_app(struct host *h, uint16_t type, uint64_t start_time, void* args)
+host_add_app_exec(struct host *h, uint64_t id, uint16_t type, 
+                  uint64_t start_time, void *args, size_t arg_size)
+{
+    struct app *app = NULL;
+    /* Guarantees the app can be executed */
+    HASH_FIND(hh, h->apps, &type, sizeof(uint16_t), app);
+    if (app) {
+        struct exec *exec = app_new_exec(id, type, start_time, 
+                                         args, arg_size);
+        HASH_ADD(hh, h->execs, id, sizeof(uint64_t), exec);
+    }
+}
+
+struct netflow 
+host_execute_app(struct host *h, struct exec *exec)
 {
     struct app *app;
+    HASH_FIND(hh, h->apps, &exec->type, sizeof(uint16_t), app);
     struct netflow flow;
-    HASH_FIND(hh, h->apps, &type, sizeof(uint16_t), app);
-    if(app){
-        flow = app->start(start_time, args);
-        flow.start_time = start_time;
+    if (app) {
+        flow = app->start(exec->start_time, exec->args);
+        flow.exec_id = exec->id;
+        // printf("Flow Start time %ld\n", flow.start_time);
         host_send_netflow(h, &flow);
-        node_flow_push((struct node*) h, flow);
-        printf("Flow Start time %ld\n", flow.start_time);
-        printf("%x\n", flow.next->match.eth_type);
+        // printf("Flow Start time %ld\n", flow.start_time);
+        // printf("%x\n", flow.match.eth_type);
     }
+    return flow;
 }
 
 /* Retrieve a datapath port */
@@ -303,4 +326,12 @@ host_uuid(const struct host* h)
     return h->ep.base.uuid;
 }
 
+struct app *host_apps(const struct host *h)
+{
+    return h->apps;
+}
 
+struct exec *host_execs(const struct host *h)
+{
+    return h->execs;
+}

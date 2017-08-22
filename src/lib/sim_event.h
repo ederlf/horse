@@ -16,15 +16,16 @@
 #include "lib/flow.h"
 #include "lib/netflow.h"
 
-#define EVENTS_NUM 6
+#define EVENTS_NUM 7
 
 enum events {
     EVENT_FLOW = 0, 
-    EVENT_PACKET = 1,     /* For the future case of hybrid simulation. */
-    EVENT_PORT = 2,
-    EVENT_OF_MSG_IN = 3,        /* OF message from controller to simulator */
-    EVENT_OF_MSG_OUT = 4,       /* Send OF message to controller */
-    EVENT_END = UINT8_MAX, /* Final event for the simulation */
+    EVENT_PACKET = 1,          /* For the future case of hybrid simulation. */
+    EVENT_PORT = 2,            /* Port changes */
+    EVENT_OF_MSG_IN = 3,       /* OF message from controller to simulator */
+    EVENT_OF_MSG_OUT = 4,      /* Send OF message to controller */
+    EVENT_APP_START = 5,       /* Event to mark the start of an app */
+    EVENT_END = UINT8_MAX,     /* Final event for the simulation */
 };
 
 /*  The initial field of event heap node so 
@@ -57,6 +58,14 @@ struct sim_event_of {
     size_t len;        
 };
 
+
+/* Start of an application */
+struct sim_event_app_start {
+    struct sim_event hdr;
+    uint64_t node_id;
+    struct exec *exec;
+};
+
 /* Flow event when a packet/flow is sent to the controller 
    It does not have a node_id because it is not handled by a node */
 struct sim_event_pkt_in {
@@ -79,13 +88,6 @@ struct sim_event_pkt_out {
     struct netflow flow;
 };
 
-/* A instruction from the control plane. */
-struct event_instruction {
-    struct sim_event hdr;       
-    uint64_t node_id;              /* The node to process the event.     */
-    //struct instruction
-};
-
 /* Change to port configuration and/or status */
 struct event_port {
     struct sim_event hdr;    
@@ -97,7 +99,13 @@ struct event_port {
 struct sim_event* sim_event_new(uint64_t time);
 void sim_event_free(struct sim_event* ev);
 struct sim_event_flow *sim_event_flow_new(uint64_t time, uint64_t node_id);
-struct sim_event_of *sim_event_of_msg_in_new(uint64_t time, uint64_t dp_id, void *data, size_t len);
-struct sim_event_of *sim_event_of_msg_out_new(uint64_t time, uint64_t dp_id, void *data, size_t len);
+struct sim_event_of *sim_event_of_msg_in_new(uint64_t time, 
+                                             uint64_t dp_id, void *data, 
+                                             size_t len);
+struct sim_event_of *sim_event_of_msg_out_new(uint64_t time, 
+                                              uint64_t dp_id, void *data, 
+                                              size_t len);
+struct sim_event_app_start *sim_event_app_start_new(uint64_t time, uint64_t 
+                                              node_id, struct exec *exec);
 
 #endif

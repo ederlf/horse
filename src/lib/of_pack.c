@@ -40,7 +40,7 @@ uint8_t *of_packet_in(struct netflow *f, size_t *len)
         return NULL;
     }
     pkt_len = netflow_to_pkt(f, of_octets.data);
-    printf("Needs to send packet_out %d\n", of_packet_in->length);
+    // printf("Needs to send packet_in %d\n", of_packet_in->length);
     of_octets.bytes = pkt_len;
     if ((of_packet_in_data_set(of_packet_in, &of_octets)) != OF_ERROR_NONE) {
         printf("Failed to write packet data to packet-in message\n");

@@ -47,9 +47,7 @@ void of_manager_message_cb(struct of_conn* conn, uint8_t type,
     memcpy(copy_data, data, len);
     struct sim_event_of *msg = sim_event_of_msg_in_new(time, dp_id, 
                                                        copy_data, len);
-    printf("INSERINDO Mensagem Type %d time %ld\n", type, time);
     scheduler_insert(om->sch, (struct sim_event*) msg);
-    printf("ADICIONEI Mensagem \n");
     /* We do not need the type but it is here 
      * because libfluid callback needs it */
     UNUSED(type);

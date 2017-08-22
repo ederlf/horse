@@ -59,13 +59,15 @@ cdef class SDNSwitch:
 
 cdef class Host:
     cdef host* _host_ptr
+    cdef int exec_id
 
     def __cinit__(self):
         self._host_ptr = host_new()
-        # Add ping to the  
         host_add_app(self._host_ptr, 1)
+        self.exec_id = 1
 
-    def add_port(self, port, eth_addr, ip = None, netmask = None, max_speed = 1000000, cur_speed = 1000000):
+    def add_port(self, port, eth_addr, ip = None, 
+                netmask = None, max_speed = 1000000, cur_speed = 1000000):
         # TODO: Add mac converstion to utils...
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
@@ -81,7 +83,8 @@ cdef class Host:
         cdef int ip
         ip_parts = dst.split('.')
         ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-        host_start_app(self._host_ptr, 1, start_time, <void*> &ip)
+        host_add_app_exec(self._host_ptr, self.exec_id, 1, start_time, <void*> &ip, sizeof(int))
+        self.exec_id += 1
 
     @property
     def uuid(self):
@@ -110,8 +113,8 @@ cdef class Topology:
             h = <Host> Node
             topology_add_host(self._topo_ptr, h._host_ptr)
 
-    def add_link(self, node1, node2, port1, port2, latency = 1):
-        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, 10, latency, False)
+    def add_link(self, node1, node2, port1, port2, bw = 1, latency = 0):
+        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, bw, latency, False)
 
     @property
     def dp(self):
