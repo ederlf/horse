@@ -80,6 +80,7 @@ void flow_table_destroy(struct flow_table *ft)
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
         struct flow *cur_flow, *tmp;
         HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
+            // flow_printer(cur_flow);
             HASH_DEL(nxt_mft->flows, cur_flow);
             flow_destroy(cur_flow);    
         }
@@ -104,7 +105,8 @@ flow_table_lookup(struct flow_table *ft, struct flow_key *key, uint64_t time)
         /* Apply mini flow table mask to the temporary flow key fields. */
         apply_all_mask(&tmp_flow, &nxt_mft->mask);
         /* Search for a match in the mini flow table. */
-        HASH_FIND(hh, nxt_mft->flows, &tmp_flow.key, sizeof(struct flow_key), flow_found);
+        HASH_FIND(hh, nxt_mft->flows, &tmp_flow.key, 
+                  sizeof(struct flow_key), flow_found);
         if (flow_found){
             bool expired = flow_table_del_expired(ft, nxt_mft, flow_found, 
                                                   time);

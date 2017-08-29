@@ -77,12 +77,6 @@ enum set_field_type {
     SET_IPV6_ND_TLL
 };
 
-enum port_no {
-    IN_PORT = 0xfffffff8,
-    TABLE = 0xfffffff9,
-    CONTROLLER = 0xfffffffd,
-};
-
 struct meter {
     uint32_t meter_id;
 };

@@ -26,7 +26,6 @@ void heap_destroy(struct heap *h){
 void heap_insert(struct heap *h, struct heap_node *node, uint64_t priority)
 {
     size_t idx, parent;
-
     if (h->size >= h->allocated){
         h->allocated = h->size == 0? 1 : 2 * h->size; 
         h->array = xrealloc(h->array, (h->allocated + 1) * sizeof(*h->array));
@@ -53,7 +52,7 @@ min_heapify(struct heap *h, size_t idx, size_t size)
     size_t left, right, min;
     min = 0; 
     struct heap_node **arr = h->array;
-    while (min != idx) {
+    while (min < h->size) {
         min = idx;
         left = heap_left_child(idx);
         right = heap_right_child(idx);
@@ -67,11 +66,11 @@ min_heapify(struct heap *h, size_t idx, size_t size)
             min = right;
         } 
 
-        if(min != idx) {
-            heap_swap(h, idx, min);
-            idx = min;
-            min = -1;
-        }   
+        if(min == idx) {
+            break;
+        }
+        heap_swap(h, idx, min);
+        idx = min;
     }
 }
 
@@ -80,13 +79,6 @@ heap_delete(struct heap *h)
 {
     struct heap_node *removed;
     struct heap_node *temp = h->array[h->size--];
-    /* Shrink? */
-    // if ((h->size <= (h->allocated + 2)) && (h->allocated > initial_size))
-    // {
-    //     h->allocated -= 1;
-    //     h->array = xrealloc(h->array, sizeof(int) * h->allocated);
-    //     if (!h->array) exit(-1); // Exit if the memory allocation fails
-    // }
     removed = h->array[1];
     h->array[1] = temp;
     min_heapify(h, 1, h->size);
@@ -108,24 +100,32 @@ struct heap_node* heap_retrieve(struct heap *h)
 // }
 
 // int main(int argc, char const *argv[])
-// {
-//     struct heap *h = xmalloc(sizeof(struct heap));
+// {   
+//     time_t t;
+//     srand((unsigned) time(&t));
+//     struct heap *h = malloc(sizeof(struct heap));
+//     heap_init(h);
 //     int i;
-//     for (i = 2; i < 10; ++i){
-//         struct heap_node *node = xmalloc(sizeof(struct heap_node));
-//         heap_insert(h, node, i);
+//     for (i = 1; i < 1000000; ++i){
+//         struct heap_node *node = malloc(sizeof(struct heap_node));
+//         heap_insert(h, node, rand() % 10000);
+//         if (i % 3 == 0){
+//             struct heap_node *n = heap_delete(h);
+//             printf("%ld %p\n", n->priority, node);
+//             free(n);
+//         }
 //     }
-//     struct heap_node *node = xmalloc(sizeof(struct heap_node));
-//     heap_insert(h, node, 1);
-//     heap_display(h);
+//     // struct heap_node *node = xmalloc(sizeof(struct heap_node));
+//     // heap_insert(h, node, 1);
+//     // heap_display(h);
 //     // size_t s = h->size;
-//     // for (i = 1; i < s; ++i){
-//     //     free(heap_delete(h));
-//     //     heap_display(h);
+//     // for (i = 1; i < 100000; ++i){
+//     //     struct heap_node *n = heap_delete(h);
+//     //     printf("%ld\n", n->priority);
+//     //     free(n);
+//     //     // heap_display(h);
 //     // }
-//     // printf("%lu\n", h->size);
-
-
+//     printf("%lu\n", h->size);
 //     // heap_delete(h);
 //     // heap_display(h);
 //     return 0;

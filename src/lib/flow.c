@@ -18,6 +18,12 @@
 #define ALL_UINT32_MASK 0xffffffff
 #define ALL_UINT64_MASK 0xffffffffffffffff
 
+#define ETH_ADDR_FMT                                                    \
+    "%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8
+
+#define ETH_ADDR_ARGS(ea)                                   \
+    (ea)[0], (ea)[1], (ea)[2], (ea)[3], (ea)[4], (ea)[5]
+
 static
 void init_instruction_set(struct flow *f){
     memset(&f->insts, 0x0, sizeof(struct instruction_set));
@@ -61,6 +67,10 @@ void
 flow_add_instructions(struct flow *f, struct instruction_set insts)
 {
     f->insts = insts;
+}
+
+void flow_printer(struct flow *f) {
+    printf("table_id:%d eth_dst="ETH_ADDR_FMT" in_port=%d, pkt_cnt:%ld, priority:%d \n", f->table_id, ETH_ADDR_ARGS(f->key.eth_dst), f->key.in_port, f->pkt_cnt, f->priority);
 }
 
 void 
@@ -337,20 +347,30 @@ void set_masked_tunnel_id(struct flow *f, uint64_t tunnel_id, uint64_t mask)
 
 void set_masked_eth_dst(struct flow *f, uint8_t eth_dst[6], uint8_t mask[6])
 {
-    int i;
-    for (i = 0; i < 6; ++i){
-        f->key.eth_dst[i] = eth_dst[i] & mask[i];
-        f->mask.eth_dst[i] = mask[i];
-    }
+    uint32_t *v32, *m32;
+    uint16_t *v16, *m16;
+
+    memcpy(f->mask.eth_dst, mask, 6);
+    v32 = (uint32_t*)  &f->key.eth_dst[0];
+    v16 = (uint16_t*)  &f->key.eth_dst[4];
+    m32 = (uint32_t*)  &mask[0];
+    m16 = (uint16_t*)  &mask[4];
+    *v32 = *((uint32_t*)&eth_dst[0]) & *m32;
+    *v16 = *((uint16_t*)&eth_dst[4]) & *m16;
 }
 
 void set_masked_eth_src(struct flow *f, uint8_t eth_src[6], uint8_t mask[6])
 {
-    int i;
-    for (i = 0; i < 6; ++i){
-        f->key.eth_src[i] = eth_src[i] & mask[i];
-        f->mask.eth_src[i] = mask[i];
-    }
+    uint32_t *v32, *m32;
+    uint16_t *v16, *m16;
+
+    memcpy(f->mask.eth_src, mask, 6);
+    v32 = (uint32_t*)  &f->key.eth_src[0];
+    v16 = (uint16_t*)  &f->key.eth_src[4];
+    m32 = (uint32_t*)  &mask[0];
+    m16 = (uint16_t*)  &mask[4];
+    *v32 = *((uint32_t*)&eth_src[0]) & *m32;
+    *v16 = *((uint16_t*)&eth_src[4]) & *m16;
 }
 
 void set_masked_vlan_id(struct flow *f, uint16_t vlan_id, uint16_t mask)
@@ -391,65 +411,100 @@ void set_masked_arp_tpa(struct flow *f, uint32_t arp_tpa, uint32_t mask)
 
 void set_masked_arp_sha(struct flow *f, uint8_t arp_sha[6], uint8_t mask[6])
 {
-    int i;
-    for (i = 0; i < 6; ++i){
-        f->key.arp_sha[i] = arp_sha[i] & mask[i];
-        f->mask.arp_sha[i] = mask[i];
-    }
+    uint32_t *v32, *m32;
+    uint16_t *v16, *m16;
+
+    memcpy(f->mask.arp_sha, mask, 6);
+    v32 = (uint32_t*)  &f->key.arp_sha[0];
+    v16 = (uint16_t*)  &f->key.arp_sha[4];
+    m32 = (uint32_t*)  &mask[0];
+    m16 = (uint16_t*)  &mask[4];
+    *v32 = *((uint32_t*)&arp_sha[0]) & *m32;
+    *v16 = *((uint16_t*)&arp_sha[4]) & *m16;
 }
 
 void set_masked_arp_tha(struct flow *f, uint8_t arp_tha[6], uint8_t mask[6])
 {
-    int i;
-    for (i = 0; i < 6; ++i){
-        f->key.arp_tha[i] = arp_tha[i] & mask[i];
-        f->mask.arp_tha[i] = mask[i];
-    }
+    memcpy(f->mask.arp_tha, mask, 6);
+    uint32_t *v32, *m32;
+    uint16_t *v16, *m16;
+
+    v32 = (uint32_t*)  &f->key.arp_tha[0];
+    v16 = (uint16_t*)  &f->key.arp_tha[4];
+    m32 = (uint32_t*)  &mask[0];
+    m16 = (uint16_t*)  &mask[4];
+    *v32 = *((uint32_t*)&arp_tha[0]) & *m32;
+    *v16 = *((uint16_t*)&arp_tha[4]) & *m16;
 }
 
 void set_masked_ipv6_dst(struct flow *f, uint8_t ipv6_dst[16], uint8_t mask[16])
 {
-    int i;
-    for (i = 0; i < 16; ++i){
-        f->key.ipv6_dst[i] = ipv6_dst[i] & mask[i];
-        f->mask.ipv6_dst[i] = mask[i];
-    }
+    memcpy(f->mask.ipv6_dst, mask, 16);
+    uint64_t *v1_64, *m1_64;
+    uint64_t *v2_64, *m2_64;
+
+    v1_64 = (uint64_t*)  &f->key.ipv6_dst[0];
+    v2_64 = (uint64_t*)  &f->key.ipv6_dst[8];
+    m1_64 = (uint64_t*)  &mask[0];
+    m2_64 = (uint64_t*)  &mask[8];
+    *v1_64 = *((uint64_t*)&ipv6_dst[0]) & *m1_64;
+    *v2_64 = *((uint64_t*)&ipv6_dst[8]) & *m2_64;
 }
 
 void set_masked_ipv6_src(struct flow *f, uint8_t ipv6_src[16], uint8_t mask[16])
 {
-    int i;
-    for (i = 0; i < 16; ++i){
-        f->key.ipv6_src[i] = ipv6_src[i] & mask[i];
-        f->mask.ipv6_src[i] = mask[i];
-    }
+    memcpy(f->mask.ipv6_src, mask, 16);
+    uint64_t *v1_64, *m1_64;
+    uint64_t *v2_64, *m2_64;
+
+    v1_64 = (uint64_t*)  &f->key.ipv6_src[0];
+    v2_64 = (uint64_t*)  &f->key.ipv6_src[8];
+    m1_64 = (uint64_t*)  &mask[0];
+    m2_64 = (uint64_t*)  &mask[8];
+    *v1_64 = *((uint64_t*)&ipv6_src[0]) & *m1_64;
+    *v2_64 = *((uint64_t*)&ipv6_src[8]) & *m2_64;
 }
 
 void set_masked_ipv6_nd_target(struct flow *f, uint8_t ipv6_nd_target[16], uint8_t mask[16])
 {
-    int i;
-    for (i = 0; i < 16; ++i){
-        f->key.ipv6_nd_target[i] = ipv6_nd_target[i] & mask[i];
-        f->mask.ipv6_nd_target[i] = mask[i];
-    }
+    memcpy(f->mask.ipv6_nd_target, mask, 16);
+    uint64_t *v1_64, *m1_64;
+    uint64_t *v2_64, *m2_64;
+
+    v1_64 = (uint64_t*)  &f->key.ipv6_nd_target[0];
+    v2_64 = (uint64_t*)  &f->key.ipv6_nd_target[8];
+    m1_64 = (uint64_t*)  &mask[0];
+    m2_64 = (uint64_t*)  &mask[8];
+    *v1_64 = *((uint64_t*)&ipv6_nd_target[0]) & *m1_64;
+    *v2_64 = *((uint64_t*)&ipv6_nd_target[8]) & *m2_64;
 }
 
 void set_masked_ipv6_nd_sll(struct flow *f, uint8_t ipv6_nd_sll[6], uint8_t mask[6])
 {
-    int i;
-    for (i = 0; i < 6; ++i){
-        f->key.ipv6_nd_sll[i] = ipv6_nd_sll[i] & mask[i];
-        f->mask.ipv6_nd_sll[i] = mask[i];
-    }
+    memcpy(f->mask.ipv6_nd_sll, mask, 6);
+    uint32_t *v32, *m32;
+    uint16_t *v16, *m16;
+
+    v32 = (uint32_t*)  &f->key.ipv6_nd_sll[0];
+    v16 = (uint16_t*)  &f->key.ipv6_nd_sll[4];
+    m32 = (uint32_t*)  &mask[0];
+    m16 = (uint16_t*)  &mask[4];
+    *v32 = *((uint32_t*)&ipv6_nd_sll[0]) & *m32;
+    *v16 = *((uint16_t*)&ipv6_nd_sll[4]) & *m16;
 }
 
 void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask[6])
 {
-    int i;
-    for (i = 0; i < 6; ++i){
-        f->key.ipv6_nd_tll[i] = ipv6_nd_tll[i] & mask[i];
-        f->mask.ipv6_nd_tll[i] = mask[i];
-    }
+    memcpy(f->mask.ipv6_nd_tll, mask, 6);
+    uint32_t *v32, *m32;
+    uint16_t *v16, *m16;
+
+    v32 = (uint32_t*)  &f->key.ipv6_nd_tll[0];
+    v16 = (uint16_t*)  &f->key.ipv6_nd_tll[4];
+    m32 = (uint32_t*)  &mask[0];
+    m16 = (uint16_t*)  &mask[4];
+    *v32 = *((uint32_t*)&ipv6_nd_tll[0]) & *m32;
+    *v16 = *((uint16_t*)&ipv6_nd_tll[4]) & *m16;
 }
 
 void 

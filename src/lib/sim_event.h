@@ -39,6 +39,8 @@ struct sim_event {
     struct heap_node node;      /* ev_node.priority and ev_node.idx .    */
     uint8_t type;               /* Type of the event                     */
     uint64_t time;              /* Time of the event.                    */
+    struct sim_event *prev;
+    struct sim_event *next;
 };
 
 /*  A flow event represents 

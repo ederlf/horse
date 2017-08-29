@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2016, Troy D. Hanson   http://troydhanson.github.com/uthash/
+Copyright (c) 2008-2017, Troy D. Hanson   http://troydhanson.github.com/uthash/
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -26,18 +26,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef UTSTRING_H
 #define UTSTRING_H
 
-#define UTSTRING_VERSION 2.0.1
-
-#ifdef __GNUC__
-#define _UNUSED_ __attribute__ ((__unused__))
-#else
-#define _UNUSED_
-#endif
+#define UTSTRING_VERSION 2.0.2
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#ifdef __GNUC__
+#define UTSTRING_UNUSED __attribute__((__unused__))
+#else
+#define UTSTRING_UNUSED
+#endif
 
 #ifndef oom
 #define oom() exit(-1)
@@ -117,11 +117,11 @@ do {                                                             \
   (dst)->d[(dst)->i]='\0';                                       \
 } while(0)
 
-#define utstring_len(s) ((unsigned)((s)->i))
+#define utstring_len(s) ((s)->i)
 
 #define utstring_body(s) ((s)->d)
 
-_UNUSED_ static void utstring_printf_va(UT_string *s, const char *fmt, va_list ap) {
+UTSTRING_UNUSED static void utstring_printf_va(UT_string *s, const char *fmt, va_list ap) {
    int n;
    va_list cp;
    for (;;) {
@@ -148,7 +148,7 @@ _UNUSED_ static void utstring_printf_va(UT_string *s, const char *fmt, va_list a
 static void utstring_printf(UT_string *s, const char *fmt, ...)
   __attribute__ (( format( printf, 2, 3) ));
 #endif
-_UNUSED_ static void utstring_printf(UT_string *s, const char *fmt, ...) {
+UTSTRING_UNUSED static void utstring_printf(UT_string *s, const char *fmt, ...) {
    va_list ap;
    va_start(ap,fmt);
    utstring_printf_va(s,fmt,ap);
@@ -159,7 +159,7 @@ _UNUSED_ static void utstring_printf(UT_string *s, const char *fmt, ...) {
  * begin substring search functions                                            *
  ******************************************************************************/
 /* Build KMP table from left to right. */
-_UNUSED_ static void _utstring_BuildTable(
+UTSTRING_UNUSED static void _utstring_BuildTable(
     const char *P_Needle,
     size_t P_NeedleLen,
     long *P_KMP_Table)
@@ -199,7 +199,7 @@ _UNUSED_ static void _utstring_BuildTable(
 
 
 /* Build KMP table from right to left. */
-_UNUSED_ static void _utstring_BuildTableR(
+UTSTRING_UNUSED static void _utstring_BuildTableR(
     const char *P_Needle,
     size_t P_NeedleLen,
     long *P_KMP_Table)
@@ -239,7 +239,7 @@ _UNUSED_ static void _utstring_BuildTableR(
 
 
 /* Search data from left to right. ( Multiple search mode. ) */
-_UNUSED_ static long _utstring_find(
+UTSTRING_UNUSED static long _utstring_find(
     const char *P_Haystack,
     size_t P_HaystackLen,
     const char *P_Needle,
@@ -272,7 +272,7 @@ _UNUSED_ static long _utstring_find(
 
 
 /* Search data from right to left. ( Multiple search mode. ) */
-_UNUSED_ static long _utstring_findR(
+UTSTRING_UNUSED static long _utstring_findR(
     const char *P_Haystack,
     size_t P_HaystackLen,
     const char *P_Needle,
@@ -306,7 +306,7 @@ _UNUSED_ static long _utstring_findR(
 
 
 /* Search data from left to right. ( One time search mode. ) */
-_UNUSED_ static long utstring_find(
+UTSTRING_UNUSED static long utstring_find(
     UT_string *s,
     long P_StartPosition,   /* Start from 0. -1 means last position. */
     const char *P_Needle,
@@ -352,7 +352,7 @@ _UNUSED_ static long utstring_find(
 
 
 /* Search data from right to left. ( One time search mode. ) */
-_UNUSED_ static long utstring_findR(
+UTSTRING_UNUSED static long utstring_findR(
     UT_string *s,
     long P_StartPosition,   /* Start from 0. -1 means last position. */
     const char *P_Needle,

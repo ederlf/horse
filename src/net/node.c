@@ -49,8 +49,8 @@ node_is_buffer_empty(struct node *n)
     return !n->flow_buff.tail;
 }
 
-bool node_flow_push(struct node*n, struct netflow flow){
-    if (!(n->flow_buff.tail - BUFFER_MAX)){
+bool node_flow_push(struct node *n, struct netflow flow){
+    if (!(n->flow_buff.tail - (BUFFER_MAX-1))){
         return 0;
     }
     n->flow_buff.tail++;

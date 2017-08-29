@@ -187,18 +187,17 @@ void
 dp_send_netflow(struct datapath *dp, struct netflow *flow)
 {   
     struct out_port *op, *tmp;
-    struct out_port *ports = flow->out_ports;
-    LL_FOREACH_SAFE(ports, op, tmp) {
+    LL_FOREACH_SAFE(flow->out_ports, op, tmp) {
         struct port *p, *tmp_port; 
         /* Handle flooding */
         if (op->port == OFPP_FLOOD) {
-            LL_DELETE(ports, op);
+            LL_DELETE(flow->out_ports, op);
             free(op);
             HASH_ITER(hh, dp->base.ports, p, tmp_port) {
                 if (p->port_id != flow->match.in_port) {
                     struct out_port *new_port = xmalloc(sizeof(struct out_port));
                     new_port->port = p->port_id;
-                    LL_APPEND(ports, new_port);    
+                    LL_APPEND(flow->out_ports, new_port);    
                 }
             }
             /* Get back to the loop and process all the ports added*/
@@ -338,6 +337,7 @@ dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uin
     execute_action_list(&al, nf);
     /* TODO: Buffering */
     dp_send_netflow(dp, nf);
+    action_list_clean(&al);
     return NULL;
 }
 

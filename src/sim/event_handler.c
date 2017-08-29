@@ -17,7 +17,7 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
     /* May have or not ports to send the flow */
     LL_FOREACH(ports, op) {
         /* Schedule a packet in message */
-        if (op->port == CONTROLLER) {
+        if (op->port == OFPP_CONTROLLER) {
             size_t len;
             /* node can only be a datapath */
             struct datapath *dp = (struct datapath*) node;
@@ -98,25 +98,25 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
     struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
                                                     ev_of->dp_id);
+    
     ret = dp_control_handle_control_msg(dp, ev_of->data, 
                                         &nf, ev_of->len, ev->time);
-   
     if (nf.out_ports != NULL) {
         next_flow_event(ev_hdl, (struct node*) dp, &nf, nf.out_ports);
     }
     /* In case there is a reply */
     if (ret != NULL){
-        struct sim_event_of *ev_of;
-        uint8_t *data;
+        struct sim_event_of *of_out;
+        uint8_t *msg = NULL;
         size_t len = ret->length;
-        of_object_wire_buffer_steal(ret, &data);
-        ev_of = sim_event_of_msg_out_new(ev->time, 
-                                        dp_id(dp), data, 
+        of_object_wire_buffer_steal(ret, &msg);
+        of_out = sim_event_of_msg_out_new(ev->time, 
+                                        dp_id(dp), msg, 
                                         len);
-        scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
+        scheduler_insert(ev_hdl->sch, (struct sim_event*) of_out);
         of_object_delete(ret);
     }
-    ev_of->data = NULL;
+    // ev_of->data = NULL;
 }
 
 static void 
@@ -136,6 +136,7 @@ handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev)
     struct topology *topo = ev_hdl->topo;
     struct sim_event_app_start *ev_app = (struct sim_event_app_start *)ev;
     /* Retrieve node to handle the flow */
+    // printf("App start %p %ld %x\n", ev, ev_app->node_id, *((uint32_t*) ev_app->exec->args));
     struct node *node = topology_node(topo, ev_app->node_id);
     if (node) {
         nf = host_execute_app((struct host*) node, ev_app->exec);

@@ -4,7 +4,7 @@
 #include "netflow.h"
 #include "sim_event.h"
 
-#define MAX_PACKET_IN_DATA 128
+#define MAX_PACKET_IN_DATA 256
 
 uint8_t *of_packet_in(struct netflow *f, size_t *len);
 

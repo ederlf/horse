@@ -35,7 +35,18 @@ host_new(void)
 void 
 host_destroy(struct host *h)
 {
+    struct exec *exec, *exec_tmp;
+    struct app *app, *app_tmp;
     legacy_node_clean(&h->ep);
+    
+    HASH_ITER(hh, h->apps, app, app_tmp) {
+        HASH_DEL(h->apps, app);
+        app_destroy(app);
+    }
+    HASH_ITER(hh, h->execs, exec, exec_tmp) {
+        HASH_DEL(h->execs, exec);
+        app_destroy_exec(exec);
+    }
     free(h);
 }
 
@@ -78,6 +89,9 @@ static int
 l2_recv_netflow(struct host *h, struct netflow *flow){
 
     struct port *p = host_port(h, flow->match.in_port);
+    if (!p) {
+        return 0;
+    }
     uint8_t *eth_dst = flow->match.eth_dst;
     uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     /* Return 0 if destination is other */
@@ -90,6 +104,13 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
     if (flow->match.eth_type == ETH_TYPE_ARP){
         /* ARP request */
         if (flow->match.arp_op == ARP_REQUEST){
+
+            /* Returns if port is not the target */
+            if (p->ipv4_addr != NULL && 
+                flow->match.arp_tpa != p->ipv4_addr->addr){
+                return 0;
+            } 
+
             // printf("Received ARP Request from %x %ld\n", flow->match.arp_spa, flow->start_time);
             struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, flow->match.arp_spa);
             /* Learns MAC of the requester */
@@ -203,13 +224,17 @@ host_send_l3(struct host *h, struct netflow *flow){
     if (!re){
         /* Default gateway */
         re = ipv4_lookup(&h->ep.rt, 0);
+
     }
-    struct out_port *op = xmalloc(sizeof(struct out_port));
-    op->port = re->iface;
-    LL_APPEND(flow->out_ports, op); 
-    /* IP to search in the ARP table */
-    // printf("Destination is %x\n", flow->match.ipv4_dst);
-    return re->gateway == 0? flow->match.ipv4_dst: re->gateway;   
+    if (re){
+        struct out_port *op = xmalloc(sizeof(struct out_port));
+        op->port = re->iface;
+        LL_APPEND(flow->out_ports, op);
+        /* IP of the next hop to search in the ARP table */
+        return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
+    } 
+    /* Could not find a route */
+    return 0;   
 }
 
 static void
@@ -271,7 +296,10 @@ static
 void host_send_netflow(struct host *h, struct netflow *flow)
 {
     uint32_t ip = host_send_l3(h, flow);
-    host_send_l2(h, flow, ip);    
+    /* Only forward if the next hop ip is found */
+    if (ip) {
+        host_send_l2(h, flow, ip);    
+    }
 }
 
 void 

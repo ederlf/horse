@@ -19,7 +19,30 @@ sim_event_new(uint64_t time)
 }
 
 void sim_event_free(struct sim_event* ev){
-    free(ev);
+    
+    switch (ev->type){
+        case EVENT_FLOW: {
+            free((struct sim_event_flow*) ev);
+            break;
+        }
+        case EVENT_OF_MSG_IN:
+        case EVENT_OF_MSG_OUT: {
+            free((struct sim_event_of*) ev);
+            break;
+        }
+        case EVENT_APP_START: {
+            free((struct sim_event_app_start*) ev);
+            break;
+        }
+        case EVENT_END :{
+            free(ev);
+            break;
+        }
+        default: {
+            fprintf(stderr, "Unknown Event %d\n", ev->type);
+            break;
+        }
+    } 
 }
  
 struct sim_event_flow*

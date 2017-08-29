@@ -51,6 +51,7 @@ uint8_t *of_packet_in(struct netflow *f, size_t *len)
     *len = of_packet_in->length;
     of_object_wire_buffer_steal((of_object_t*) of_packet_in, &buf);
     // buf = (uint8_t*) WBUF_BUF(OF_OBJECT_TO_WBUF(of_packet_in));
+    free(of_octets.data);
     of_packet_in_delete(of_packet_in);
     return buf;
 }

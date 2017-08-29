@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2016, Troy D. Hanson   http://troydhanson.github.com/uthash/
+Copyright (c) 2008-2017, Troy D. Hanson   http://troydhanson.github.com/uthash/
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -26,17 +26,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef UTARRAY_H
 #define UTARRAY_H
 
-#define UTARRAY_VERSION 2.0.1
-
-#ifdef __GNUC__
-#define _UNUSED_ __attribute__ ((__unused__))
-#else
-#define _UNUSED_
-#endif
+#define UTARRAY_VERSION 2.0.2
 
 #include <stddef.h>  /* size_t */
 #include <string.h>  /* memset, etc */
 #include <stdlib.h>  /* exit */
+
+#ifdef __GNUC__
+#define UTARRAY_UNUSED __attribute__((__unused__))
+#else
+#define UTARRAY_UNUSED
+#endif
 
 #ifndef oom
 #define oom() exit(-1)
@@ -230,9 +230,9 @@ static void utarray_str_dtor(void *elt) {
   char **eltc = (char**)elt;
   if (*eltc != NULL) free(*eltc);
 }
-static const UT_icd ut_str_icd _UNUSED_ = {sizeof(char*),NULL,utarray_str_cpy,utarray_str_dtor};
-static const UT_icd ut_int_icd _UNUSED_ = {sizeof(int),NULL,NULL,NULL};
-static const UT_icd ut_ptr_icd _UNUSED_ = {sizeof(void*),NULL,NULL,NULL};
+static const UT_icd ut_str_icd UTARRAY_UNUSED = {sizeof(char*),NULL,utarray_str_cpy,utarray_str_dtor};
+static const UT_icd ut_int_icd UTARRAY_UNUSED = {sizeof(int),NULL,NULL,NULL};
+static const UT_icd ut_ptr_icd UTARRAY_UNUSED = {sizeof(void*),NULL,NULL,NULL};
 
 
 #endif /* UTARRAY_H */

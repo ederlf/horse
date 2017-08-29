@@ -1,37 +1,53 @@
 from horse import *
 from random import randint
+import sys
+
+def rand_mac():
+    return "%02x:%02x:%02x:%02x:%02x:%02x" % (
+        randint(0, 255),
+        randint(0, 255),
+        randint(0, 255),
+        randint(0, 255),
+        randint(0, 255),
+        randint(0, 255)
+)
+
+k = int(sys.argv[1]) + 1
+hosts = []
 
 topo = Topology()
-
-k = 101
-
-h1 = Host()
-h2 = Host()
-
-h1.add_port(1, "00:00:00:00:00:01", ip = "10.0.0.1", 
-            netmask = "255.255.255.0" )
-h2.add_port(1, "00:00:00:00:00:02", ip = "10.0.0.2", 
-            netmask = "255.255.255.0")
-
-topo.add_node(h1)
-topo.add_node(h2)
-
+# "00:00:00:00:00:0%s"% i
 last_switch = None
 for i in range(1, k):
     sw = SDNSwitch(i)
-    sw.add_port(1, "00:00:00:00:01:00")
-    sw.add_port(2, "00:00:00:00:02:00")
+    h = Host()
+    h.add_port(port = 1, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i), 
+               netmask = "255.255.255.0")
+    sw.add_port(port = 1, eth_addr = "00:00:00:00:01:00")
+    sw.add_port(port = 2, eth_addr = "00:00:00:00:02:00")
+    sw.add_port(port = 3, eth_addr = "00:00:00:00:03:00")
+    hosts.append(h)
+    topo.add_node(h)
     topo.add_node(sw)
-    if i == 1:
-        topo.add_link(sw, h1, 1, 1, 0) #latency=randint(0,9))
-    if i == k - 1:
-        topo.add_link(sw, h2, 2, 1, 0) #latency=randint(0,9))
+    topo.add_link(sw, h, 1, 1, latency = 0) #latency=randint(0,9))
     if last_switch:
-        topo.add_link(last_switch, sw, 2, 1)
+        topo.add_link(last_switch, sw, 2, 3)
     last_switch = sw
 
-h1.ping("10.0.0.2", 5000000)
-h2.ping("10.0.0.1", 10000000)
-topo.start()
+time = 5000000
+# hosts[0].ping("10.0.0.2", 5000000)
+# hosts[0].ping("10.0.0.3", 6000000)
+# hosts[1].ping("10.0.0.1", 7000000)
+# hosts[1].ping("10.0.0.3", 8000000)
+# hosts[2].ping("10.0.0.1", 9000000)
+# hosts[2].ping("10.0.0.2", 10000000)
+for i, h in enumerate(hosts):
+    for z in range(1, k):
+      if z != i + 1:
+        h.ping("10.0.0.%s" % (z), time)
+        time += 1000000
 
+
+
+topo.start()
 
