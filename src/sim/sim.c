@@ -213,30 +213,30 @@ cont_mode(void* args)
     //        scheduler_is_empty(sch), sch->ev_queue->size);
     // printf("Executing %ld\n", sch->clock);
     /* Get the event but delete it only if executed! */
-    if (!scheduler_is_empty(sch)){
+    // if (!scheduler_is_empty(sch)){
         // cur_ev = scheduler_di
         // if (!cur_ev) 
-        cur_ev = scheduler_retrieve(sch); 
-        sch->clock += delta_us;  
-        // printf("CONT  %d %ld %ld %p\n", cur_ev->type, cur_ev->time, sch->clock,cur_ev);     
-        if (cur_ev->time <= sch->clock){
-            /* Execute */
-            if (cur_ev->type == EVENT_OF_MSG_OUT || 
-                 cur_ev->type == EVENT_OF_MSG_IN ) {
-                 // printf("MSG_OF CONT %s %ld %ld\n", cur_ev->type == 4? "OUT":"IN", cur_ev->time, sch->clock);
-                last_ctrl = cur_ev->time;
-            }
-            else if(cur_ev->type == EVENT_END){
-                printf("Last event?\n");
-                goto check_idle;
-            }
-            handle_event(&s->evh, cur_ev);
-            scheduler_delete(sch, cur_ev);
-            sim_event_free(cur_ev);
-            cur_ev = NULL;
+    cur_ev = scheduler_retrieve(sch); 
+    sch->clock += delta_us;  
+    // printf("CONT  %d %ld %ld %p\n", cur_ev->type, cur_ev->time, sch->clock,cur_ev);     
+    if (cur_ev->time <= sch->clock){
+        /* Execute */
+        if (cur_ev->type == EVENT_OF_MSG_OUT || 
+             cur_ev->type == EVENT_OF_MSG_IN ) {
+             // printf("MSG_OF CONT %s %ld %ld\n", cur_ev->type == 4? "OUT":"IN", cur_ev->time, sch->clock);
+            last_ctrl = cur_ev->time;
         }
-        
+        else if(cur_ev->type == EVENT_END){
+            printf("Last event?\n");
+            goto check_idle;
+        }
+        handle_event(&s->evh, cur_ev);
+        scheduler_delete(sch, cur_ev);
+        sim_event_free(cur_ev);
+        cur_ev = NULL;
     }
+        
+    // }
     
     check_idle:
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);

@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include <jemalloc/jemalloc.h>
 
 #define UNUSED(x) (void)x;
 
