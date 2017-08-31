@@ -16,14 +16,14 @@
 
 #define EV_NUM 1000000
 
-enum tests {
-    SINGLE = 0,
-    LINEAR = 1,
-    CORE_EDGE = 2,
-};
 
 static void *des_mode(void * args);
 static void *cont_mode(void* args); 
+
+static pthread_cond_t  mode_cond_var   = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t mtx_mode    = PTHREAD_MUTEX_INITIALIZER;
+int last_wrt = 0;
+uint64_t last_ctrl = 0;
 
 static void 
 initial_events(struct sim *s)
@@ -88,10 +88,6 @@ sim_close(struct sim *s)
     of_manager_destroy(s->evh.om);
 }
 
-static pthread_cond_t  condition_var   = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t mutex1    = PTHREAD_MUTEX_INITIALIZER;
-int last_wrt = 0;
-uint64_t last_ctrl = 0;
 
 // static void update_stats(struct topology *topo, uint64_t time){
 
@@ -114,12 +110,12 @@ des_mode(void *args){
     while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
-        pthread_mutex_lock( &mutex1 );
+        pthread_mutex_lock( &mtx_mode );
         while(sch->mode){
             // printf("Waiting\n");
-            pthread_cond_wait( &condition_var, &mutex1 );
+            pthread_cond_wait( &mode_cond_var, &mtx_mode );
         }
-        pthread_mutex_unlock( &mutex1 );
+        pthread_mutex_unlock( &mtx_mode );
 
         struct sim_event *ev = scheduler_dispatch(sch);
         sch->clock = ev->time;
@@ -137,11 +133,11 @@ des_mode(void *args){
                 ev->type == EVENT_OF_MSG_IN ) {
                 
                 /* Wake up timer */
-                pthread_mutex_lock( &mutex1 );
+                pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
                 sch->mode = CONTINUOUS;
-                pthread_cond_signal( &condition_var );
-                pthread_mutex_unlock( &mutex1 );
+                pthread_cond_signal( &mode_cond_var );
+                pthread_mutex_unlock( &mtx_mode );
             
             }
             sim_event_free(ev);
@@ -171,11 +167,11 @@ cont_mode(void* args)
     struct scheduler *sch = s->evh.sch;
     /* The code below is just a demonstration. */
     /* Increase time and check if there a DP event to execute */
-    pthread_mutex_lock( &mutex1 );
+    pthread_mutex_lock( &mtx_mode );
     while(!sch->mode){
-        pthread_cond_wait( &condition_var, &mutex1 );
+        pthread_cond_wait( &mode_cond_var, &mtx_mode );
     }
-    pthread_mutex_unlock( &mutex1 );
+    pthread_mutex_unlock( &mtx_mode );
     
     clock_gettime(CLOCK_MONOTONIC_RAW, &now);
     uint64_t delta_us = (now.tv_sec - last.tv_sec) * 1000000 + (now.tv_nsec - last.tv_nsec) / 1000;
@@ -196,18 +192,16 @@ cont_mode(void* args)
         sim_event_free(cur_ev);
         cur_ev = NULL;
     }
-        
-    // }
-    
+            
     check_idle:
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
     /* Check if controller is idle for some time */
     if (sch->clock - last_ctrl > mode_interval){
-        pthread_mutex_lock( &mutex1 );
+        pthread_mutex_lock( &mtx_mode );
         sch->mode = DES;
         /* Wake up timer */
-        pthread_cond_signal( &condition_var );
-        pthread_mutex_unlock( &mutex1 );
+        pthread_cond_signal( &mode_cond_var );
+        pthread_mutex_unlock( &mtx_mode );
     }
     return 0; 
 }

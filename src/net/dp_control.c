@@ -48,21 +48,6 @@
 #include "dp_control.h"
 #include <loci/loci.h>
 
-/* Handles barrier request messages. */
-// static ofl_err
-// handle_control_barrier_request(struct datapath *dp,
-//            struct ofl_msg_header *msg, const struct sender *sender) {
-
-//     /* Note: the implementation is single-threaded,
-//        so a barrier request can simply be replied. */
-//     struct ofl_msg_header reply =
-//             {.type = OFPT_BARRIER_REPLY};
-
-//     dp_send_message(dp, (struct ofl_msg_header *)&reply, sender);
-//     ofl_msg_free(msg, dp->exp);
-
-//     return 0;
-// }
 
 // /* Handles features request messages. */
 // static ofl_err
@@ -195,36 +180,6 @@
 //     }
 // }
 
-
-// /* Handles echo reply messages. */
-// static ofl_err
-// handle_control_echo_reply(struct datapath *dp UNUSED,
-//                                 struct ofl_msg_echo *msg,
-//                                   const struct sender *sender UNUSED) {
-
-//     ofl_msg_free((struct ofl_msg_header *)msg, dp->exp);
-//     return 0;
-// }
-
-// /* Handles echo request messages. */
-// static ofl_err
-// handle_control_echo_request(struct datapath *dp,
-//                                           struct ofl_msg_echo *msg,
-//                                                 const struct sender *sender) {
-//     struct ofl_msg_echo reply =
-//             {{.type = OFPT_ECHO_REPLY},
-//              .data_length = msg->data_length,
-//              .data        = msg->data};
-//     dp_send_message(dp, (struct ofl_msg_header *)&reply, sender);
-
-//     ofl_msg_free((struct ofl_msg_header *)msg, dp->exp);
-//     return 0;
-// }
-
-
-#define OF_MSG_NUM 6
-
-
 /* Dispatches control messages to appropriate handler functions. */
 of_object_t *
 dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
@@ -246,7 +201,8 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
             break;
         }
         case OF_PORT_STATS_REQUEST: {
-
+            ret = dp_handle_port_stats_req(dp, obj);
+            break;
         }
         case OF_FLOW_STATS_REQUEST: {
 
@@ -273,89 +229,4 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
     }
     of_object_delete(obj);
     return ret;
-    /* NOTE: It is assumed that if a handler returns with error, it did not use
-             any part of the control message, thus it can be freed up.
-             If no error is returned however, the message must be freed inside
-             the handler (because the handler might keep parts of the message) */
-    // switch (msg->type) {
-    
-    //     case OFPT_BARRIER_REQUEST: {
-    //         return handle_control_barrier_request(dp, msg, sender);
-    //     }
-    //     case OFPT_BARRIER_REPLY: {
-    //         ofl_msg_free(msg, dp->exp);
-    //         return 0;
-    //     }
-    //     case OFPT_GET_CONFIG_REQUEST: {
-    //         return handle_control_get_config_request(dp, msg, sender);
-    //     }
-    //     case OFPT_GET_CONFIG_REPLY: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_SET_CONFIG: {
-    //         return handle_control_set_config(dp, (struct ofl_msg_set_config *)msg, sender);
-    //     }
-    //     case OF_PACKET_IN: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    
-    //     case OF_FLOW_REMOVED: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_PORT_STATUS: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_FLOW_MOD: {
-    //         return pipeline_handle_flow_mod(dp->pipeline, (struct ofl_msg_flow_mod *)msg, sender);
-    //     }
-    //     case OFPT_GROUP_MOD: {
-    //         return group_table_handle_group_mod(dp->groups, (struct ofl_msg_group_mod *)msg, sender);
-    //     }
-    //     case OFPT_PORT_MOD: {
-    //         return dp_ports_handle_port_mod(dp, (struct ofl_msg_port_mod *)msg, sender);
-    //     }
-    //     case OFPT_TABLE_MOD: {
-    //         return pipeline_handle_table_mod(dp->pipeline, (struct ofl_msg_table_mod *)msg, sender);
-    //     }
-    //     case OFPT_MULTIPART_REQUEST: {
-    //         return handle_control_stats_request(dp, (struct ofl_msg_multipart_request_header *)msg, sender);
-    //     }
-    //     case OFPT_MULTIPART_REPLY: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_ECHO_REQUEST: {
-    //         return handle_control_echo_request(dp, (struct ofl_msg_echo *)msg, sender);
-    //     }
-    //     case OFPT_ECHO_REPLY: {
-    //         return handle_control_echo_reply(dp, (struct ofl_msg_echo *)msg, sender);
-    //     }
-    //     case OFPT_QUEUE_GET_CONFIG_REQUEST: {
-    //         return dp_ports_handle_queue_get_config_request(dp, (struct ofl_msg_queue_get_config_request *)msg, sender);
-    //     }
-    //     case OFPT_ROLE_REQUEST: {
-    //         return dp_handle_role_request(dp, (struct ofl_msg_role_request*)msg, sender);
-    //     }
-    //     case OFPT_ROLE_REPLY:{
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_QUEUE_GET_CONFIG_REPLY: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_METER_MOD:{
-    //         return meter_table_handle_meter_mod(dp->meters, (struct ofl_msg_meter_mod *)msg, sender);
-    //     }
-    //     case OFPT_EXPERIMENTER: {
-    //         return dp_exp_message(dp, (struct ofl_msg_experimenter *)msg, sender);
-    //     }
-    //     case OFPT_GET_ASYNC_REPLY:{
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    //     case OFPT_GET_ASYNC_REQUEST:
-    //     case OFPT_SET_ASYNC:{
-    //         return dp_handle_async_request(dp, (struct ofl_msg_async_config*)msg, sender);
-    //     }
-    //     default: {
-    //         return ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);
-    //     }
-    // }
 }

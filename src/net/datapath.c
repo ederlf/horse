@@ -260,6 +260,94 @@ dp_handle_flow_mod(const struct datapath *dp,
 }
 
 of_object_t* 
+dp_handle_port_stats_req(const struct datapath *dp, 
+                         of_object_t *obj)
+{
+    uint32_t xid;
+    of_port_no_t port_id;
+    of_port_stats_reply_t *reply;
+    of_port_stats_request_t *req = (of_port_stats_request_t*) obj;
+    of_port_stats_entry_t *port_entry = NULL;
+    of_list_port_stats_entry_t *port_list = NULL;
+
+    if ((reply = of_port_stats_reply_new(obj->version)) == NULL) {
+        fprintf(stderr, "%s\n", "Failed to create port stats reply object");
+        return NULL;
+    }
+
+    of_port_stats_request_xid_get(req, &xid);
+    of_port_stats_reply_xid_set(reply, xid);
+
+    port_entry = of_port_stats_entry_new(OF_VERSION_1_3);
+    if (port_entry == NULL){
+        fprintf(stderr, "%s\n", "Failed to create a port entry object");
+        return NULL;
+    }
+
+    port_list = of_list_port_stats_entry_new(OF_VERSION_1_3);
+    if (port_list == NULL){
+        fprintf(stderr, "%s\n", "Failed to create a port status list object");
+        of_port_stats_entry_delete(port_entry);
+        return NULL;
+    }
+
+    of_port_stats_request_port_no_get(req, &port_id);
+
+    /* Return all interfaces */
+    if (port_id == OFPP_ANY) {
+        struct port *cur_port, *tmp;
+        HASH_ITER(hh, dp->base.ports, cur_port, tmp) {
+            /* TODO: Put it in a function */
+            of_port_stats_entry_port_no_set(port_entry, cur_port->port_id);
+            of_port_stats_entry_duration_sec_set(port_entry, 0);
+            of_port_stats_entry_duration_nsec_set(port_entry, 0);
+            of_port_stats_entry_rx_packets_set(port_entry, cur_port->stats.rx_packets);
+            of_port_stats_entry_tx_packets_set(port_entry, cur_port->stats.tx_packets);
+            of_port_stats_entry_rx_bytes_set(port_entry, cur_port->stats.rx_bytes);
+            of_port_stats_entry_tx_bytes_set(port_entry, cur_port->stats.tx_bytes);
+            of_port_stats_entry_rx_dropped_set(port_entry, 0);
+            of_port_stats_entry_tx_dropped_set(port_entry, 0);
+            of_port_stats_entry_rx_errors_set(port_entry, 0);
+            of_port_stats_entry_tx_errors_set(port_entry, 0);
+            of_port_stats_entry_rx_frame_err_set(port_entry, 0);
+            of_port_stats_entry_rx_over_err_set(port_entry, 0);
+            of_port_stats_entry_rx_crc_err_set(port_entry, 0);
+            of_port_stats_entry_collisions_set(port_entry, 0);
+            of_list_port_stats_entry_append(port_list, port_entry);
+        }
+    }
+    else {
+        struct port *p = dp_port(dp, port_id);
+        of_port_stats_entry_port_no_set(port_entry, p->port_id);
+        of_port_stats_entry_duration_sec_set(port_entry, 0);
+        of_port_stats_entry_duration_nsec_set(port_entry, 0);
+        of_port_stats_entry_rx_packets_set(port_entry, p->stats.rx_packets);
+        of_port_stats_entry_tx_packets_set(port_entry, p->stats.tx_packets);
+        of_port_stats_entry_rx_bytes_set(port_entry, p->stats.rx_bytes);
+        of_port_stats_entry_tx_bytes_set(port_entry, p->stats.tx_bytes);
+        of_port_stats_entry_rx_dropped_set(port_entry, 0);
+        of_port_stats_entry_tx_dropped_set(port_entry, 0);
+        of_port_stats_entry_rx_errors_set(port_entry, 0);
+        of_port_stats_entry_tx_errors_set(port_entry, 0);
+        of_port_stats_entry_rx_frame_err_set(port_entry, 0);
+        of_port_stats_entry_rx_over_err_set(port_entry, 0);
+        of_port_stats_entry_rx_crc_err_set(port_entry, 0);
+        of_port_stats_entry_collisions_set(port_entry, 0);
+        of_list_port_stats_entry_append(port_list, port_entry);
+    }
+
+    if (of_port_stats_reply_entries_set(reply, port_list) < 0) {
+        fprintf(stderr, "%s\n", "Failure to add list of ports to stats reply" );
+        return NULL;
+    }
+
+    of_list_port_stats_entry_delete(port_entry);
+    of_list_port_stats_entry_delete(port_list);
+
+    return reply;
+}
+
+of_object_t* 
 dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
 {
     uint32_t xid;
@@ -316,7 +404,7 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
     }
 
     if (of_port_desc_stats_reply_entries_set(reply, of_list_port_desc) < 0) {
-        fprintf(stderr, "%s\n", "Failure to add list of ports to stats reply" );
+        fprintf(stderr, "%s\n", "Failure to add list of ports to desc stats reply" );
         return NULL;
     }
 
