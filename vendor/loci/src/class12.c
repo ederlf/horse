@@ -9392,6 +9392,15 @@ of_bsn_tlv_wire_object_id_get(of_object_t *obj, of_object_id_t *id)
         case 0x9e:
             *id = OF_BSN_TLV_VIRTUAL;
             break;
+        case 0x9f:
+            *id = OF_BSN_TLV_PDUA_RX_INSTANCE;
+            break;
+        case 0xa0:
+            *id = OF_BSN_TLV_LAG_OPTIONS;
+            break;
+        case 0xa1:
+            *id = OF_BSN_TLV_ROUTING_PARAM;
+            break;
         default:
             *id = OF_BSN_TLV;
             break;
@@ -9874,6 +9883,15 @@ of_bsn_tlv_wire_object_id_get(of_object_t *obj, of_object_id_t *id)
             break;
         case 0x9e:
             *id = OF_BSN_TLV_VIRTUAL;
+            break;
+        case 0x9f:
+            *id = OF_BSN_TLV_PDUA_RX_INSTANCE;
+            break;
+        case 0xa0:
+            *id = OF_BSN_TLV_LAG_OPTIONS;
+            break;
+        case 0xa1:
+            *id = OF_BSN_TLV_ROUTING_PARAM;
             break;
         default:
             *id = OF_BSN_TLV;

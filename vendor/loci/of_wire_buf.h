@@ -408,8 +408,7 @@ of_wire_buffer_match_set(int version, of_wire_buffer_t *wbuf, int offset,
  */
 
 static inline void
-of_wire_buffer_of_port_desc_get(int version, of_wire_buffer_t *wbuf, int offset,
-                             void *value)
+of_wire_buffer_of_port_desc_get(int version, of_wire_buffer_t *wbuf, int offset, void *value)
 {
     (void) version;
     (void) wbuf;
@@ -430,8 +429,7 @@ of_wire_buffer_of_port_desc_get(int version, of_wire_buffer_t *wbuf, int offset,
  */
 
 static inline void
-of_wire_buffer_of_port_desc_set(int version, of_wire_buffer_t *wbuf, int offset,
-                             void *value)
+of_wire_buffer_of_port_desc_set(int version, of_wire_buffer_t *wbuf, int offset, void *value)
 {
     (void) version;
     (void) wbuf;

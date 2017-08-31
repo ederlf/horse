@@ -135,10 +135,8 @@ of_object_new_from_message(of_message_t msg, int len)
         return NULL;
     }
     obj->version = version;
-
     of_header_wire_object_id_get(obj, &object_id);
     of_object_init_map[object_id](obj, version, len, 0);
-
     return obj;
 }
 
