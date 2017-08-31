@@ -325,6 +325,7 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
             return;
         }
         
+        vlan = (struct vlan *)(buffer + offset);
         m->eth_type = ntohs(vlan->ethertype);
         /* Add a vlan tag */
         if (*top < MAX_STACK_SIZE) {
