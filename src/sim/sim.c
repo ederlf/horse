@@ -25,15 +25,6 @@ enum tests {
 static void *des_mode(void * args);
 static void *cont_mode(void* args); 
 
-// static
-// void heap_display(struct heap *h) {
-//     size_t i;
-//     for(i=1; i <= h->size; ++i) {
-//         printf("|%ld|, %p\n", h->array[i]->priority, h->array[i]);
-//     }
-//     printf("\n");
-// }
-
 static void 
 initial_events(struct sim *s)
 {
@@ -66,8 +57,6 @@ sim_init(struct sim *s, struct topology *topo, enum sim_mode mode)
     s->evh.topo = topo;
     s->evh.sch = scheduler_new();
     s->cont.exec = cont_mode;
-    // init_timer(s->cont, (void*)s);
-    // set_periodic_timer(/* 1 */100);
     s->mode = mode;
     initial_events(s); 
     if (s->mode == EMU_CTRL){
@@ -101,7 +90,6 @@ sim_close(struct sim *s)
 
 static pthread_cond_t  condition_var   = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t mutex1    = PTHREAD_MUTEX_INITIALIZER;
-int run = 0;
 int last_wrt = 0;
 uint64_t last_ctrl = 0;
 
@@ -135,7 +123,7 @@ des_mode(void *args){
 
         struct sim_event *ev = scheduler_dispatch(sch);
         sch->clock = ev->time;
-        // printf("Clock DES %"PRIu64"\n", sch->clock);
+
         /* Time will be shared now */
         if (sch->clock - last_wrt > 1000000){
             // update_stats(s->topo, s->sch->clock);
@@ -147,13 +135,14 @@ des_mode(void *args){
             handle_event(&s->evh, ev);
             if (ev->type == EVENT_OF_MSG_OUT ||
                 ev->type == EVENT_OF_MSG_IN ) {
+                
+                /* Wake up timer */
                 pthread_mutex_lock( &mutex1 );
                 last_ctrl = sch->clock;
                 sch->mode = CONTINUOUS;
-                /* Wake up timer */
-                // printf("Switching to CONT %ld\n", last_ctrl);
                 pthread_cond_signal( &condition_var );
                 pthread_mutex_unlock( &mutex1 );
+            
             }
             sim_event_free(ev);
         }
@@ -164,32 +153,20 @@ des_mode(void *args){
         }
         
     }
-    /* Awake the timer so it can stop */
-    // pthread_mutex_lock( &mutex1 );
     printf("Over timer %p\n", s);
     shutdown_timer(&s->cont);
-    // pthread_cond_signal( &condition_var );
-    // pthread_mutex_unlock( &mutex1 );
     return 0;
 } 
 
 struct sim_event *cur_ev = NULL;
 uint64_t mode_interval = 100000; // in microseconds 
-time_t ts = 0;
 
-int execs = 0;
 uint64_t delta_us = 0;
 
 static void *
 cont_mode(void* args) 
 {
-    // execs += 1;
-    // if (time(NULL) - ts > 0) {
-    //     printf("Execs %d\n", execs);
-    //     printf("%.2f\n", (double)(time(NULL) - ts ));
-    //     execs = 0;
-    // }
-    // printf("Initial %.2f\n", (double)(time(NULL) ));
+
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
     /* The code below is just a demonstration. */
@@ -202,27 +179,12 @@ cont_mode(void* args)
     
     clock_gettime(CLOCK_MONOTONIC_RAW, &now);
     uint64_t delta_us = (now.tv_sec - last.tv_sec) * 1000000 + (now.tv_nsec - last.tv_nsec) / 1000;
-    // printf("%ld\n", delta_us);
-    // printf("Elapsed ms %ld\n", (now.tv_sec - last.tv_sec) * 1000 + (now.tv_nsec - last.tv_nsec) / 1000000);
-    // sch->clock += delta_us; 
-    // printf("%ld\n", (now.tv_sec - last.tv_sec) * 1000000);
-    // sch->clock += 50; /* Adds one milisecond */
-    // printf("Clock %"PRIu64"\n", sch->clock);
-    // printf("CONT cur_ev:%p empty? %d Size %ld\n", cur_ev, 
-    //        scheduler_is_empty(sch), sch->ev_queue->size);
-    // printf("Executing %ld\n", sch->clock);
-    /* Get the event but delete it only if executed! */
-    // if (!scheduler_is_empty(sch)){
-        // cur_ev = scheduler_di
-        // if (!cur_ev) 
     cur_ev = scheduler_retrieve(sch); 
-    sch->clock += delta_us;  
-    // printf("CONT  %d %ld %ld %p\n", cur_ev->type, cur_ev->time, sch->clock,cur_ev);     
+    sch->clock += delta_us;     
     if (cur_ev->time <= sch->clock){
         /* Execute */
         if (cur_ev->type == EVENT_OF_MSG_OUT || 
              cur_ev->type == EVENT_OF_MSG_IN ) {
-             // printf("MSG_OF CONT %s %ld %ld\n", cur_ev->type == 4? "OUT":"IN", cur_ev->time, sch->clock);
             last_ctrl = cur_ev->time;
         }
         else if(cur_ev->type == EVENT_END){
@@ -241,20 +203,12 @@ cont_mode(void* args)
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
     /* Check if controller is idle for some time */
     if (sch->clock - last_ctrl > mode_interval){
-        // printf("Switching to DES %ld, %ld, %ld\n", sch->clock, last_ctrl, 
-        //        sch->clock - last_ctrl);
-        // if (cur_ev){
-        //     printf("Clock %ld, cur_ev %ld\n", sch->clock, cur_ev->time );
-        //     scheduler_insert(sch, cur_ev);
-        //     cur_ev = NULL;
-        // }
         pthread_mutex_lock( &mutex1 );
         sch->mode = DES;
         /* Wake up timer */
         pthread_cond_signal( &condition_var );
         pthread_mutex_unlock( &mutex1 );
     }
-    // ts = time(NULL);
     return 0; 
 }
 
