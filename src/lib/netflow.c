@@ -18,10 +18,10 @@ netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
 {
     /* eth_type must be 0x8100 or 0x88a8 */
     int *top = &nf->tags.top;
-    struct tag *new;
     if ( *top < (MAX_STACK_SIZE - 1) && 
         (eth_type == ETH_TYPE_VLAN || 
          eth_type == ETH_TYPE_VLAN_QinQ) ) {
+        struct tag *new;
         bool empty = *top == STACK_EMPTY? true: false;
         (*top)++;
         new = &nf->tags.level[*top];
@@ -127,7 +127,7 @@ bool netflow_is_outer_mpls(struct netflow *nf)
 {
     return  nf->tags.top != STACK_EMPTY && 
             (nf->tags.level[nf->tags.top].type == ETH_TYPE_MPLS ||
-             nf->tags.level[nf->tags.top].type == ETH_TYPE_MPLS);
+             nf->tags.level[nf->tags.top].type == ETH_TYPE_MPLS_MCAST);
 }
 
 

@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <uthash/utlist.h>
+#include <valgrind/memcheck.h>
 
 #define EV_NUM 1000000
 
@@ -22,7 +23,7 @@ enum tests {
 };
 
 static void *des_mode(void * args);
-static void cont_mode(void* args); 
+static void *cont_mode(void* args); 
 
 // static
 // void heap_display(struct heap *h) {
@@ -41,8 +42,8 @@ initial_events(struct sim *s)
     struct node *node, *tmp;
     /* Not very efficient now... */
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
-        struct exec *exec, *exec_tmp;
         if (node->type == HOST){
+            struct exec *exec, *exec_tmp;
             HASH_ITER(hh, host_execs((struct host*) node), exec, exec_tmp) {
                 struct sim_event_app_start *ev = sim_event_app_start_new(exec->start_time, node->uuid, exec);
                 scheduler_insert(sch, (struct sim_event*) ev);
@@ -82,9 +83,8 @@ sim_init(struct sim *s, struct topology *topo, enum sim_mode mode)
             }
         }
         of_client_start(s->evh.om->of, false);
-        // printf("Started connections %p\n", des_mode);
     }
-    init_timer(s->cont, (void*)s);
+    init_timer(&s->cont, (void*)s);
     set_periodic_timer(/* 1 */100);
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
     pthread_create(&s->dataplane, (pthread_attr_t*)0, des_mode, (void*)s);
@@ -117,12 +117,12 @@ uint64_t last_ctrl = 0;
 // }
 
 static void *
-des_mode(void * args){
+des_mode(void *args){
 /*  Executes DES while controller does nothing
     Waits for some event from controller or current time
     is larger than event time */
     struct sim *s = (struct sim*) args;
-    struct scheduler *sch = s->evh.sch;
+    struct scheduler *sch = s->evh.sch;   
     while (1){
         // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
@@ -167,7 +167,7 @@ des_mode(void * args){
     /* Awake the timer so it can stop */
     // pthread_mutex_lock( &mutex1 );
     printf("Over timer %p\n", s);
-    shutdown_timer(s->cont);
+    shutdown_timer(&s->cont);
     // pthread_cond_signal( &condition_var );
     // pthread_mutex_unlock( &mutex1 );
     return 0;
@@ -180,7 +180,7 @@ time_t ts = 0;
 int execs = 0;
 uint64_t delta_us = 0;
 
-static void 
+static void *
 cont_mode(void* args) 
 {
     // execs += 1;
@@ -189,7 +189,6 @@ cont_mode(void* args)
     //     printf("%.2f\n", (double)(time(NULL) - ts ));
     //     execs = 0;
     // }
-
     // printf("Initial %.2f\n", (double)(time(NULL) ));
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
@@ -256,6 +255,7 @@ cont_mode(void* args)
         pthread_mutex_unlock( &mutex1 );
     }
     // ts = time(NULL);
+    return 0; 
 }
 
 void 

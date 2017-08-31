@@ -8,14 +8,14 @@
 
 static void
 next_flow_event(struct ev_handler *ev_hdl, struct node* node, 
-                struct netflow *nf, struct out_port *ports){
+                struct netflow *nf){
     uint64_t dst_uuid;
     uint32_t dst_port, latency;
-    struct out_port *op;
+    struct out_port *op, *tmp;
     struct scheduler *sch = ev_hdl->sch;
     struct topology *topo = ev_hdl->topo;
     /* May have or not ports to send the flow */
-    LL_FOREACH(ports, op) {
+    LL_FOREACH_SAFE(nf->out_ports, op, tmp) {
         /* Schedule a packet in message */
         if (op->port == OFPP_CONTROLLER) {
             size_t len;
@@ -43,8 +43,9 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
             new_flow->flow.out_ports = NULL;
             scheduler_insert(sch, (struct sim_event*) new_flow);
         }
+        LL_DELETE(nf->out_ports, op);
     }
-    netflow_clean_out_ports(nf);
+    // netflow_clean_out_ports(nf);
 }
 
 /**
@@ -56,7 +57,6 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
 
 static void 
 handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
-    struct out_port *ports;
     struct topology *topo = ev_hdl->topo;
     struct sim_event_flow *ev_flow = (struct sim_event_flow *)ev;
     /* Retrieve node to handle the flow */
@@ -66,8 +66,7 @@ handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
         // struct netflow *f = &ev_flow->flow;
         // printf("POOORT %d\n", f->match.in_port);
         node->handle_netflow(node, &ev_flow->flow);
-        ports = ev_flow->flow.out_ports;
-        next_flow_event(ev_hdl, node, &ev_flow->flow, ports);
+        next_flow_event(ev_hdl, node, &ev_flow->flow);
     }
 }
 
@@ -102,7 +101,7 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
     ret = dp_control_handle_control_msg(dp, ev_of->data, 
                                         &nf, ev_of->len, ev->time);
     if (nf.out_ports != NULL) {
-        next_flow_event(ev_hdl, (struct node*) dp, &nf, nf.out_ports);
+        next_flow_event(ev_hdl, (struct node*) dp, &nf);
     }
     /* In case there is a reply */
     if (ret != NULL){
@@ -131,7 +130,6 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
 static void
 handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev)
 {   
-    struct out_port *ports;
     struct netflow nf;
     struct topology *topo = ev_hdl->topo;
     struct sim_event_app_start *ev_app = (struct sim_event_app_start *)ev;
@@ -140,8 +138,7 @@ handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev)
     struct node *node = topology_node(topo, ev_app->node_id);
     if (node) {
         nf = host_execute_app((struct host*) node, ev_app->exec);
-        ports = nf.out_ports;
-        next_flow_event(ev_hdl, node, &nf, ports);
+        next_flow_event(ev_hdl, node, &nf);
     }
 }
 

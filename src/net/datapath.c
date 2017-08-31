@@ -88,11 +88,10 @@ execute_action_list(struct action_list *al, struct netflow *flow)
 static void 
 execute_action_set(struct action_set *as, struct netflow *flow){
 
-    struct action *act;
     enum action_set_order type;
     /* Loop through the enum */
     for (type = ACT_METER; type <= ACT_OUTPUT; ++type) {
-        act = action_set_action(as, type);
+        struct action *act = action_set_action(as, type);
         if(act){
             execute_action(act, flow);
         }
@@ -141,13 +140,13 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
 {
     /* Get the input port and update rx counters*/
     uint8_t table_id;
-    struct flow_table *table;
     struct flow *f;
     /* Buffering to be implemented */
     flow->metadata.buffer_id = OFP_NO_BUFFER;
     uint32_t in_port = flow->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
+        struct flow_table *table;
         struct action_set acts;
         action_set_init(&acts);
         p->stats.rx_packets += flow->byte_cnt;
