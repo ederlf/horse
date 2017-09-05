@@ -51,6 +51,9 @@ of_object_t* dp_handle_flow_mod(const struct datapath *dp,
 of_object_t* dp_handle_port_stats_req(const struct datapath *dp, 
                                       of_object_t *obj);
 
+of_object_t* dp_handle_flow_stats_req(const struct datapath *dp, 
+                                      of_object_t* obj, uint64_t time);
+
 of_object_t* dp_handle_port_desc(const struct datapath *dp, 
                                  of_object_t *obj);
 

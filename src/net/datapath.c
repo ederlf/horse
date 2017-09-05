@@ -348,6 +348,28 @@ dp_handle_port_stats_req(const struct datapath *dp,
 }
 
 of_object_t* 
+dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj, 
+                         uint64_t time)
+{
+    uint64_t cookie, cookie_mask;
+    uint32_t xid, out_port, out_group;
+    uint8_t table_id;
+    of_flow_stats_request_t *req = (of_flow_stats_request_t*) obj;
+
+    of_flow_stats_request_xid_get(req, &xid);
+    of_flow_stats_request_cookie_get(req, &cookie);
+    of_flow_stats_request_cookie_mask_get(req, &cookie_mask);
+    of_flow_stats_request_table_id_get(req, &table_id);
+    of_flow_stats_request_out_port_get(req, &out_port);
+    of_flow_stats_request_out_group_get(req, &out_group);
+
+    UNUSED(dp);
+    UNUSED(time);
+
+    return NULL;
+}
+
+of_object_t* 
 dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
 {
     uint32_t xid;

@@ -285,7 +285,6 @@ host_send_l2(struct host *h, struct netflow *flow, uint32_t ip){
         arp_req.start_time = flow->start_time;
         arp_req.pkt_cnt = 1;
         arp_req.byte_cnt = 56;
-        arp_req.next = flow;
         /* Put the current packet in the queue and flow becomes ARP */ 
         node_flow_push((struct node*) h, *flow);
         *flow = arp_req;

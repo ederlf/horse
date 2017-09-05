@@ -51,13 +51,14 @@ struct netflow {
     struct flow_key match;      /* The fields belonging to a flow.          */
     struct tag_stack tags;
     union { 
-        uint8_t tcp_flags;          /* Bitmap of TCP flags present 
+        uint16_t tcp_flags;          /* Bitmap of TCP flags present 
                                        in the flow  */
         struct icmp_echo_reply icmp_info;
     }; 
+    uint8_t *payload;            /* Possible payload */ 
+    uint16_t payload_len;        /* Size of the payload */
     struct dp_meta metadata;    /* Any additional information. e.g: pkt out */
     struct out_port *out_ports; /* List of ports the flow may be sent       */
-    struct netflow *next;       /* A pointer to a possible following flow   */
 };
 
 void netflow_init(struct netflow *nf);

@@ -9,7 +9,7 @@ void netflow_init(struct netflow *nf)
      *  of a NULL pointer is all bits 0, so initialize
      *  the pointer. 
     */
-    nf->next = NULL;
+    nf->payload = NULL;
     nf->out_ports = NULL;
 }
 
@@ -406,7 +406,33 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
         }
     }
 
-    if (m->ip_proto == IP_PROTO_ICMPV4) {
+    if (m->ip_proto == IP_PROTO_UDP) {
+        if (pkt_len < offset + sizeof(struct udp_header)) {
+            return;
+        }
+        
+        struct udp_header *udp;
+        udp = (struct udp_header *)(buffer + offset);
+        offset += sizeof(struct udp_header);
+
+        m->udp_src = ntohs(udp->udp_src);
+        m->udp_dst = ntohs(udp->udp_dst);
+
+    }
+    else if (m->ip_proto == IP_PROTO_TCP) {
+        if (pkt_len < offset + sizeof(struct tcp_header)) {
+            return;
+        }
+        
+        struct tcp_header *tcp;
+        tcp = (struct tcp_header *)(buffer + offset);
+        offset += sizeof(struct tcp_header);
+
+        m->tcp_src = ntohs(tcp->tcp_src);
+        m->tcp_dst = ntohs(tcp->tcp_dst);
+        nf->tcp_flags = ntohs(tcp->tcp_ctl);
+    }
+    else if (m->ip_proto == IP_PROTO_ICMPV4) {
 
         if (pkt_len < offset + sizeof(struct icmp_header)) {
             return;
