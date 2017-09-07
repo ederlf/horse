@@ -187,47 +187,49 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
     
     of_object_t *obj = of_object_new_from_message(msg, len);
     of_object_t* ret = NULL;
-    switch (obj->object_id) {
-        case OF_PACKET_OUT: {
-            ret = dp_handle_pkt_out(dp, obj, nf, time);
-            break;
-        }
-        case OF_FLOW_ADD: 
-        case OF_FLOW_MODIFY:
-        case OF_FLOW_MODIFY_STRICT: 
-        case OF_FLOW_DELETE:
-        case OF_FLOW_DELETE_STRICT: { 
-            ret = dp_handle_flow_mod(dp, obj, time);
-            break;
-        }
-        case OF_PORT_STATS_REQUEST: {
-            ret = dp_handle_port_stats_req(dp, obj);
-            break;
-        }
-        case OF_FLOW_STATS_REQUEST: {
-            ret = dp_handle_flow_stats_req(dp, obj, time);
-            break;
-        }
-        case OF_AGGREGATE_STATS_REQUEST: {
+    if (obj != NULL) {
+        switch (obj->object_id) {
+            case OF_PACKET_OUT: {
+                ret = dp_handle_pkt_out(dp, obj, nf, time);
+                break;
+            }
+            case OF_FLOW_ADD: 
+            case OF_FLOW_MODIFY:
+            case OF_FLOW_MODIFY_STRICT: 
+            case OF_FLOW_DELETE:
+            case OF_FLOW_DELETE_STRICT: { 
+                ret = dp_handle_flow_mod(dp, obj, time);
+                break;
+            }
+            case OF_PORT_STATS_REQUEST: {
+                ret = dp_handle_port_stats_req(dp, obj);
+                break;
+            }
+            case OF_FLOW_STATS_REQUEST: {
+                ret = dp_handle_flow_stats_req(dp, obj, time);
+                break;
+            }
+            case OF_AGGREGATE_STATS_REQUEST: {
 
-        }
-        case OF_FEATURES_REQUEST: {
+            }
+            case OF_FEATURES_REQUEST: {
 
-        }
-        case OF_PORT_MOD: {
+            }
+            case OF_PORT_MOD: {
 
-        }
-        case OF_DESC_STATS_REQUEST: {
+            }
+            case OF_DESC_STATS_REQUEST: {
 
+            }
+            case OF_PORT_DESC_STATS_REQUEST: {
+                ret = dp_handle_port_desc(dp, obj);
+                break;
+            }
+            default: {
+                break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
+            }
         }
-        case OF_PORT_DESC_STATS_REQUEST: {
-            ret = dp_handle_port_desc(dp, obj);
-            break;
-        }
-        default: {
-            break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
-        }
+        of_object_delete(obj);
     }
-    of_object_delete(obj);
     return ret;
 }
