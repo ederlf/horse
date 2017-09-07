@@ -14,7 +14,7 @@
 
 static void netflow_to_match(struct netflow *flow, of_match_t *match)
 {
-    struct flow_key m =  flow->match;
+    struct ofl_flow_key m =  flow->match;
     memset(match, 0x0, sizeof(of_match_t));
     match->version = OF_VERSION_1_3;
     match->fields.in_port = m.in_port;

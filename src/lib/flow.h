@@ -25,57 +25,17 @@
 #include "instruction.h"
 #include "instruction_set.h"
 #include "packets.h"
+#include "ofl.h"
 #include <inttypes.h>
 #include <stdbool.h>
 #include <uthash/uthash.h>
 
 #define MAX_STACK_SIZE 8
 
-struct flow_key {
-    uint32_t in_port;
-    uint32_t in_phy_port;
-    uint64_t metadata;
-    uint64_t tunnel_id;
-    uint8_t  eth_dst[ETH_LEN];
-    uint8_t  eth_src[ETH_LEN];
-    uint16_t eth_type;
-    uint16_t vlan_id;
-    uint8_t  vlan_pcp;
-    uint8_t  ip_dscp;
-    uint8_t  ip_ecn;
-    uint8_t  ip_proto;
-    uint32_t ipv4_src;
-    uint32_t ipv4_dst;
-    uint16_t tcp_src;
-    uint16_t tcp_dst;
-    uint16_t udp_src;
-    uint16_t udp_dst;
-    uint16_t sctp_src;
-    uint16_t sctp_dst;
-    uint8_t  icmpv4_type;
-    uint8_t  icmpv4_code;
-    uint16_t arp_op;
-    uint32_t arp_spa;
-    uint32_t arp_tpa;
-    uint8_t  arp_sha[ETH_LEN];
-    uint8_t  arp_tha[ETH_LEN];
-    uint8_t  ipv6_src[IPV6_LEN];
-    uint8_t  ipv6_dst[IPV6_LEN];
-    uint32_t ipv6_flabel;
-    uint8_t  icmpv6_type;
-    uint8_t  icmpv6_code;
-    uint8_t  ipv6_nd_target[IPV6_LEN];
-    uint8_t  ipv6_nd_sll[ETH_LEN];
-    uint8_t  ipv6_nd_tll[ETH_LEN];
-    uint32_t mpls_label;
-    uint8_t  mpls_tc;
-    uint8_t  mpls_bos;
-};
-
 /* Description of a switch flow */
 struct flow {
-    struct flow_key key;
-    struct flow_key mask;
+    struct ofl_flow_key key;
+    struct ofl_flow_key mask;
     uint8_t table_id;
     uint16_t flags;
     uint16_t priority;
@@ -93,7 +53,7 @@ struct flow {
 
 struct flow *flow_new(void);
 void flow_destroy(struct flow *f);
-bool flow_key_cmp(struct flow_key *a, struct flow_key *b);
+bool flow_key_cmp(struct ofl_flow_key *a, struct ofl_flow_key *b);
 void flow_add_instructions(struct flow *f, struct instruction_set is);
 void flow_printer(struct flow *f);
 
@@ -160,5 +120,5 @@ void set_masked_ipv6_nd_target(struct flow *f, uint8_t ipv6_nd_target[16], uint8
 void set_masked_ipv6_nd_sll(struct flow *f, uint8_t ipv6_nd_sll[6], uint8_t mask[6]);
 void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask[6]);
 
-void apply_all_mask(struct flow *flow, struct flow_key *mask);
+void apply_all_mask(struct flow *flow, struct ofl_flow_key *mask);
 #endif /* FLOW_H */

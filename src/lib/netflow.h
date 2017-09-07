@@ -48,7 +48,7 @@ struct netflow {
     uint64_t start_time;
     uint64_t end_time;
     uint64_t exec_id;           /* Tracks the app that triggered it*/
-    struct flow_key match;      /* The fields belonging to a flow.          */
+    struct ofl_flow_key match;      /* The fields belonging to a flow.      */
     struct tag_stack tags;
     union { 
         uint16_t tcp_flags;          /* Bitmap of TCP flags present 

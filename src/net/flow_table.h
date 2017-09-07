@@ -26,7 +26,7 @@
 **/
 struct mini_flow_table {
     struct flow* flows;
-    struct flow_key mask;
+    struct ofl_flow_key mask;
     struct mini_flow_table *prev; /* needed for a doubly-linked list only */
     struct mini_flow_table *next; /* needed for singly- or doubly-linked lists */
 };
@@ -40,7 +40,7 @@ struct flow_table {
 
 struct flow_table* flow_table_new(uint8_t table_id);
 void flow_table_destroy(struct flow_table *ft);
-struct flow* flow_table_lookup(struct flow_table* ft, struct flow_key *key, uint64_t time);
+struct flow* flow_table_lookup(struct flow_table* ft, struct ofl_flow_key *key, uint64_t time);
 void add_flow(struct flow_table *ft, struct flow *f, uint64_t time);
 void modify_flow(struct flow_table *ft, struct flow *f, bool strict, uint64_t time);
 void delete_flow(struct flow_table *ft, struct flow *f, bool strict);

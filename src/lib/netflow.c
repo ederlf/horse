@@ -163,7 +163,7 @@ static void mpls_to_pkt(struct tag *t, uint8_t *buff)
 size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
 {
     size_t offset = 0;
-    struct flow_key m =  nf->match;
+    struct ofl_flow_key m =  nf->match;
     struct eth_header *eth;
 
     eth = (struct eth_header*) buffer;
@@ -277,7 +277,7 @@ void
 pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
 {
     size_t offset = 0;
-    struct flow_key *m =  &nf->match;
+    struct ofl_flow_key *m =  &nf->match;
     struct eth_header *eth;
     // uint8_t icmp_type, icmp_code;
 

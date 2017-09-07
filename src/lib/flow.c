@@ -44,8 +44,8 @@ flow_new(void)
     f->created = 0;
     f->remove_at = 0; 
     f->last_used = 0;
-    memset(&f->key, 0x0, sizeof(struct flow_key));
-    memset(&f->mask, 0x0, sizeof(struct flow_key));
+    memset(&f->key, 0x0, sizeof(struct ofl_flow_key));
+    memset(&f->mask, 0x0, sizeof(struct ofl_flow_key));
     init_instruction_set(f);
     return f;
 }
@@ -58,9 +58,9 @@ flow_destroy(struct flow *f)
 }
 
 bool 
-flow_key_cmp(struct flow_key *a, struct flow_key *b)
+flow_key_cmp(struct ofl_flow_key *a, struct ofl_flow_key *b)
 {
-    return  ( memcmp(a, b, sizeof(struct flow_key) ) == 0);
+    return  ( memcmp(a, b, sizeof(struct ofl_flow_key) ) == 0);
 } 
 
 void 
@@ -508,7 +508,7 @@ void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask
 }
 
 void 
-apply_all_mask(struct flow *flow, struct flow_key *mask)
+apply_all_mask(struct flow *flow, struct ofl_flow_key *mask)
 {
     flow->key.in_port &= mask->in_port;
     set_masked_metadata(flow, flow->key.metadata, mask->metadata);
