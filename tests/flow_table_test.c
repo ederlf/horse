@@ -237,7 +237,7 @@ void modify_non_strict(void **state)
     flow_add_instructions(fl, is);
     add_flow(ft, fl, 0);
     struct flow *fl2 = flow_new();
-    set_ipv4_dst(fl2, 21);
+    set_ip_ecn(fl2, 21);
     set_eth_type(fl2, 0x800);
     set_ip_proto(fl2, 7);
     flow_add_instructions(fl2, is);
@@ -342,7 +342,7 @@ void delete_non_strict(void **state)
     flow_add_instructions(fl, is);
     add_flow(ft, fl, 0);
     struct flow *fl2 = flow_new();
-    set_ipv4_dst(fl2, 21);
+    set_ip_ecn(fl2, 21);
     set_eth_type(fl2, 0x800);
     set_ip_proto(fl2, 7);
     add_flow(ft, fl2, 0);
@@ -350,7 +350,7 @@ void delete_non_strict(void **state)
     struct flow *fl3 = flow_new();
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
-    delete_flow(ft, fl3, false);
+    delete_flow(ft, fl3, 0, false);
     /* Check if both flows were modified*/
     DL_FOREACH(ft->flows, elt) {
         struct flow *hash = elt->flows;

@@ -245,11 +245,11 @@ dp_handle_flow_mod(const struct datapath *dp,
             break;
         }
         case OF_FLOW_DELETE: {
-            delete_flow(ft, f, false);
+            delete_flow(ft, f, false, time);
             break;
         }
         case OF_FLOW_DELETE_STRICT: {
-            delete_flow(ft, f, true);
+            delete_flow(ft, f, true, time);
             break;
         }
         default: {
@@ -351,8 +351,23 @@ of_object_t*
 dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj, 
                          uint64_t time)
 {
-    unpack_flow_stats_request(obj);
+    uint32_t xid;
+    struct ofl_flow_stats_req req;
+    unpack_flow_stats_request(obj, &req);
+    of_flow_stats_request_xid_get(obj, &xid);
 
+    struct flow **flows = xmalloc(sizeof(struct flow*));
+
+
+    // if (msg->table_id == 0xff) {
+    //     size_t i;
+    //     for (i=0; i<PIPELINE_TABLES; i++) {
+    //         flow_table_stats(pl->tables[i], msg, &stats, &stats_size, &stats_num);
+    //     }
+    // } else {
+    //     flow_table_stats(pl->tables[msg->table_id], msg, &stats, &stats_size, &stats_num);
+    // }
+    UNUSED(flows);
     UNUSED(dp);
     UNUSED(time);
 

@@ -548,3 +548,45 @@ apply_all_mask(struct flow *flow, struct ofl_flow_key *mask)
     set_masked_ipv6_nd_sll(flow, flow->key.ipv6_nd_sll, mask->ipv6_nd_sll);
     set_masked_ipv6_nd_tll(flow, flow->key.ipv6_nd_tll, mask->ipv6_nd_tll);
 }
+
+/* Need to refactor later... */
+void 
+set_all_mask(struct flow *flow, struct ofl_flow_key *mask){
+    flow->mask.in_port &= mask->in_port;
+    set_masked_metadata(flow, flow->mask.metadata, mask->metadata);
+    set_masked_tunnel_id(flow, flow->mask.tunnel_id, mask->tunnel_id);
+    flow->mask.eth_type &= mask->eth_type;
+    set_masked_eth_dst(flow, flow->mask.eth_dst, mask->eth_dst);
+    set_masked_eth_src(flow, flow->mask.eth_src, mask->eth_src);
+    set_masked_vlan_id(flow, flow->mask.vlan_id, mask->vlan_id);
+    flow->mask.vlan_pcp &= mask->vlan_pcp;
+    set_masked_mpls_label(flow, flow->mask.mpls_label, mask->mpls_label);
+    flow->mask.mpls_tc &= mask->mpls_tc;
+    flow->mask.mpls_bos &= mask->mpls_bos;
+    flow->mask.ip_dscp &= mask->ip_dscp;
+    flow->mask.ip_ecn &= mask->ip_ecn;
+    flow->mask.ip_proto &= mask->ip_proto;
+    set_masked_ipv4_dst(flow, flow->mask.ipv4_dst, mask->ipv4_dst);
+    set_masked_ipv4_src(flow, flow->mask.ipv4_src, mask->ipv4_src);
+    flow->mask.tcp_dst &= mask->tcp_dst;
+    flow->mask.tcp_src &= mask->tcp_src;
+    flow->mask.sctp_dst &= mask->sctp_dst;
+    flow->mask.sctp_src &= mask->sctp_src;
+    flow->mask.udp_dst &= mask->udp_dst;
+    flow->mask.udp_src &= mask->udp_src;
+    flow->mask.arp_op &= mask->arp_op;
+    flow->mask.icmpv4_type &= mask->icmpv4_type;
+    flow->mask.icmpv4_code &= mask->icmpv4_code;
+    set_masked_arp_spa(flow, flow->mask.arp_spa, mask->arp_spa);
+    set_masked_arp_tpa(flow, flow->mask.arp_tpa, mask->arp_tpa);
+    set_masked_arp_sha(flow, flow->mask.arp_sha, mask->arp_sha);
+    set_masked_arp_tha(flow, flow->mask.arp_tha, mask->arp_tha);
+    set_masked_ipv6_dst(flow, flow->mask.ipv6_dst, mask->ipv6_dst);
+    set_masked_ipv6_src(flow, flow->mask.ipv6_src, mask->ipv6_src);
+    flow->mask.ipv6_flabel &= mask->ipv6_flabel;
+    flow->mask.icmpv6_type &= mask->icmpv6_type;
+    flow->mask.icmpv6_code &= mask->icmpv6_code;
+    set_masked_ipv6_nd_target(flow, flow->mask.ipv6_nd_target, mask->ipv6_nd_target);
+    set_masked_ipv6_nd_sll(flow, flow->mask.ipv6_nd_sll, mask->ipv6_nd_sll);
+    set_masked_ipv6_nd_tll(flow, flow->mask.ipv6_nd_tll, mask->ipv6_nd_tll);
+}

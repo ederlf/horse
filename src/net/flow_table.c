@@ -12,6 +12,10 @@
 #include "flow_table.h"
 #include "lib/util.h"
 #include <uthash/utlist.h>
+
+static bool is_flow_in_mft(struct flow *f, struct mini_flow_table *mft);
+static bool match_non_strict(struct flow *f1, struct flow *f2);
+
 /* Creates a new mini flow table. 
 *   
 *  A mini flow table needs a flow
@@ -126,6 +130,13 @@ flow_table_lookup(struct flow_table *ft, struct ofl_flow_key *key, uint64_t time
     return ret_flow;
 }
 
+// void 
+// flow_table_stats(struct flow_table *ft, struct ofl_flow_stats_req *req, 
+//                  struct flow ***flows, size_t flow_count)
+// {
+
+// }
+
 /* Insert flow:
 *  added = False  
 *  for each flow hash table
@@ -188,24 +199,39 @@ mod_flow_strict(struct flow_table *ft, struct flow *f, uint64_t time)
     }
 }
 
+static bool 
+is_flow_in_mft(struct flow *f, struct mini_flow_table *mft)
+{
+    struct flow tmp_flow;
+    memcpy(&tmp_flow.mask, &mft->mask, sizeof(struct ofl_flow_key));
+    /* Apply modifying flow mask to temporary flow. */
+    set_all_mask(&tmp_flow, &f->mask);
+    /* Check if the flow can be found in the mini table. */
+    return flow_key_cmp(&tmp_flow.mask, &f->mask);
+}
+
+static bool 
+match_non_strict(struct flow *f1, struct flow *f2) {
+
+    struct flow tmp_flow;
+    /* Copy  flow key. */
+    memcpy(&tmp_flow.key, &f2->key, sizeof(struct ofl_flow_key));
+    /* Apply modifying flow mask to table flow. */
+    apply_all_mask(&tmp_flow, &f1->mask);
+    return flow_key_cmp(&tmp_flow.key, &f1->key);
+
+}
+
 static void
 mod_flow_non_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
-        struct flow tmp_flow;
-        memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct ofl_flow_key));
-        /* Apply modifying flow mask to temporary flow. */
-        apply_all_mask(&tmp_flow, &f->mask);
-        /* Check if the flow can be found in a mini table. */
-        if (flow_key_cmp(&tmp_flow.mask, &f->mask)){
+        if (is_flow_in_mft(f, nxt_mft)) {
             struct flow *cur_flow;
-            for(cur_flow=nxt_mft->flows; cur_flow != NULL; cur_flow=cur_flow->hh.next) {
-                /* Copy table flow key. */
-                memcpy(&tmp_flow.key, &cur_flow->key, sizeof(struct ofl_flow_key));
-                /* Apply modifying flow mask to table flow. */
-                apply_all_mask(&tmp_flow, &f->mask);
-                if (flow_key_cmp(&tmp_flow.key, &f->key)){
+            for(cur_flow=nxt_mft->flows; cur_flow != NULL; 
+                cur_flow=cur_flow->hh.next) {
+                if (match_non_strict(f, cur_flow)){
                     bool expired = flow_table_del_expired(ft, nxt_mft, cur_flow, time);
                     if (!expired) {
                         /* Replace instructions. */
@@ -242,7 +268,7 @@ modify_flow(struct flow_table *ft, struct flow *f,
 *   TODO: Consider time. Flow may not be present any more.
 */
 static void
-del_flow_strict(struct flow_table *ft, struct flow *f)
+del_flow_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table* nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
@@ -257,43 +283,39 @@ del_flow_strict(struct flow_table *ft, struct flow *f)
             break;
         }
     }
+    UNUSED(time);
 }
 
 
 /* TODO: Consider time. Flow may not be present any more. */
 static void
-del_flow_non_strict(struct flow_table *ft, struct flow *f)
+del_flow_non_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
-        struct flow tmp_flow;
-        memcpy(&tmp_flow.mask, &nxt_mft->mask, sizeof(struct ofl_flow_key));
-        /* Apply modifying flow mask to temporary flow. */
-        apply_all_mask(&tmp_flow, &f->mask);
-        /* Check if the flow can be found in a mini table. */
-        if (flow_key_cmp(&tmp_flow.mask, &f->mask)){
-            struct flow *cur_flow, *tmp;
-            HASH_ITER(hh, nxt_mft->flows, cur_flow, tmp){
-                /* Copy table flow key */
-                memcpy(&tmp_flow.key, &cur_flow->key, sizeof(struct ofl_flow_key));
-                /* Apply modifying flow mask to table flow. */
-                apply_all_mask(&tmp_flow, &f->mask);
-
-                if (flow_key_cmp(&tmp_flow.key, &f->key)){
-                    /* Delete flow */
-                    flow_table_del_flow(ft, nxt_mft, cur_flow);
+        if (is_flow_in_mft(f, nxt_mft)) {
+            struct flow *cur_flow;
+            for(cur_flow=nxt_mft->flows; cur_flow != NULL; 
+                cur_flow=cur_flow->hh.next) {
+                if (match_non_strict(f, cur_flow)){
+                    bool expired = flow_table_del_expired(ft, nxt_mft, cur_flow, time);
+                    if (!expired) {
+                        /* Replace instructions. */
+                        flow_table_del_flow(ft, nxt_mft, cur_flow);
+                    }
                 }
             }
         }
     }
 }
 
-void delete_flow(struct flow_table *ft, struct flow *f, bool strict)
+void delete_flow(struct flow_table *ft, struct flow *f, uint64_t time, 
+                 bool strict)
 {
     if (strict){
-        del_flow_strict(ft, f);
+        del_flow_strict(ft, f, time);
     }
     else {
-        del_flow_non_strict(ft, f);
+        del_flow_non_strict(ft, f, time);
     }
 }

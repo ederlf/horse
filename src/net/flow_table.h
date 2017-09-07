@@ -41,9 +41,13 @@ struct flow_table {
 struct flow_table* flow_table_new(uint8_t table_id);
 void flow_table_destroy(struct flow_table *ft);
 struct flow* flow_table_lookup(struct flow_table* ft, struct ofl_flow_key *key, uint64_t time);
+void flow_table_stats(struct flow_table *ft, 
+                      struct ofl_flow_stats_req *req, struct flow ***flows,
+                        size_t flow_count);
 void add_flow(struct flow_table *ft, struct flow *f, uint64_t time);
 void modify_flow(struct flow_table *ft, struct flow *f, bool strict, uint64_t time);
-void delete_flow(struct flow_table *ft, struct flow *f, bool strict);
+void delete_flow(struct flow_table *ft, struct flow *f, uint64_t time, 
+                 bool strict);
 
 
 #endif /* FLOW_TABLE_H */ 
