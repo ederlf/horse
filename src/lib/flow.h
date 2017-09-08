@@ -120,6 +120,6 @@ void set_masked_ipv6_nd_target(struct flow *f, uint8_t ipv6_nd_target[16], uint8
 void set_masked_ipv6_nd_sll(struct flow *f, uint8_t ipv6_nd_sll[6], uint8_t mask[6]);
 void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask[6]);
 
-void apply_all_mask(struct flow *flow, struct ofl_flow_key *mask);
+void apply_all_mask(struct ofl_flow_key *key, struct ofl_flow_key *mask);
 void set_all_mask(struct flow *flow, struct ofl_flow_key *mask);
 #endif /* FLOW_H */

@@ -25,7 +25,7 @@ void lookup(void **state)
 }
 
 void lookup_expired(void **state)
-{   
+{
     struct flow *ret;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
@@ -50,7 +50,7 @@ void stress_lookup_expired(void **state)
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     int i;
-    for(i = 0; i < 1000000; ++i) {
+    for (i = 0; i < 1000000; ++i) {
         struct flow *fl = flow_new();
         set_eth_type(fl, 0x800);
         fl->hard_timeout = 5;
@@ -64,7 +64,7 @@ void stress_lookup_expired(void **state)
         ret = flow_table_lookup(ft, &key, 10);
         assert_int_equal(ret, NULL);
     }
-    flow_table_destroy(ft);    
+    flow_table_destroy(ft);
 }
 
 /* Must return the flow with highest priority */
@@ -87,8 +87,8 @@ void lookup_priority(void **state)
     key.eth_type = 0x800;
     key.in_port = 1;
     ret = flow_table_lookup(ft, &key, 0);
-    if (ret){
-        assert_int_equal(ret->key.in_port, 1);    
+    if (ret) {
+        assert_int_equal(ret->key.in_port, 1);
     }
     flow_table_destroy(ft);
 }
@@ -107,10 +107,10 @@ void add_single_flow(void **state)
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 1);
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
-        if (ret){
+        if (ret) {
             /* Key was checked in the hash find...*/
             assert_int_equal(ret->key.eth_type, 0x800);
-        }  
+        }
     }
     flow_table_destroy(ft);
 }
@@ -138,8 +138,8 @@ void add_flows_same_field_type(void **state)
     flow_table_destroy(ft);
 }
 
-/*  Test succeeds if there are TWO mini flow tables 
-*   and ONE flow in each mini table. 
+/*  Test succeeds if there are TWO mini flow tables
+*   and ONE flow in each mini table.
 */
 void add_flows_diff_field_type(void **state)
 {
@@ -205,13 +205,13 @@ void modify_strict(void **state)
         struct flow *hash = elt->flows;
         struct flow* ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
-        if (ret){
+        if (ret) {
             assert_int_equal(ret->insts.active, is2.active);
         }
         HASH_FIND(hh, hash, &fl2->key, sizeof(struct ofl_flow_key), ret);
-        if (ret){
+        if (ret) {
             assert_int_equal(ret->insts.active, is.active);
-        }  
+        }
     }
     flow_destroy(fl3);
     flow_table_destroy(ft);
@@ -261,9 +261,9 @@ void modify_strict_expired(void **state)
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
         assert_int_equal(ret, NULL);
         HASH_FIND(hh, hash, &fl2->key, sizeof(struct ofl_flow_key), ret);
-        if (ret){
+        if (ret) {
             assert_int_equal(ret->insts.active, is.active);
-        }  
+        }
     }
     flow_destroy(fl3);
     flow_table_destroy(ft);
@@ -311,13 +311,13 @@ void modify_non_strict(void **state)
         struct flow* ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
         /* Check if the instruction active fields are equal to the flow mod */
-        if (ret){
+        if (ret) {
             assert_int_equal(ret->insts.active, is2.active);
         }
         HASH_FIND(hh, hash, &fl2->key, sizeof(struct ofl_flow_key), ret);
-        if (ret){
+        if (ret) {
             assert_int_equal(ret->insts.active, is2.active);
-        }  
+        }
     }
     flow_destroy(fl3);
     flow_table_destroy(ft);
@@ -329,7 +329,7 @@ void stress_modify_non_strict(void **state)
     struct flow_table *ft = flow_table_new(0);
     struct ofl_flow_key *keys = malloc(sizeof(struct ofl_flow_key) * 1000000);
     int i;
-    for (i = 0; i < 1000000; ++i){
+    for (i = 0; i < 1000000; ++i) {
         struct flow *fl = flow_new();
         struct instruction_set is;
         instruction_set_init(&is);
@@ -342,11 +342,11 @@ void stress_modify_non_strict(void **state)
         set_ip_proto(fl, 7);
         set_eth_type(fl, 0x800);
         set_ipv4_dst(fl, i);
-        memset(&keys[i],0x0, sizeof(struct ofl_flow_key));
+        memset(&keys[i], 0x0, sizeof(struct ofl_flow_key));
         keys[i].ip_proto = 7;
         keys[i].eth_type = 0x800;
         keys[i].ipv4_dst = i;
-        flow_add_instructions(fl, is); 
+        flow_add_instructions(fl, is);
         add_flow(ft, fl, 0);
     }
 
@@ -367,10 +367,10 @@ void stress_modify_non_strict(void **state)
         struct flow *hash = elt->flows;
         struct flow* ret;
         HASH_FIND(hh, hash, &keys[i], sizeof(struct ofl_flow_key), ret);
-        if (ret){
+        if (ret) {
             assert_int_equal(ret->insts.active, is2.active);
         }
-        i++; 
+        i++;
     }
     free(keys);
     flow_destroy(fl3);

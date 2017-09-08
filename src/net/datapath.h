@@ -18,7 +18,7 @@
 #include <loci/loci.h>
 
 /* Total number of possible ports
-*  UINT32_MAX == 2 ^ 32 datapaths 
+*  UINT32_MAX == 2 ^ 32 datapaths
 */
 #define MAX_PORT_NUM UINT32_MAX /* 2 ^ 8 ports */
 
@@ -38,26 +38,26 @@ struct datapath* dp_new(uint64_t dp_id, char *ip, int port);
 
 void dp_destroy(struct datapath *dp);
 
-void dp_add_port(struct datapath *dp, uint32_t port_id, 
+void dp_add_port(struct datapath *dp, uint32_t port_id,
                  uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
 
 void dp_handle_netflow(struct node *n, struct netflow *flow);
 
-of_object_t* dp_handle_flow_mod(const struct datapath *dp, 
+of_object_t* dp_handle_flow_mod(const struct datapath *dp,
                                 of_flow_modify_t *obj, uint64_t time);
 
-of_object_t* dp_handle_port_stats_req(const struct datapath *dp, 
+of_object_t* dp_handle_port_stats_req(const struct datapath *dp,
                                       of_object_t *obj);
 
-of_object_t* dp_handle_flow_stats_req(const struct datapath *dp, 
+of_object_t* dp_handle_flow_stats_req(const struct datapath *dp,
                                       of_object_t* obj, uint64_t time);
 
-of_object_t* dp_handle_port_desc(const struct datapath *dp, 
+of_object_t* dp_handle_port_desc(const struct datapath *dp,
                                  of_object_t *obj);
 
-of_object_t* dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, 
+of_object_t* dp_handle_pkt_out(struct datapath *dp, of_object_t *obj,
                                struct netflow *nf, uint64_t time);
 
 /* Access functions*/
