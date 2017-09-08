@@ -14,7 +14,8 @@ void unpack_instructions(of_list_instruction_t *insts,
                          struct instruction_set *is);
 /* Will use only the flow_mod_modify_t from loci object */
 int unpack_flow_mod(of_object_t *obj, struct flow *f);
-int unpack_flow_stats_request(of_object_t *obj);
+int unpack_flow_stats_request(of_object_t *obj, 
+                              struct ofl_flow_stats_req *req);
 int unpack_packet_out(of_object_t *obj, struct netflow* f, 
                    struct action_list *al);
 

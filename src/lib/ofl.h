@@ -42,8 +42,7 @@ struct ofl_flow_key {
     uint8_t  mpls_bos;
 };
 
-
-struct ofl_stats_request {
+struct ofl_flow_stats_req {
     uint8_t table_id;         /* ID of table to read (from ofp_table_stats),
                                  OFPTT_ALL for all tables. */
     uint32_t out_port;        /* Require matching entries to include this

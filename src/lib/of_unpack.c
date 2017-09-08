@@ -457,27 +457,25 @@ unpack_flow_mod(of_object_t *obj, struct flow *f)
 }
 
 int 
-unpack_flow_stats_request(of_object_t *obj)
+unpack_flow_stats_request(of_object_t *obj, struct ofl_flow_stats_req *req)
 {
-    uint64_t cookie, cookie_mask;
-    uint32_t xid, out_port, out_group;
-    uint8_t table_id;
-    of_match_t match;
-    of_flow_stats_request_t *req = (of_flow_stats_request_t*) obj;
 
-    of_flow_stats_request_xid_get(req, &xid);
-    of_flow_stats_request_cookie_get(req, &cookie);
-    of_flow_stats_request_cookie_mask_get(req, &cookie_mask);
-    of_flow_stats_request_table_id_get(req, &table_id);
-    of_flow_stats_request_out_port_get(req, &out_port);
-    of_flow_stats_request_out_group_get(req, &out_group);
+    of_match_t match;
+    of_flow_stats_request_t *of_req = (of_flow_stats_request_t*) obj;
+
+    of_flow_stats_request_cookie_get(of_req, &req->cookie);
+    of_flow_stats_request_cookie_mask_get(of_req, &req->cookie_mask);
+    of_flow_stats_request_table_id_get(of_req, &req->table_id);
+    of_flow_stats_request_out_port_get(of_req, &req->out_port);
+    of_flow_stats_request_out_group_get(of_req, &req->out_group);
 
     if ( of_flow_stats_request_match_get(obj, &match) < 0 ) {
         fprintf(stderr, "Failed to get flow stats match");
         return -1;
     }
 
-    // unpack_match_fields(&match.fields, )
+    unpack_match_fields(&match.fields, &req->match);
+    unpack_match_fields(&match.masks, &req->mask);
     return 0;
 }
 
