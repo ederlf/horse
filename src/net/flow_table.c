@@ -13,9 +13,11 @@
 #include "lib/util.h"
 #include <uthash/utlist.h>
 
-static bool is_flow_in_mft(struct flow *f, struct mini_flow_table *mft);
+static bool is_flow_non_strict_in_mft(struct flow *f, 
+                                        struct mini_flow_table *mft);
 static bool match_non_strict(struct flow *f1, struct flow *f2);
-
+static struct flow *match_strict(struct flow *f, struct mini_flow_table *mft,
+                                bool *stop); 
 /* Creates a new mini flow table. 
 *   
 *  A mini flow table needs a flow
@@ -168,7 +170,19 @@ add_flow(struct flow_table *ft, struct flow *f, uint64_t time)
     }
 }
 
-/* Strict match only matches when table mask = flow_mask (the flow natural mask)*/
+static struct flow
+*match_strict(struct flow *f, struct mini_flow_table *mft, bool *stop) 
+{
+    if (flow_key_cmp(&f->mask, &mft->mask)){
+        struct flow *flow_found;
+        HASH_FIND(hh, mft->flows, &f->key, sizeof(struct ofl_flow_key), flow_found);
+        *stop = true;
+        return flow_found;
+    }
+    return NULL;
+}
+
+/* Strict match only matches when table mask == flow_mask (the flow natural mask)*/
 
 /* Modify flow strict:
 *   for each flow hash table   
@@ -179,28 +193,27 @@ add_flow(struct flow_table *ft, struct flow *f, uint64_t time)
 static void
 mod_flow_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
-    struct mini_flow_table *nxt_mft, *tmp;
+    struct mini_flow_table* nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
-        if (flow_key_cmp(&f->mask, &nxt_mft->mask)){
-            struct flow *flow_found;
-            HASH_FIND(hh, nxt_mft->flows, &f->key, sizeof(struct ofl_flow_key), flow_found);
-            /* If the flow exists and not expired, replaces its instructions. */ 
-            if (flow_found){
-                bool expired = flow_table_del_expired(ft, nxt_mft, flow_found, time);
-                if (!expired){
-                    if (flow_found->priority == f->priority){
-                        flow_add_instructions(flow_found, f->insts); 
-                    }
-                }
-            }
-            /* Break the loop, the match cannot exist in another flow. */ 
+        bool stop = false;
+        struct flow *flow_found = match_strict(f, nxt_mft, &stop);
+        if (flow_found && flow_found->priority == f->priority &&
+            !flow_table_del_expired(ft, nxt_mft, flow_found, time)) {
+            flow_add_instructions(flow_found, f->insts);
+        }
+        if (stop) {
             break;
         }
     }
 }
 
+/* Checks if a flow matching is part of the flows in a minitable.
+*  It works by applying the mask of the flow over the mask of the minitable.
+*  If the resulting mask of the minitable equals the flow mask, it means the 
+*  flow can be non strictly found.
+*/
 static bool 
-is_flow_in_mft(struct flow *f, struct mini_flow_table *mft)
+is_flow_non_strict_in_mft(struct flow *f, struct mini_flow_table *mft)
 {
     struct flow tmp_flow;
     memcpy(&tmp_flow.mask, &mft->mask, sizeof(struct ofl_flow_key));
@@ -227,16 +240,14 @@ mod_flow_non_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
-        if (is_flow_in_mft(f, nxt_mft)) {
+        if (is_flow_non_strict_in_mft(f, nxt_mft)) {
             struct flow *cur_flow;
             for(cur_flow=nxt_mft->flows; cur_flow != NULL; 
                 cur_flow=cur_flow->hh.next) {
-                if (match_non_strict(f, cur_flow)){
-                    bool expired = flow_table_del_expired(ft, nxt_mft, cur_flow, time);
-                    if (!expired) {
-                        /* Replace instructions. */
-                        flow_add_instructions(cur_flow, f->insts);
-                    }
+                if (match_non_strict(f, cur_flow) && 
+                    !flow_table_del_expired(ft, nxt_mft, cur_flow, time)){
+                    /* Replace instructions. */
+                    flow_add_instructions(cur_flow, f->insts);
                 }
             }
         }
@@ -262,47 +273,42 @@ modify_flow(struct flow_table *ft, struct flow *f,
 *          if flow in the hash table and equal priority
 *               delete flow
                 found = 1
+        stop in the case of search in the correct mini flow table.
 *   if not found
 *      return error
 *
-*   TODO: Consider time. Flow may not be present any more.
 */
 static void
 del_flow_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table* nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
-        if (flow_key_cmp(&f->mask, &nxt_mft->mask)){
-            struct flow *flow_found;
-            HASH_FIND(hh, nxt_mft->flows, &f->key, sizeof(struct ofl_flow_key), flow_found);
-            /* If the flow exists, delete it. */ 
-            if (flow_found && flow_found->priority == f->priority){
-                flow_table_del_flow(ft, nxt_mft, flow_found);
-            }
-            /* Break the loop, the match cannot exist in another flow. */ 
+        bool stop = false;
+        struct flow *flow_found = match_strict(f, nxt_mft, &stop);
+        if (flow_found && flow_found->priority == f->priority &&
+            !flow_table_del_expired(ft, nxt_mft, flow_found, time)) {
+            flow_table_del_flow(ft, nxt_mft, flow_found);
+        }
+        if (stop) {
             break;
         }
     }
-    UNUSED(time);
 }
 
 
-/* TODO: Consider time. Flow may not be present any more. */
 static void
 del_flow_non_strict(struct flow_table *ft, struct flow *f, uint64_t time)
 {
     struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp){
-        if (is_flow_in_mft(f, nxt_mft)) {
+        if (is_flow_non_strict_in_mft(f, nxt_mft)) {
             struct flow *cur_flow;
             for(cur_flow=nxt_mft->flows; cur_flow != NULL; 
                 cur_flow=cur_flow->hh.next) {
-                if (match_non_strict(f, cur_flow)){
-                    bool expired = flow_table_del_expired(ft, nxt_mft, cur_flow, time);
-                    if (!expired) {
-                        /* Replace instructions. */
-                        flow_table_del_flow(ft, nxt_mft, cur_flow);
-                    }
+               if (match_non_strict(f, cur_flow) && 
+                    !flow_table_del_expired(ft, nxt_mft, cur_flow, time)){
+                    /* Delete flow. */
+                     flow_table_del_flow(ft, nxt_mft, cur_flow);
                 }
             }
         }

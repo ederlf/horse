@@ -217,6 +217,58 @@ void modify_strict(void **state)
     flow_table_destroy(ft);
 }
 
+/* The flow should not be found */
+void modify_strict_expired(void **state)
+{
+    struct mini_flow_table *elt;
+    struct flow_table *ft = flow_table_new(0);
+    struct flow *fl = flow_new();
+    fl->hard_timeout = 5;
+    struct instruction_set is;
+    instruction_set_init(&is);
+    struct goto_table gt;
+    inst_goto_table(&gt, 1);
+    struct write_metadata wm;
+    inst_write_metadata(&wm, 0xbeef);
+    add_goto_table(&is, gt);
+    add_write_metadata(&is, wm);
+    /* Match */
+    set_ip_proto(fl, 7);
+    set_eth_type(fl, 0x800);
+    flow_add_instructions(fl, is);
+    add_flow(ft, fl, 0);
+    struct flow *fl2 = flow_new();
+    set_ipv4_dst(fl2, 21);
+    set_eth_type(fl2, 0x800);
+    set_ip_proto(fl2, 7);
+    flow_add_instructions(fl2, is);
+    add_flow(ft, fl2, 0);
+    /* Flow to be modified */
+    struct flow *fl3 = flow_new();
+    struct instruction_set is2;
+    instruction_set_init(&is2);
+    struct clear_actions clear;
+    inst_clear_actions(&clear);
+    add_clear_actions(&is2, clear);
+    set_ip_proto(fl3, 7);
+    set_eth_type(fl3, 0x800);
+    flow_add_instructions(fl3, is2);
+    modify_flow(ft, fl3, true, 10);
+    /* Check if only the first flow is deleted because of expiration*/
+    DL_FOREACH(ft->flows, elt) {
+        struct flow *hash = elt->flows;
+        struct flow* ret;
+        HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
+        assert_int_equal(ret, NULL);
+        HASH_FIND(hh, hash, &fl2->key, sizeof(struct ofl_flow_key), ret);
+        if (ret){
+            assert_int_equal(ret->insts.active, is.active);
+        }  
+    }
+    flow_destroy(fl3);
+    flow_table_destroy(ft);
+}
+
 /* Succeed if instruction for two flows is modified */
 void modify_non_strict(void **state)
 {
@@ -373,6 +425,7 @@ int main(int argc, char* argv[]) {
         unit_test(add_flows_same_field_type),
         unit_test(add_flows_diff_field_type),
         unit_test(modify_strict),
+        unit_test(modify_strict_expired),
         unit_test(modify_non_strict),
         unit_test(delete_non_strict),
     };
