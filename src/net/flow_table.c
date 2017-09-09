@@ -267,8 +267,7 @@ void
 flow_table_stats(struct flow_table *ft, struct ofl_flow_stats_req *req,
                  struct flow ***flows, size_t *flow_count, uint64_t time)
 {
-    *flow_count = 0;
-    size_t fsize = 1;
+    size_t allocated = 1;
     struct mini_flow_table *nxt_mft, *tmp;
     DL_FOREACH_SAFE(ft->flows, nxt_mft, tmp) {
         if (is_flow_non_strict_in_mft(&req->mask, nxt_mft)) {
@@ -279,10 +278,10 @@ flow_table_stats(struct flow_table *ft, struct ofl_flow_stats_req *req,
                         flow_entry_has_out_port(cur_flow)) && */
                         match_non_strict(&req->match, &req->mask, &cur_flow->key) &&
                         !flow_table_del_expired(ft, nxt_mft, cur_flow, time)) {
-                    /* Replace instructions. */
-                    if ((fsize) == (*flow_count)) {
-                        (*flows) = xrealloc(*flows, (sizeof(struct flows *)) * (fsize) * 2);
-                        fsize *= 2;
+                    /* Increase size if needed. */
+                    if ((allocated) == (*flow_count)) {
+                        (*flows) = xrealloc(*flows, (sizeof(struct flows *)) * (allocated) * 2);
+                        allocated *= 2;
                     }
                     (*flows)[(*flow_count)] = cur_flow;
                     (*flow_count)++;

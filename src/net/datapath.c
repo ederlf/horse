@@ -13,6 +13,7 @@
 #include "lib/util.h"
 #include "lib/openflow.h"
 #include "lib/of_unpack.h"
+#include "lib/of_pack.h"
 #include <cfluid/of_settings.h>
 #include <uthash/utlist.h>
 
@@ -278,13 +279,13 @@ dp_handle_port_stats_req(const struct datapath *dp,
     of_port_stats_request_xid_get(req, &xid);
     of_port_stats_reply_xid_set(reply, xid);
 
-    port_entry = of_port_stats_entry_new(OF_VERSION_1_3);
+    port_entry = of_port_stats_entry_new(obj->version);
     if (port_entry == NULL) {
         fprintf(stderr, "%s\n", "Failed to create a port entry object");
         return NULL;
     }
 
-    port_list = of_list_port_stats_entry_new(OF_VERSION_1_3);
+    port_list = of_list_port_stats_entry_new(obj->version);
     if (port_list == NULL) {
         fprintf(stderr, "%s\n", "Failed to create a port status list object");
         of_port_stats_entry_delete(port_entry);
@@ -341,37 +342,41 @@ dp_handle_port_stats_req(const struct datapath *dp,
         return NULL;
     }
 
-    of_list_port_stats_entry_delete(port_entry);
+    of_port_stats_entry_delete(port_entry);
     of_list_port_stats_entry_delete(port_list);
 
     return reply;
 }
 
-of_object_t*
+of_object_t *
 dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj,
                          uint64_t time)
 {
     uint32_t xid;
+    size_t flow_count = 0;
     struct ofl_flow_stats_req req;
+    of_flow_stats_reply_t *reply = NULL;
     unpack_flow_stats_request(obj, &req);
     of_flow_stats_request_xid_get(obj, &xid);
 
     struct flow **flows = xmalloc(sizeof(struct flow*));
 
+    if (req.table_id == OFPTT_ALL) {
+        size_t i;
+        for (i = 0; i < MAX_TABLES; i++) {
+            flow_table_stats(dp->tables[i], &req, &flows, &flow_count, time);
+        }
+    } else {
+        flow_table_stats(dp->tables[req.table_id], &req, &flows,
+                         &flow_count, time);
+    }
 
-    // if (msg->table_id == 0xff) {
-    //     size_t i;
-    //     for (i=0; i<PIPELINE_TABLES; i++) {
-    //         flow_table_stats(pl->tables[i], msg, &stats, &stats_size, &stats_num);
-    //     }
-    // } else {
-    //     flow_table_stats(pl->tables[msg->table_id], msg, &stats, &stats_size, &stats_num);
-    // }
-    UNUSED(flows);
-    UNUSED(dp);
-    UNUSED(time);
-
-    return NULL;
+    /* Pack and return */
+    if (flow_count > 0) {
+       reply = pack_flow_stats_reply(flows, xid, flow_count);
+    }
+    free(flows);
+    return reply;
 }
 
 of_object_t*
@@ -395,14 +400,14 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
     of_port_desc_stats_reply_xid_set(reply, xid);
 
     /* Allocates memory for of_port_desc */
-    of_port_desc = of_port_desc_new(OF_VERSION_1_3);
+    of_port_desc = of_port_desc_new(obj->version);
     if (of_port_desc == NULL) {
         fprintf(stderr, "%s\n", "Failed to create a port desc object");
         return NULL;
     }
 
     /* Allocates memory for of_list_port_desc */
-    of_list_port_desc = of_list_port_desc_new(OF_VERSION_1_3);
+    of_list_port_desc = of_list_port_desc_new(obj->version);
     if (of_list_port_desc == NULL)
     {
         fprintf(stderr, "%s\n", "Failed to create a list port desc object");

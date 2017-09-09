@@ -25,7 +25,7 @@ struct apply_actions {
 };
 
 struct clear_actions {
-    struct inst_header hdr;  
+    struct inst_header hdr;
 };
 
 struct write_actions {
@@ -36,6 +36,7 @@ struct write_actions {
 struct write_metadata {
     struct inst_header hdr;
     uint64_t metadata;
+    uint64_t metadata_mask;
 };
 
 struct goto_table {
@@ -46,7 +47,8 @@ struct goto_table {
 void inst_apply_actions(struct apply_actions *aa, struct action_list al);
 void inst_clear_actions(struct clear_actions *ca);
 void inst_write_actions(struct write_actions *wa, struct action_set as);
-void inst_write_metadata(struct write_metadata *wm, uint64_t metadata);
+void inst_write_metadata(struct write_metadata *wm,
+                         uint64_t metadata, uint64_t metadata_mask);
 void inst_goto_table(struct goto_table *gt, uint8_t table_id);
 
 void apply_actions_clean(struct apply_actions *aa);

@@ -19,10 +19,12 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
         /* Schedule a packet in message */
         if (op->port == OFPP_CONTROLLER) {
             size_t len;
+            uint8_t *data = NULL;
             /* node can only be a datapath */
             struct datapath *dp = (struct datapath*) node;
             nf->metadata.reason = OFPR_ACTION;
-            uint8_t *data = of_packet_in(nf, &len);
+            of_object_t *msg = pack_packet_in(nf, &len);
+            of_object_wire_buffer_steal(msg, &data);
             /* Create an of out event */
             struct sim_event_of *ev_of;
             // printf("Packet in start time %ld\n", nf->start_time);
@@ -30,6 +32,7 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
                                              dp_id(dp), data, 
                                              len);
             scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
+            of_object_delete(msg);
         }
         else if (topology_next_hop(topo, node->uuid, op->port, 
                            &dst_uuid, &dst_port, &latency)) {
@@ -44,6 +47,7 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
             scheduler_insert(sch, (struct sim_event*) new_flow);
         }
         LL_DELETE(nf->out_ports, op);
+        free(op);
     }
     // netflow_clean_out_ports(nf);
 }
@@ -62,9 +66,6 @@ handle_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
     if (node) {
-        // printf("Node type %s and ID:%ld InPORT %d IP %x time %ld\n", node->type? "HOST": "DATAPATH", ev_flow->node_id, ev_flow->flow.match.in_port, ev_flow->flow.match.ipv4_dst, ev_flow->flow.start_time);
-        // struct netflow *f = &ev_flow->flow;
-        // printf("POOORT %d\n", f->match.in_port);
         node->handle_netflow(node, &ev_flow->flow);
         next_flow_event(ev_hdl, node, &ev_flow->flow);
     }

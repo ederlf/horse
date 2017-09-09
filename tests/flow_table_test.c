@@ -175,7 +175,7 @@ void modify_strict(void **state)
     struct goto_table gt;
     inst_goto_table(&gt, 1);
     struct write_metadata wm;
-    inst_write_metadata(&wm, 0xbeef);
+    inst_write_metadata(&wm, 0xbeef, 0xffffffffffffffff);
     add_goto_table(&is, gt);
     add_write_metadata(&is, wm);
     /* Match */
@@ -229,7 +229,7 @@ void modify_strict_expired(void **state)
     struct goto_table gt;
     inst_goto_table(&gt, 1);
     struct write_metadata wm;
-    inst_write_metadata(&wm, 0xbeef);
+    inst_write_metadata(&wm, 0xbeef, 0xffffffffffffffff);
     add_goto_table(&is, gt);
     add_write_metadata(&is, wm);
     /* Match */
@@ -280,7 +280,7 @@ void modify_non_strict(void **state)
     struct goto_table gt;
     inst_goto_table(&gt, 1);
     struct write_metadata wm;
-    inst_write_metadata(&wm, 0xbeef);
+    inst_write_metadata(&wm, 0xbeef, 0xffffffffffffffff);
     add_goto_table(&is, gt);
     add_write_metadata(&is, wm);
     /* Match */
@@ -337,7 +337,7 @@ void stress_modify_non_strict(void **state)
         inst_goto_table(&gt, 1);
         add_goto_table(&is, gt);
         struct write_metadata wm;
-        inst_write_metadata(&wm, 0xbeef);
+        inst_write_metadata(&wm, 0xbeef, 0xffffffffffffffff);
         add_write_metadata(&is, wm);
         set_ip_proto(fl, 7);
         set_eth_type(fl, 0x800);

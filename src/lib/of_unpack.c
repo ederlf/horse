@@ -374,10 +374,11 @@ unpack_instructions(of_list_instruction_t *insts, struct instruction_set *is)
                 break;
             }
             case OFPIT_WRITE_METADATA: {
-                uint64_t metadata;
+                uint64_t metadata, metadata_mask;
                 struct write_metadata wm;
                 of_instruction_write_metadata_metadata_get(&inst, &metadata);
-                inst_write_metadata(&wm, metadata); 
+                of_instruction_write_metadata_metadata_mask_get(&inst, &metadata_mask);
+                inst_write_metadata(&wm, metadata, metadata_mask); 
                 add_write_metadata(is, wm);
                 break;
             }
