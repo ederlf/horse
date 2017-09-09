@@ -360,6 +360,7 @@ dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj,
     of_flow_stats_request_xid_get(obj, &xid);
 
     struct flow **flows = xmalloc(sizeof(struct flow*));
+    memset(&req, 0x0, sizeof(struct ofl_flow_stats_req));
 
     if (req.table_id == OFPTT_ALL) {
         size_t i;

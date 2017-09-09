@@ -477,6 +477,7 @@ void flow_set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t
 void apply_all_mask(struct ofl_flow_key *key, struct ofl_flow_key *mask)
 {
     key->in_port &= mask->in_port;
+    key->in_phy_port &= mask->in_phy_port;
     key->metadata &= mask->metadata;
     key->tunnel_id &= mask->tunnel_id;
     key->eth_type &= mask->eth_type;

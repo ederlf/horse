@@ -559,7 +559,7 @@ of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,
     of_list_instruction_t *insts = NULL;
     of_list_flow_stats_entry_t *stats_list = of_list_flow_stats_entry_new(OF_VERSION_1_3);
     of_flow_stats_entry_t *stat_entry = of_flow_stats_entry_new(OF_VERSION_1_3);
-    reply = of_port_stats_entry_new(OF_VERSION_1_3);
+    reply = of_flow_stats_reply_new(OF_VERSION_1_3);
     of_flow_stats_reply_xid_set(reply, xid);
 
     size_t i;
@@ -582,7 +582,7 @@ of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,
 
         insts = of_list_instruction_new(OF_VERSION_1_3);
         pack_instructions(&flows[i]->insts, insts);
-        if ( of_flow_stats_entry_instructions_set(reply, insts) < 0) {
+        if ( of_flow_stats_entry_instructions_set(stat_entry, insts) < 0) {
             fprintf(stderr, "%s\n", "Failed to set instructions of stats flow entry");
         }
         of_list_flow_stats_entry_append(stats_list, stat_entry);
