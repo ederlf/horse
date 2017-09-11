@@ -210,7 +210,8 @@ dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
                 break;
             }
             case OF_AGGREGATE_STATS_REQUEST: {
-
+                ret = dp_handle_aggregate_stats_req(dp, obj, time);
+                break;
             }
             case OF_FEATURES_REQUEST: {
 

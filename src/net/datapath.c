@@ -201,6 +201,7 @@ dp_send_netflow(struct datapath *dp, struct netflow *flow)
                 }
             }
             /* Get back to the loop and process all the ports added*/
+            op = tmp = flow->out_ports;
             continue;
         }
         p = dp_port(dp, op->port);
@@ -209,9 +210,6 @@ dp_send_netflow(struct datapath *dp, struct netflow *flow)
             if (upnlive) {
                 p->stats.tx_packets += flow->pkt_cnt;
                 p->stats.tx_bytes += flow->byte_cnt;
-                if (dp->base.uuid == 1) {
-                    // printf("Port %d -- %ld Packets | %ld Bytes -- time %ld\n", op->port, p->stats.tx_packets, p->stats.tx_bytes, flow->start_time);
-                }
                 /* Start time of the flow will be the same as the end */
                 netflow_update_send_time(flow, p->curr_speed);
             }
@@ -344,8 +342,22 @@ dp_handle_port_stats_req(const struct datapath *dp,
 
     of_port_stats_entry_delete(port_entry);
     of_list_port_stats_entry_delete(port_list);
-
     return reply;
+}
+
+static void dp_get_stats_flows(const struct datapath *dp, 
+                               struct ofl_flow_stats_req *req, struct flow ***flows, size_t *flow_count, 
+                               uint64_t time)
+{
+    if (req->table_id == OFPTT_ALL) {
+        size_t i;
+        for (i = 0; i < MAX_TABLES; i++) {
+            flow_table_stats(dp->tables[i], req, flows, flow_count, time);
+        }
+    } else {
+        flow_table_stats(dp->tables[req->table_id], req, flows,
+                         flow_count, time);
+    }  
 }
 
 of_object_t *
@@ -361,23 +373,38 @@ dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj,
 
     struct flow **flows = xmalloc(sizeof(struct flow*));
     memset(&req, 0x0, sizeof(struct ofl_flow_stats_req));
-
-    if (req.table_id == OFPTT_ALL) {
-        size_t i;
-        for (i = 0; i < MAX_TABLES; i++) {
-            flow_table_stats(dp->tables[i], &req, &flows, &flow_count, time);
-        }
-    } else {
-        flow_table_stats(dp->tables[req.table_id], &req, &flows,
-                         &flow_count, time);
-    }
-
+    dp_get_stats_flows(dp, &req, &flows, &flow_count, time);
     /* Pack and return */
     if (flow_count > 0) {
        reply = pack_flow_stats_reply(flows, xid, flow_count);
     }
     free(flows);
     return reply;
+}
+
+of_object_t* 
+dp_handle_aggregate_stats_req(const struct datapath *dp,
+                              of_object_t* obj, uint64_t time)
+{
+    uint32_t xid;
+    size_t flow_count = 0;
+    struct ofl_flow_stats_req req;
+    of_aggregate_stats_reply_t *reply = NULL;
+    unpack_aggregate_stats_request(obj, &req);
+    of_aggregate_stats_request_xid_get(obj, &xid);
+
+    struct flow **flows = xmalloc(sizeof(struct flow*));
+    memset(&req, 0x0, sizeof(struct ofl_flow_stats_req));
+
+    dp_get_stats_flows(dp, &req, &flows, &flow_count, time);
+
+    /* Pack and return */
+    if (flow_count > 0) {
+       reply = pack_aggregate_stats_reply(flows, xid, flow_count);
+    }
+    free(flows);
+    return reply;
+
 }
 
 of_object_t*

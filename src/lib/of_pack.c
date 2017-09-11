@@ -598,3 +598,24 @@ of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,
     // of_flow_stats_reply_delete(reply);
     return reply;
 }
+
+of_object_t *pack_aggregate_stats_reply(struct flow **flows, 
+                                        uint32_t xid, size_t flow_count)
+{
+    size_t i;
+    uint64_t pkt_cnt = 0;
+    uint64_t byte_cnt = 0;
+    of_flow_stats_reply_t *reply = of_aggregate_stats_reply_new(OF_VERSION_1_3);
+    of_aggregate_stats_reply_xid_set(reply, xid);
+    of_aggregate_stats_reply_flow_count_set(reply, flow_count);
+    
+    for (i = 0; i < flow_count; i++) {
+        pkt_cnt += flows[i]->pkt_cnt;
+        byte_cnt += flows[i]->byte_cnt;
+    }
+    
+    of_aggregate_stats_reply_packet_count_set(reply, pkt_cnt);
+    of_aggregate_stats_reply_packet_count_set(reply, byte_cnt);
+
+    return reply;
+}

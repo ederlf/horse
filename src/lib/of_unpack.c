@@ -481,6 +481,29 @@ unpack_flow_stats_request(of_object_t *obj, struct ofl_flow_stats_req *req)
 }
 
 int 
+unpack_aggregate_stats_request(of_object_t *obj, 
+                               struct ofl_flow_stats_req *req) 
+{
+    of_match_t match;
+    of_aggregate_stats_request_t *of_req = (of_aggregate_stats_request_t*) obj;
+
+    of_aggregate_stats_request_cookie_get(of_req, &req->cookie);
+    of_aggregate_stats_request_cookie_mask_get(of_req, &req->cookie_mask);
+    of_aggregate_stats_request_table_id_get(of_req, &req->table_id);
+    of_aggregate_stats_request_out_port_get(of_req, &req->out_port);
+    of_aggregate_stats_request_out_group_get(of_req, &req->out_group);
+
+    if ( of_aggregate_stats_request_match_get(obj, &match) < 0 ) {
+        fprintf(stderr, "Failed to get flow stats match");
+        return -1;
+    }
+
+    unpack_match_fields(&match.fields, &req->match);
+    unpack_match_fields(&match.masks, &req->mask);
+    return 0;
+}
+
+int 
 unpack_packet_out(of_object_t *obj, struct netflow* f, struct action_list *al)
 {
     of_octets_t octets[1];
