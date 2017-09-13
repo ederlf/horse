@@ -1,5 +1,7 @@
 cimport horse
 from libc.stdint cimport uint64_t
+from libc.stdint cimport UINT64_MAX
+
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -90,6 +92,35 @@ cdef class Host:
     def uuid(self):
         return host_uuid(self._host_ptr)
 
+cdef class SimConfig:
+    cdef sim_config *_config_ptr
+    args = ("mode", "end_time")
+
+    def __cinit__(self):
+        self._config_ptr = sim_config_new()
+
+    @property
+    def mode(self):
+        return sim_config_get_mode(self._config_ptr)
+        
+    def set_mode(self, value):
+        sim_config_set_mode(self._config_ptr, value) 
+
+    @property
+    def end_time(self):
+        return sim_config_get_end_time(self._config_ptr)
+        
+    def set_end_time(self, value):
+        sim_config_set_end_time(self._config_ptr, value)
+
+    @property
+    def ctrl_idle_interval(self):
+        return sim_config_get_ctrl_idle_interval(self._config_ptr)
+        
+    def set_ctrl_idle_interval(self, value):
+        sim_config_set_ctrl_idle_interval(self._config_ptr, value)
+
+
 cdef class Topology:
     cdef topology *_topo_ptr
     cdef object dps
@@ -102,8 +133,13 @@ cdef class Topology:
     #     if self._topo_ptr != NULL:
     #         topology_destroy(self._topo_ptr)
 
+    # @staticmethod
+    cdef topology* topo_ptr(self):
+        return self._topo_ptr
+
     def start(self):
-        start(self._topo_ptr)
+        pass
+        #  start(self._topo_ptr)
 
     def add_node(self, Node):
         if isinstance(Node, SDNSwitch):
@@ -127,3 +163,22 @@ cdef class Topology:
     @property
     def links_num(self):
         return topology_links_num(self._topo_ptr)
+
+cdef class Sim:
+    cdef Topology topo
+    cdef SimConfig config
+    # Default interval is 0.5 seconds
+    def __cinit__(self, topo, mode = 1, end_time = UINT64_MAX, 
+                  ctrl_interval = 10000):
+        self.topo = topo
+        # self._topo_ptr = topo._topo_ptr
+        # print topo.topo_ptr()
+        self.config =  SimConfig()
+        self.config.set_mode(mode)
+        self.config.set_end_time(end_time)
+        self.config.set_ctrl_idle_interval(ctrl_interval)
+
+    def start(self):
+        topo = <Topology> self.topo
+        config = <SimConfig> self.config    
+        start(topo._topo_ptr, config._config_ptr)     

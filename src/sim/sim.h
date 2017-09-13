@@ -11,23 +11,18 @@
 #ifndef SIM_H
 #define SIM_H 1
 
+#include "sim_config.h"
 #include "event_handler.h"
 #include "net/topology.h"
 #include "lib/timer.h"
-
-
-enum sim_mode {
-    SIM_CTRL = 0,
-    EMU_CTRL = 1,
-};
 
 struct sim {
     struct ev_handler evh;
     struct timer cont;          /* Timer for continuous mode   */
     pthread_t dataplane;
-    enum sim_mode mode;
+    struct sim_config *config;
 };
 
-void start(struct topology *topo);
+void start(struct topology *topo, struct sim_config *config);
 
 #endif

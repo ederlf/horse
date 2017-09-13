@@ -43,7 +43,7 @@ initial_events(struct sim *s)
     }
     /* Event to stop the simulator */
     struct sim_event *end_ev; 
-    end_ev = sim_event_new(UINT64_MAX); 
+    end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
 }
@@ -52,14 +52,14 @@ struct timespec last = {0};
 struct timespec now = {0};
 
 static void
-sim_init(struct sim *s, struct topology *topo, enum sim_mode mode) 
+sim_init(struct sim *s, struct topology *topo, struct sim_config *config) 
 {
+    s->config = config;
     s->evh.topo = topo;
     s->evh.sch = scheduler_new();
     s->cont.exec = cont_mode;
-    s->mode = mode;
     initial_events(s); 
-    if (s->mode == EMU_CTRL){
+    if (sim_config_get_mode(s->config) == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;
         s->evh.om = of_manager_new(s->evh.sch);
@@ -155,9 +155,6 @@ des_mode(void *args){
 } 
 
 struct sim_event *cur_ev = NULL;
-uint64_t mode_interval = 100000; // in microseconds 
-
-uint64_t delta_us = 0;
 
 static void *
 cont_mode(void* args) 
@@ -184,7 +181,6 @@ cont_mode(void* args)
             last_ctrl = cur_ev->time;
         }
         else if(cur_ev->type == EVENT_END){
-            printf("Last event?\n");
             goto check_idle;
         }
         handle_event(&s->evh, cur_ev);
@@ -196,7 +192,8 @@ cont_mode(void* args)
     check_idle:
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
     /* Check if controller is idle for some time */
-    if (sch->clock - last_ctrl > mode_interval){
+    if ( (sch->clock - last_ctrl) > 
+        100000) {
         pthread_mutex_lock( &mtx_mode );
         sch->mode = DES;
         /* Wake up timer */
@@ -207,11 +204,11 @@ cont_mode(void* args)
 }
 
 void 
-start(struct topology *topo) 
+start(struct topology *topo, struct sim_config *config) 
 {
     struct sim s;
     memset(&s, 0x0, sizeof(struct sim));
-    sim_init(&s, topo, EMU_CTRL);
+    sim_init(&s, topo, config);
     sim_close(&s);    
 }
 

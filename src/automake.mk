@@ -64,6 +64,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/sim/scheduler.h \
                 src/sim/scheduler.c \
                 src/sim/sim.h \
-                src/sim/sim.c
+                src/sim/sim.c \
+                src/sim/sim_config.h \
+                src/sim/sim_config.c 
 
 libhorse_la_LIBADD = libjson.la libpatricia.la

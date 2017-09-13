@@ -14,6 +14,9 @@ cdef extern from "sim/sim.h":
     cdef struct topology:
         pass
 
+    cdef struct sim_config:
+        pass
+
     # Datapath .h
     datapath* dp_new(uint64_t, char*, int)
     void dp_destroy(datapath* dp)
@@ -45,11 +48,17 @@ cdef extern from "sim/sim.h":
     uint32_t topology_dps_num(const topology *topo)
     uint32_t topology_links_num(const topology *topo)
     void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)
+    
     # Sim.h
-    void start(topology *topo)
+    # TODO: Create an object for the simulator to ease adding config?
+    void start(topology *topo, sim_config *config)
     
-
-
-    
-
-    
+    # Config.h
+    sim_config *sim_config_new()
+    void sim_config_set_mode(sim_config *conf, int mode)
+    int sim_config_get_mode(sim_config *conf)
+    void sim_config_set_end_time(sim_config *conf, uint64_t end_time)
+    uint64_t sim_config_get_end_time(sim_config *conf)
+    void sim_config_set_ctrl_idle_interval(sim_config *conf, 
+                                       uint64_t interval)
+    uint64_t sim_config_get_ctrl_idle_interval(sim_config *conf)

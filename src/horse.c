@@ -54,8 +54,9 @@ main(int argc, char *argv[]){
             }
             case 't':{ 
                 struct topology *topo = from_json(argv[optind]);
+                struct sim_config *conf = sim_config_new();
                 // struct topology *topo = topology_new();
-                start(topo);
+                start(topo, conf);
                 break;
             }
             case '?':{

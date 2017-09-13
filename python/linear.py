@@ -35,19 +35,13 @@ for i in range(1, k):
     last_switch = sw
 
 time = 5000000
-# hosts[0].ping("10.0.0.2", 5000000)
-# hosts[0].ping("10.0.0.3", 6000000)
-# hosts[1].ping("10.0.0.1", 7000000)
-# hosts[1].ping("10.0.0.3", 8000000)
-# hosts[2].ping("10.0.0.1", 9000000)
-# hosts[2].ping("10.0.0.2", 10000000)
 for i, h in enumerate(hosts):
     for z in range(1, k):
       if z != i + 1:
         h.ping("10.0.0.%s" % (z), time)
         time += 1000000
 
+sim = Sim(topo)
+sim.start()
 
-
-topo.start()
 
