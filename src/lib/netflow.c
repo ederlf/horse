@@ -1,6 +1,5 @@
 #include "netflow.h"
 #include <uthash/utlist.h>
-#include <arpa/inet.h>
 
 void netflow_init(struct netflow *nf)
 {
