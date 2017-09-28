@@ -6,7 +6,7 @@
 #include "sim_event.h"
 #include <loci/loci.h>
 
-#define MAX_PACKET_IN_DATA 256
+#define MAX_PACKET_IN_DATA 1492
 
 of_object_t *pack_packet_in(struct netflow *f, size_t *len);
 of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,

@@ -450,6 +450,7 @@ pack_action_list(struct action_list *al,  of_list_action_t *acts)
         of_object_t* act = pack_action(&act_elem->act);
         if (act != NULL) {
             of_list_action_append(acts, act);
+            of_object_delete(act);
         }
     }
 }
@@ -484,11 +485,14 @@ pack_instructions(struct instruction_set *is, of_list_instruction_t *insts)
         }
         
         of_list_instruction_append(insts, apply);
+        of_list_action_delete(acts);
+        of_instruction_apply_actions_delete(apply);
     }
 
     if (instruction_is_active(is, INSTRUCTION_CLEAR_ACTIONS)) {
         of_instruction_clear_actions_t *clear = of_instruction_clear_actions_new (OF_VERSION_1_3);
         of_list_instruction_append(insts, clear);
+        of_instruction_clear_actions_delete(clear);
     }
 
     if (instruction_is_active(is, INSTRUCTION_WRITE_ACTIONS)) {
@@ -499,6 +503,8 @@ pack_instructions(struct instruction_set *is, of_list_instruction_t *insts)
             fprintf(stderr, "%s\n", "Failure to set actions on write actions");
         }
         of_list_instruction_append(insts, write);
+        of_list_action_delete(acts);
+        of_instruction_write_actions_delete(write);
     }
 
     if (instruction_is_active(is, INSTRUCTION_WRITE_METADATA)) {
@@ -506,12 +512,14 @@ pack_instructions(struct instruction_set *is, of_list_instruction_t *insts)
         of_instruction_write_metadata_metadata_set(wm, is->write_meta.metadata);
         of_instruction_write_metadata_metadata_mask_set(wm, is->write_meta.metadata_mask);
         of_list_instruction_append(insts, wm);
+        of_instruction_write_metadata_delete(wm);
     }
 
     if (instruction_is_active(is, INSTRUCTION_GOTO_TABLE)) {
         of_instruction_goto_table_t *gt = of_instruction_goto_table_new(OF_VERSION_1_3);
         of_instruction_goto_table_table_id_set(gt, is->gt_table.table_id);
         of_list_instruction_append(insts, gt);
+        of_instruction_goto_table_delete(gt);
     }
 }
 
@@ -574,6 +582,7 @@ of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,
         of_flow_stats_entry_cookie_set(stat_entry, flows[i]->cookie);
         of_flow_stats_entry_packet_count_set(stat_entry, flows[i]->pkt_cnt);
         of_flow_stats_entry_byte_count_set(stat_entry, flows[i]->byte_cnt);
+        memset(&match, 0, sizeof(match));
         pack_match_fields(&flows[i]->key, &match.fields);
         pack_match_fields(&flows[i]->mask, &match.masks);
         if ( of_flow_stats_entry_match_set(stat_entry, &match) < 0) {
@@ -586,6 +595,7 @@ of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,
             fprintf(stderr, "%s\n", "Failed to set instructions of stats flow entry");
         }
         of_list_flow_stats_entry_append(stats_list, stat_entry);
+        of_list_instruction_delete(insts);
     }
     if (of_flow_stats_reply_entries_set(reply, stats_list) < 0) {
         fprintf(stderr, "%s\n", "Failure to add list of flows to stats reply" );
