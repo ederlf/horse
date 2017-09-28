@@ -339,6 +339,17 @@ host_execute_app(struct host *h, struct exec *exec)
     return flow;
 }
 
+void host_set_name(struct host* h, char *name)
+{
+    memcpy(h->ep.base.name, name, MAX_NODE_NAME);
+}
+
+/* Access functions*/
+char *host_name(struct host *h)
+{
+    return h->ep.base.name;
+}
+
 /* Retrieve a datapath port */
 struct port* 
 host_port(const struct host *h, uint32_t port_id)

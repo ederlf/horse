@@ -20,7 +20,7 @@ topo = Topology()
 last_switch = None
 for i in range(1, k):
     sw = SDNSwitch(i)
-    h = Host()
+    h = Host("h%s" % i)
     h.add_port(port = 1, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i), 
                netmask = "255.255.255.0")
     sw.add_port(port = 1, eth_addr = "00:00:00:00:01:00")
@@ -40,8 +40,8 @@ for i, h in enumerate(hosts):
       if z != i + 1:
         h.ping("10.0.0.%s" % (z), time)
         time += 1000000
-
-sim = Sim(topo)
+end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000  
+sim = Sim(topo, ctrl_interval = 100000, end_time = end_time)
 sim.start()
 
 

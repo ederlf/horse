@@ -34,6 +34,7 @@ from libc.stdint cimport UINT64_MAX
 
 cdef class SDNSwitch:
     cdef datapath* _dp_ptr
+    cdef object ports
 
     # Default ip to connect to a controller is the localhost
     # Default port is the IANA number allocated for OpenFlow  
@@ -49,7 +50,15 @@ cdef class SDNSwitch:
     def add_port(self, port, eth_addr, max_speed = 1000000, cur_speed = 1000000):
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
-        dp_add_port(self._dp_ptr, port, c_eth_addr, max_speed, cur_speed)      
+        dp_add_port(self._dp_ptr, port, c_eth_addr, max_speed, cur_speed)
+
+    property name:
+        def __get__(self):
+            return dp_name(self._dp_ptr)
+
+        def __set__(self, name):
+            dp_set_name(self._dp_ptr, name)
+
     @property
     def dp_id(self):
         return dp_id(self._dp_ptr) 
@@ -63,10 +72,11 @@ cdef class Host:
     cdef host* _host_ptr
     cdef int exec_id
 
-    def __cinit__(self):
+    def __cinit__(self, name):
         self._host_ptr = host_new()
         host_add_app(self._host_ptr, 1)
         self.exec_id = 1
+        self.name = name
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 1000000):
@@ -87,6 +97,13 @@ cdef class Host:
         ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
         host_add_app_exec(self._host_ptr, self.exec_id, 1, start_time, <void*> &ip, sizeof(int))
         self.exec_id += 1
+
+    property name:
+        def __get__(self):
+            return host_name(self._host_ptr)
+
+        def __set__(self, name):
+            host_set_name(self._host_ptr, name)
 
     @property
     def uuid(self):
@@ -124,10 +141,14 @@ cdef class SimConfig:
 cdef class Topology:
     cdef topology *_topo_ptr
     cdef object dps
+    cdef object node_info
+    cdef object nodes
 
     def __cinit__(self):
         self._topo_ptr = topology_new()
         self.dps = []
+        self.node_info = {}
+        self.nodes = {}
 
     # def __dealloc__(self):
     #     if self._topo_ptr != NULL:
@@ -137,20 +158,33 @@ cdef class Topology:
     cdef topology* topo_ptr(self):
         return self._topo_ptr
 
-    def start(self):
-        pass
-        #  start(self._topo_ptr)
-
-    def add_node(self, Node):
+    def add_node(self, Node, **kwargs):
         if isinstance(Node, SDNSwitch):
             dp = <SDNSwitch> Node
+            if "name" in kwargs:
+                self.node_info[kwargs["name"]] = kwargs
+                self.nodes[kwargs["name"]] = Node
             topology_add_datapath(self._topo_ptr, dp._dp_ptr)
+
         elif isinstance (Node, Host):
             h = <Host> Node
+            # TODO: Remember to improve it
+            if "name" in kwargs:
+                self.node_info[kwargs["name"]] = kwargs
+                self.nodes[kwargs["name"]] = Node
             topology_add_host(self._topo_ptr, h._host_ptr)
 
     def add_link(self, node1, node2, port1, port2, bw = 1, latency = 0):
         topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, bw, latency, False)
+
+
+    property nodes:
+        def __get__(self):
+            return self.nodes
+
+    property node_info:
+        def __get__(self):
+            return self.node_info
 
     @property
     def dp(self):
@@ -163,6 +197,8 @@ cdef class Topology:
     @property
     def links_num(self):
         return topology_links_num(self._topo_ptr)
+
+    
 
 cdef class Sim:
     cdef Topology topo

@@ -7,6 +7,7 @@ void
 node_init(struct node* n, uint16_t type)
 {
     n->uuid = ++current_uuid;
+    memset(n->name, 0x0, MAX_NODE_NAME);
     n->ports_num = 0;
     n->ports = NULL;
     n->type = type;
