@@ -64,6 +64,10 @@ of_object_t* dp_handle_pkt_out(struct datapath *dp, of_object_t *obj,
                                struct netflow *nf, uint64_t time);
 
 /* Access functions*/
+void dp_set_name(struct datapath *dp, char* name);
+
+char* dp_name(struct datapath *dp);
+
 uint64_t dp_uuid(const struct datapath* dp);
 
 uint64_t dp_id(const struct datapath* dp);
