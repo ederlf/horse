@@ -150,8 +150,8 @@ dp_recv_netflow(struct datapath *dp, struct netflow *flow)
         struct flow_table *table;
         struct action_set acts;
         action_set_init(&acts);
-        p->stats.rx_packets += flow->byte_cnt;
-        p->stats.rx_bytes += flow->pkt_cnt;
+        p->stats.rx_bytes += flow->byte_cnt;
+        p->stats.rx_packets += flow->pkt_cnt;
         /* Reset metadata */
         flow->match.metadata = 0;
         /* Enter pipeline */
