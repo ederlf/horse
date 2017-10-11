@@ -520,3 +520,13 @@ struct of_settings
 {
     return dp->dp_settings;
 }
+
+void 
+dp_write_stats(const struct datapath *dp, uint64_t time, FILE *fp)
+{
+    struct port *p, *tmp;
+    HASH_ITER(hh, dp->base.ports, p, tmp) {
+        uint64_t t = time / 1000000;
+        fprintf (fp, "%"PRIu64";%s;%"PRIu64";%"PRIu64"\n", t, p->name, p->stats.tx_bytes, p->stats.rx_bytes);
+    }
+}

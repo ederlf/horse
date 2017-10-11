@@ -24,6 +24,7 @@ static pthread_cond_t  mode_cond_var   = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t mtx_mode    = PTHREAD_MUTEX_INITIALIZER;
 int last_wrt = 0;
 uint64_t last_ctrl = 0;
+uint64_t last_stats = 0;
 
 static void 
 initial_events(struct sim *s)
@@ -50,6 +51,7 @@ initial_events(struct sim *s)
 
 struct timespec last = {0};
 struct timespec now = {0};
+FILE *pFile;
 
 static void
 sim_init(struct sim *s, struct topology *topo, struct sim_config *config) 
@@ -73,6 +75,8 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
         }
         of_client_start(s->evh.om->of, false);
     }
+    pFile = fopen ("bw.txt","w");
+    sleep(2);
     init_timer(&s->cont, (void*)s);
     set_periodic_timer(/* 1 */100);
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
@@ -83,22 +87,23 @@ static void
 sim_close(struct sim *s)
 {
     pthread_join(s->dataplane, 0);
+    fclose (pFile);
     scheduler_destroy(s->evh.sch);
     topology_destroy(s->evh.topo);
     of_manager_destroy(s->evh.om);
 }
 
 
-// static void update_stats(struct topology *topo, uint64_t time){
+static void update_stats(struct topology *topo, uint64_t time){
 
-//     struct node *cur_node, *tmp, *nodes;
-//     nodes = topology_nodes(topo);
-//     HASH_ITER(hh, nodes, cur_node, tmp) {
-//         if (cur_node->type == DATAPATH){
-//             dp_write_stats((struct datapath*) cur_node, time);
-//         }
-//     }
-// }
+    struct node *cur_node, *tmp, *nodes;
+    nodes = topology_nodes(topo);
+    HASH_ITER(hh, nodes, cur_node, tmp) {
+        if (cur_node->type == DATAPATH){
+            dp_write_stats((struct datapath*) cur_node, time, pFile);
+        }
+    }
+}
 
 static void *
 des_mode(void *args){
@@ -121,10 +126,11 @@ des_mode(void *args){
         sch->clock = ev->time;
 
         /* Time will be shared now */
-        if (sch->clock - last_wrt > 1000000){
-            // update_stats(s->topo, s->sch->clock);
-            last_wrt = sch->clock;
+        if (sch->clock - last_stats > 1000000){
+            update_stats(s->evh.topo, sch->clock);
+            last_stats = sch->clock;
         }
+
         /* Need to make it more sane ... */
         if (ev->type != EVENT_END) {
             /* Execute */
@@ -174,6 +180,13 @@ cont_mode(void* args)
     uint64_t delta_us = (now.tv_sec - last.tv_sec) * 1000000 + (now.tv_nsec - last.tv_nsec) / 1000;
     cur_ev = scheduler_retrieve(sch); 
     sch->clock += delta_us;     
+
+     /* Time will be shared now */
+    if (sch->clock - last_stats > 1000000){
+        update_stats(s->evh.topo, sch->clock);
+        last_stats = sch->clock;
+    }
+
     if (cur_ev->time <= sch->clock){
         /* Execute */
         if (cur_ev->type == EVENT_OF_MSG_OUT || 

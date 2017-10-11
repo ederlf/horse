@@ -38,9 +38,10 @@ cdef class SDNSwitch:
 
     # Default ip to connect to a controller is the localhost
     # Default port is the IANA number allocated for OpenFlow  
-    def __cinit__(self, uint64_t dp_id, ctrl_ip = "127.0.0.1", 
+    def __cinit__(self, name, uint64_t dp_id, ctrl_ip = "127.0.0.1", 
                   ctrl_port = 6653):
         self._dp_ptr = dp_new(dp_id, ctrl_ip, ctrl_port)
+        self.name = name
 
     # def add_port(self, intf):
     #     mac = intf.eth_addr.replace(':', '').decode('hex')

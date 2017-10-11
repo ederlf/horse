@@ -77,4 +77,5 @@ struct flow_table *dp_flow_table(const struct datapath *dp, uint8_t table_id);
 
 struct of_settings *dp_settings(const struct datapath *dp);
 
+void dp_write_stats(const struct datapath *dp, uint64_t time, FILE *fp);
 #endif /*DATAPATH_H */

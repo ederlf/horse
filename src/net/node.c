@@ -31,6 +31,10 @@ void
 node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
 {
     struct port *p = port_new(port_id, eth_addr, speed, curr_speed);
+    /* TODO, allow to give a name to the interface in the python binding */
+    char port_name[16];
+    sprintf(port_name, "%s-eth%"PRIu32"", n->name, port_id);
+    memcpy(p->name, port_name, strlen(port_name));    
     HASH_ADD(hh, n->ports, port_id, sizeof(uint32_t), p);
     n->ports_num++;
 }
