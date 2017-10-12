@@ -1,5 +1,6 @@
 #include "app.h"
 #include "ping.h"
+#include "raw_udp.h"
 #include <uthash/utlist.h>
 
 struct app *app_creator(uint16_t type)
@@ -7,6 +8,11 @@ struct app *app_creator(uint16_t type)
     struct app *a = xmalloc(sizeof(struct app));
     a->type = type;
     switch (type){
+        case UDP: {
+            a->handle_netflow = raw_udp_handle_netflow;
+            a->start = raw_udp_start;
+            break;
+        }
         case PINGV4: {
             a->handle_netflow = ping_handle_netflow;
             a->start = ping_start;

@@ -2,12 +2,14 @@
 #define APP_H 1
 
 #include "lib/netflow.h"
+#include "raw_udp.h"
 #include <uthash/uthash.h>
 
 /* Using the types assigned by IANA just: because 
 *  */
 enum app_type {
     PINGV4 = 1,
+    UDP =  17,
     PINGV6 = 58,
 };
 

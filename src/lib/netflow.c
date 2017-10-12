@@ -162,8 +162,10 @@ static void mpls_to_pkt(struct tag *t, uint8_t *buff)
 size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
 {
     size_t offset = 0;
+    uint16_t *payload_len = NULL;
     struct ofl_flow_key m =  nf->match;
     struct eth_header *eth;
+
 
     eth = (struct eth_header*) buffer;
     memcpy(eth->eth_src, m.eth_src, ETH_LEN);
@@ -204,6 +206,7 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         offset += sizeof(struct arp_eth_header);
         return offset;
     }
+    
     if (m.eth_type == ETH_TYPE_IP){
         struct ip_header *ip = (struct ip_header*) (buffer + offset);
         memset(ip, 0x0, sizeof(struct ip_header));
@@ -211,11 +214,14 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         ip->ip_ihl_ver = (1 << 6) | 5;   
         ip->ip_tos = (ip->ip_tos | m.ip_dscp) << 1 | m.ip_ecn;
         ip->ip_proto = m.ip_proto;
+        ip->ip_tot_len = htons(sizeof(struct ip_header));
         ip->ip_src = htonl(m.ipv4_src);
         ip->ip_dst = htonl(m.ipv4_dst);
         offset += sizeof(struct ip_header);
+        payload_len = &ip->ip_tot_len;
         goto l4;
     }
+
     if (m.eth_type == ETH_TYPE_IPV6){
         struct ipv6_header *ipv6 = (struct ipv6_header*) (buffer + offset);
         memset(ipv6, 0x0, sizeof(struct ipv6_header));
@@ -223,6 +229,7 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         memcpy(ipv6->ipv6_dst, m.ipv6_dst, IPV6_LEN);
         memcpy(ipv6->ipv6_src, m.ipv6_src, IPV6_LEN);
         offset += sizeof(struct ipv6_header);
+        payload_len = &ipv6->ipv6_pay_len;
         goto l4;
     }
 
@@ -230,15 +237,18 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
     if (m.ip_proto == IP_PROTO_TCP) {
         struct tcp_header *tcp = (struct tcp_header*) (buffer + offset);
         memset(tcp, 0x0, sizeof(struct tcp_header));
-        tcp->tcp_dst = m.tcp_dst;
-        tcp->tcp_src = m.tcp_src;
+        tcp->tcp_dst = htons(m.tcp_dst);
+        tcp->tcp_src = htons(m.tcp_src);
+        *payload_len += sizeof(struct tcp_header);
         offset += sizeof(struct tcp_header);
     }
     if (m.ip_proto == IP_PROTO_UDP){
         struct udp_header *udp = (struct udp_header*) (buffer + offset);
         memset(udp, 0x0, sizeof(struct udp_header));
-        udp->udp_dst = m.udp_dst;
-        udp->udp_src = m.udp_src;
+        udp->udp_dst = htons(m.udp_dst);
+        udp->udp_src = htons(m.udp_src);
+        udp->udp_len = htons(8);
+        *payload_len += sizeof(struct udp_header);
         offset += sizeof(struct udp_header);
     }
     if (m.ip_proto == IP_PROTO_ICMPV4) {
@@ -247,6 +257,7 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         icmp->icmp_code  = m.icmpv4_code;
         icmp->icmp_type  = m.icmpv4_type;
         offset += sizeof(struct icmp_header);
+        *payload_len += sizeof(struct icmp_header);
         if (icmp->icmp_type == ECHO || icmp->icmp_type == ECHO_REPLY)
         {
             struct icmp_echo_reply *echo_rep = (struct icmp_echo_reply*) (buffer + offset);

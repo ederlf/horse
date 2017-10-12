@@ -17,6 +17,14 @@ cdef extern from "sim/sim.h":
     cdef struct sim_config:
         pass
 
+    cdef struct raw_udp_args:
+        uint64_t duration  
+        uint64_t rate      
+        uint8_t interval  
+        uint32_t ip_dst   
+        uint16_t dst_port 
+        uint16_t src_port 
+
     # Datapath .h
     datapath* dp_new(uint64_t, char*, int)
     void dp_destroy(datapath* dp)

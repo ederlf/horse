@@ -1,7 +1,7 @@
 cimport horse
 from libc.stdint cimport uint64_t
 from libc.stdint cimport UINT64_MAX
-
+import random
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -75,7 +75,9 @@ cdef class Host:
 
     def __cinit__(self, name):
         self._host_ptr = host_new()
-        host_add_app(self._host_ptr, 1)
+        # It needs to be improved when number of apps grow
+        host_add_app(self._host_ptr, 1)  #PING
+        host_add_app(self._host_ptr, 17) #UDP
         self.exec_id = 1
         self.name = name
 
@@ -98,6 +100,26 @@ cdef class Host:
         ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
         host_add_app_exec(self._host_ptr, self.exec_id, 1, start_time, <void*> &ip, sizeof(int))
         self.exec_id += 1
+
+    # Rate in Mbps, duration and interval in seconds
+    def udp(self, dst, start_time, duration = 60, interval = 5, rate = 10, dst_port = 5001, src_port = random.randint(5002, 65000)):
+        cdef int ip
+        cdef raw_udp_args args
+        ip_parts = dst.split('.')
+        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+        args.duration = duration
+        args.rate = rate * 1000000 #Mbits to bits
+        args.ip_dst = ip
+        args.dst_port = dst_port
+        args.src_port = src_port
+        args.interval = interval
+        times = duration / interval
+        init_time = start_time
+        microsec_interval = interval * 1000000
+        for i in range(0, times):
+            host_add_app_exec(self._host_ptr, self.exec_id, 17, init_time, <void*> &args, sizeof(raw_udp_args))
+            init_time = init_time +  microsec_interval
+            self.exec_id += 1
 
     property name:
         def __get__(self):

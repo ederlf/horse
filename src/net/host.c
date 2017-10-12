@@ -224,7 +224,6 @@ host_send_l3(struct host *h, struct netflow *flow){
     if (!re){
         /* Default gateway */
         re = ipv4_lookup(&h->ep.rt, 0);
-
     }
     if (re){
         struct out_port *op = xmalloc(sizeof(struct out_port));

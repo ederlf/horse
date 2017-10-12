@@ -49,7 +49,6 @@ next_flow_event(struct ev_handler *ev_hdl, struct node* node,
         LL_DELETE(nf->out_ports, op);
         free(op);
     }
-    // netflow_clean_out_ports(nf);
 }
 
 /**

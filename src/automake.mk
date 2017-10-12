@@ -35,6 +35,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/app/app.c \
                 src/net/app/ping.h \
                 src/net/app/ping.c \
+                src/net/app/raw_udp.h \
+                src/net/app/raw_udp.c \
                 src/net/arp_table.h \
                 src/net/arp_table.c \
                 src/net/datapath.h \

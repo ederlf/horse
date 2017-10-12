@@ -13,6 +13,7 @@
 #include <time.h>
 #include <uthash/utlist.h>
 #include <valgrind/memcheck.h>
+#include "lib/openflow.h"
 
 #define EV_NUM 1000000
 
@@ -105,6 +106,27 @@ static void update_stats(struct topology *topo, uint64_t time){
     }
 }
 
+
+static struct sim_event* 
+make_time_msg(uint64_t time){
+    uint8_t *buf = xmalloc(sizeof(struct ofp_experimenter_header) + 8);
+    struct ofp_experimenter_header *msg = (struct ofp_experimenter_header*) buf;
+    msg->header.version = OFP_VERSION; 
+    msg->header.type = OFPT_EXPERIMENTER;
+    msg->header.length = htons(24);
+    msg->header.xid = 0;
+    msg->experimenter = htonl(0xF0A1F0A1);
+    msg->exp_type = 0;
+    uint64_t *t = (uint64_t*) &buf[16];
+    *t = hton64(time);   
+    /* TODO: Create a dedicated control channel for the simulator messages */
+    struct sim_event_of *ev = sim_event_of_msg_out_new(time, 
+                                                      0x00000000000000001, buf, 24);
+    // scheduler_insert(sch, (struct sim_event*) ev); 
+    return (struct sim_event*) ev;
+}
+
+
 static void *
 des_mode(void *args){
 /*  Executes DES while controller does nothing
@@ -135,6 +157,17 @@ des_mode(void *args){
         if (ev->type != EVENT_END) {
             /* Execute */
             handle_event(&s->evh, ev);
+            /* TODO: NOT DRY AAAARGH */
+            if (sch->clock - last_wrt > 10000000 ){
+                handle_event(&s->evh, make_time_msg(sch->clock));
+                last_wrt = sch->clock;
+                /* Wake up timer */
+                pthread_mutex_lock( &mtx_mode );
+                last_ctrl = sch->clock;
+                sch->mode = CONTINUOUS;
+                pthread_cond_signal( &mode_cond_var );
+                pthread_mutex_unlock( &mtx_mode );
+            }
             if (ev->type == EVENT_OF_MSG_OUT ||
                 ev->type == EVENT_OF_MSG_IN ) {
                 
@@ -181,10 +214,15 @@ cont_mode(void* args)
     cur_ev = scheduler_retrieve(sch); 
     sch->clock += delta_us;     
 
-     /* Time will be shared now */
     if (sch->clock - last_stats > 1000000){
         update_stats(s->evh.topo, sch->clock);
         last_stats = sch->clock;
+    }
+
+    /* Time will be shared now */
+    if (sch->clock - last_wrt > 10000000){
+        handle_event(&s->evh, make_time_msg(sch->clock));
+        last_wrt = sch->clock;
     }
 
     if (cur_ev->time <= sch->clock){
