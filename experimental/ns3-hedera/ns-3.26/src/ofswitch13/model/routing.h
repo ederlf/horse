@@ -3,9 +3,15 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include "dctopo.h"
 
 namespace ns3 {
+
+typedef std::vector<std::string> Path;
+typedef std::vector<Path> Paths;
+typedef std::map<std::string, Paths > NodePaths;
+typedef Path (*_path_choice)(Paths, std::string, std::string, uint8_t *pkt);
 
 class Routing {
 /* TBD */
@@ -13,9 +19,9 @@ protected:
     FatTreeTopo topo;    
 
 public:
-    Routing();
-    virtual ~Routing();
-    virtual <vector> get_route(string src, string dst, void* data) = 0;
+    Routing(FatTreeTopo topo);
+    virtual ~Routing(){};
+    virtual Path get_route(std::string src, std::string dst, uint8_t* data) = 0;
 };
 
 
@@ -44,7 +50,41 @@ public:
 
 class StructuredRouting: public Routing
 {
-    StructuredRouting(FatTreeTopo topo, )
+private:
+    Paths _extend_reachable(int frontier_layer);
+
+public:
+    NodePaths src_paths;
+    NodePaths dst_paths;
+    uint32_t src_path_layer;
+    uint32_t dst_path_layer;
+    _path_choice path_choice;
+    StructuredRouting(FatTreeTopo topo, _path_choice get_path);
+    ~StructuredRouting(){};
+    Path get_route(std::string src, std::string dst, uint8_t* data);
+    Paths get_all_route(std::string src, std::string dst);
+    void print_route(Path path);
+};
+
+class RandomStructuredRouting: public StructuredRouting {
+    // '''Random Structured Routing.'''
+public:
+    RandomStructuredRouting(FatTreeTopo topo);
+    static Path choose_random(Paths paths, std::string src, std::string dst, uint8_t *data);
+};
+
+class STStructuredRouting: public StructuredRouting 
+{
+public:
+    STStructuredRouting(FatTreeTopo topo);
+    static Path choose_random(Paths paths, std::string src, std::string dst, uint8_t *data);
+};
+
+class HashedStructuredRouting: public StructuredRouting 
+{
+public:
+    HashedStructuredRouting(FatTreeTopo topo);
+    static Path choose_random(Paths paths, std::string src, std::string dst, uint8_t *data);   
 };
 
 }; // namespace ns3

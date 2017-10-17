@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <iterator>
  
-std::string format(const std::string& format, ...)
+inline std::string format(const std::string& format, ...)
 {
     va_list args;
     va_start (args, format);
@@ -21,9 +21,9 @@ std::string format(const std::string& format, ...)
     va_end (args);
     return &vec[0];
 }
- 
+
 template <class Container>
-void split(const std::string& str, Container& cont,
+inline void split(const std::string& str, Container& cont,
               char delim = ' ')
 {
     std::size_t current, previous = 0;
@@ -34,6 +34,17 @@ void split(const std::string& str, Container& cont,
         current = str.find(delim, previous);
     }
     cont.push_back(str.substr(previous, current - previous));
+}
+
+inline
+bool pairCompare(const std::pair<std::string, std::string>& firstElem, const std::pair<std::string, std::string>& secondElem) {
+  return firstElem.first.compare(secondElem.first) < 0;
+}
+
+inline
+bool lexiCompare(const std::vector<std::string>& firstElem, const std::vector<std::string>& secondElem) {
+  return  std::lexicographical_compare(firstElem.begin(), firstElem.end(),
+                                        firstElem.begin(), firstElem.end());
 }
 
 #endif
