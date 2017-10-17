@@ -148,15 +148,16 @@ StructuredTopo::up_nodes(std::string name) {
 
     // @return names list of names
     // '''
+    std::vector<std::string> unodes; 
     uint32_t up_layer = std::stoul(this->layer(name)) - 1;
     std::string layer = std::to_string(up_layer);
     std::vector<std::string> node_links = this->links[name];
     for (auto &node: node_links) {
         if (this->is_layer(node, layer)) {
-            nodes.push_back(node);
+            unodes.push_back(node);
         }    
     }
-    return nodes;
+    return unodes;
 }
 
 std::vector<std::string>
@@ -167,15 +168,16 @@ StructuredTopo::down_nodes(std::string name) {
 
     // @return names list of names
     // '''
+    std::vector<std::string> dnodes; 
     uint32_t up_layer = std::stoul(this->layer(name)) + 1;
     std::string layer = std::to_string(up_layer);
     std::vector<std::string> node_links = this->links[name];
     for (auto &node: node_links) {
         if (this->is_layer(node, layer)) {
-            nodes.push_back(node);
+            dnodes.push_back(node);
         }    
     }
-    return nodes;
+    return dnodes;
 }
 
 std::vector<std::pair<std::string, std::string>>
@@ -264,7 +266,7 @@ FatTreeTopo::def_nopts(std::string layer, std::string name) {
     return d;
 }
 
-static FatTreeTopo build(uint32_t k, uint32_t speed)
+FatTreeTopo FatTreeTopo::build(uint32_t k, uint32_t speed)
 {
     // @param k switch degree
     //     @param speed bandwidth in Gbps
@@ -418,12 +420,3 @@ FatTreeTopo::port(std::string src, std::string dst){
 }
 
 }; //namespace ns3
-
-int main(int argc, char const *argv[])
-{
-    /* code */
-
-    ns3::FatTreeTopo topo = ns3::build(4, 1);
-    topo.printLinks();
-    return 0;
-}

@@ -6,7 +6,6 @@
 #include <vector>
 #include <unordered_map>
 
-
 namespace ns3 {
 
 const uint32_t PORT_BASE = 1;
@@ -75,6 +74,7 @@ class StructuredTopo {
 private:
     
     bool is_layer(std::string node, std::string layer) {
+        
         return this->layer(node).compare(layer) == 0;
     }
 
@@ -91,6 +91,7 @@ public:
     /* To ease creation on ns3 later */
     std::vector<Link> bidirectional_links;
 
+    StructuredTopo(){};
     StructuredTopo(std::vector<StructuredNodeSpec> node_specs, 
                    std::vector<StructuredEdgeSpec> edge_specs);
     ~StructuredTopo(){};
@@ -126,6 +127,7 @@ public:
         return FatTreeNodeID(pod, sw, host, 0, "None");
     }
 
+    FatTreeTopo(){};
     FatTreeTopo(uint32_t k, uint32_t speed, std::vector<StructuredNodeSpec> node_specs, std::vector<StructuredEdgeSpec> edge_specs);
     ~FatTreeTopo(){};
 
