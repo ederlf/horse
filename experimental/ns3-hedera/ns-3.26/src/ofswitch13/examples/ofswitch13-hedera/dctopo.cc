@@ -1,5 +1,7 @@
 #include "dctopo.h"
-#include "util.h"
+#include "hederautil.h"
+#include <iostream>
+#include <numeric>
 #include <utility> 
 
 namespace ns3 {
@@ -92,6 +94,8 @@ StructuredTopo::StructuredTopo(std::vector<StructuredNodeSpec> node_specs,
 {
     this->node_specs = node_specs;
     this->edge_specs = edge_specs;
+    this->nhosts = 0;
+    this->nswitches = 0;
 }
 
 std::unordered_map<std::string, std::string > 
@@ -213,7 +217,13 @@ StructuredTopo::down_edges(std::string name){
 void StructuredTopo::addNode(std::string name, InfoDict info) 
 {
     this->nodes.push_back(name);
-    this->node_info[name] = info; 
+    this->node_info[name] = info;
+    if (info["layer"].compare(LAYER_HOST) == 0){
+        this->nhosts++;
+    } 
+    else {
+        this->nswitches++;
+    }
 }
 
 void StructuredTopo::addLink(std::string src, uint32_t src_port, std::string dst, uint32_t dst_port) 

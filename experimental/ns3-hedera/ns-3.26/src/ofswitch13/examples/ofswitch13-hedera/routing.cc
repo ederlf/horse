@@ -1,6 +1,7 @@
 #include "routing.h"
-#include "util.h"
+#include "hederautil.h"
 #include <algorithm>
+#include <cstring>
 #include <random>
 #include <zlib.h>
 #include <arpa/inet.h>
@@ -35,7 +36,7 @@ Path StructuredRouting::get_route(std::string src, std::string dst,
     }
 }
 
-Paths StructuredRouting::_extend_reachable(int frontier_layer)
+Paths StructuredRouting::_extend_reachable(uint32_t frontier_layer)
 {
     Paths complete_paths;
 
@@ -207,6 +208,7 @@ Path HashedStructuredRouting::choose_random(Paths paths, std::string src, std::s
     uint16_t offset = 12;
     uint16_t type;
 
+    Path path;
     type = *((uint16_t*)(data + offset));
     if (ntohs(type) == 0x800) {
         /* Advance to IP fields */
@@ -225,21 +227,35 @@ Path HashedStructuredRouting::choose_random(Paths paths, std::string src, std::s
         crc = crc32(crc, bytes, 14);
         int choice = crc % paths.size();
         std::sort (paths.begin(), paths.end(), lexiCompare);
-        return paths[choice];
+        path = paths[choice];
     } 
+    return path;
 } 
+
+StructuredRouting *get_routing(std::string routing, FatTreeTopo topo)
+{
+    if (routing.compare("random") == 0){
+        return new RandomStructuredRouting(topo);
+    }
+    else if (routing.compare("st") == 0) {
+        return new STStructuredRouting(topo);  
+    }
+    else if (routing.compare("hashed") == 0) {
+        return new HashedStructuredRouting(topo);
+    } 
+    return NULL;
+}
 
 }; // End namespace ns3
 
 
-int main(int argc, char const *argv[])
-{
-    /* code */
-    ns3::FatTreeTopo topo = ns3::FatTreeTopo::build(4, 1);
-    ns3::STStructuredRouting r = ns3::STStructuredRouting(topo);
-    ns3::Path p = r.get_route("0_0_2", "0_1_3", NULL);
-    // topo.printLinks();
-    r.print_route(p);
-    return 0;
-}
+// int main(int argc, char const *argv[])
+// {
+//     /* code */
+//     ns3::FatTreeTopo topo = ns3::FatTreeTopo::build(4, 1);
+//     ns3::STStructuredRouting r = ns3::STStructuredRouting(topo);
+//     ns3::Path p = r.get_route("0_0_2", "0_1_3", NULL);
+//     r.print_route(p);
+//     return 0;
+// }
 

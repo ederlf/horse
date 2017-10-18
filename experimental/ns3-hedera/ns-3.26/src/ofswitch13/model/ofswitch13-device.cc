@@ -299,8 +299,13 @@ OFSwitch13Device::GetPipelineLoad (void) const
   return m_pipeLoad;
 }
 
+void OFSwitch13Device::SetDatapathId (uint64_t dpid)
+{
+  this->m_dpId = this->m_datapath->id = dpid;
+}
+
 Ptr<OFSwitch13Port>
-OFSwitch13Device::AddSwitchPort (Ptr<NetDevice> portDevice)
+OFSwitch13Device::AddSwitchPort (Ptr<NetDevice> portDevice, uint32_t port_no)
 {
   NS_LOG_FUNCTION (this << portDevice);
 
@@ -312,11 +317,12 @@ OFSwitch13Device::AddSwitchPort (Ptr<NetDevice> portDevice)
 
   // Create the OpenFlow port for this device.
   Ptr<OFSwitch13Port> ofPort;
-  ofPort = CreateObject<OFSwitch13Port> (m_datapath, portDevice, this);
+  ofPort = CreateObject<OFSwitch13Port> (m_datapath, portDevice, this, 
+                                         port_no);
 
   // Save port in port list (assert port no and vector index).
   m_ports.push_back (ofPort);
-  NS_ASSERT (m_ports.size () == ofPort->GetPortNo ());
+  // NS_ASSERT (m_ports.size () == ofPort->GetPortNo ());
 
   return ofPort;
 }

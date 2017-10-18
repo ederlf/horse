@@ -79,10 +79,10 @@ private:
     }
 
 public:
-
     uint32_t k;
     uint32_t speed;
-
+    int nhosts;
+    int nswitches;
     std::vector<StructuredNodeSpec> node_specs;
     std::vector<StructuredEdgeSpec> edge_specs;
     std::unordered_map<std::string, InfoDict> node_info;
@@ -125,6 +125,10 @@ public:
 
     static FatTreeNodeID id_gen(uint32_t pod, uint32_t sw, uint32_t host) {
         return FatTreeNodeID(pod, sw, host, 0, "None");
+    }
+
+    static FatTreeNodeID id_gen(uint64_t dpid) {
+        return FatTreeNodeID(0, 0, 0, dpid, "None");
     }
 
     FatTreeTopo(){};

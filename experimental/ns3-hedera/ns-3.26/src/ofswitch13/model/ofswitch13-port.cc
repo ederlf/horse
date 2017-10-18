@@ -91,7 +91,7 @@ OFSwitch13Port::GetTypeId (void)
 }
 
 OFSwitch13Port::OFSwitch13Port (struct datapath *dp, Ptr<NetDevice> netDev,
-                                Ptr<OFSwitch13Device> openflowDev)
+                                Ptr<OFSwitch13Device> openflowDev, uint32_t port_no)
   : m_swPort (0),
     m_netDev (netDev),
     m_openflowDev (openflowDev)
@@ -106,8 +106,18 @@ OFSwitch13Port::OFSwitch13Port (struct datapath *dp, Ptr<NetDevice> netDev,
       NS_FATAL_ERROR ("NetDevice must be CsmaNetDevice or VirtualNetDevice.");
     }
 
-  m_portNo = ++(dp->ports_num);
-  m_swPort = &dp->ports[m_portNo];
+  /* Make it possible to pass the port */
+  /* When using it needs to be one way or the other, 
+     as the code did no manage overlap */
+  if (port_no) {
+    m_portNo = port_no;
+    m_swPort = &dp->ports[dp->ports_num]; 
+    ++(dp->ports_num); 
+  }
+  else {
+    m_portNo = ++(dp->ports_num);
+    m_swPort = &dp->ports[m_portNo];
+  }
 
   memset (m_swPort, '\0', sizeof *m_swPort);
 

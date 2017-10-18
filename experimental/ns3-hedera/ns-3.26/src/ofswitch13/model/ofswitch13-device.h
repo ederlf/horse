@@ -175,6 +175,8 @@ public:
   DataRate GetPipelineLoad      (void) const;
   //\}
 
+  void SetDatapathId (uint64_t dpid);
+
   /**
    * Add a 'port' to the switch device. This method adds a new switch port to a
    * OFSwitch13Device, so that the new switch port NetDevice becomes part of
@@ -186,7 +188,7 @@ public:
    * \param portDevice The NetDevice port to add.
    * \return The OFSwitch13Port created.
    */
-  Ptr<OFSwitch13Port> AddSwitchPort (Ptr<NetDevice> portDevice);
+  Ptr<OFSwitch13Port> AddSwitchPort (Ptr<NetDevice> portDevice, uint32_t port_no = 0);
 
   /**
    * Called when a packet is received on one of the switch's ports. This method
@@ -319,6 +321,19 @@ public:
    * \param deve The OpenFlow switch device pointer.
    */
   typedef void (*DeviceTracedCallback)(Ptr<const OFSwitch13Device> dev);
+
+  /**
+   * Insert a new OpenFlow device in global map. Called by device constructor.
+   * \param id The datapath id.
+   * \param dev The Ptr<OFSwitch13Device> pointer.
+   */
+  static void RegisterDatapath (uint64_t id, Ptr<OFSwitch13Device> dev);
+
+  /**
+   * Remove an existing OpenFlow device from global map. Called by DoDispose.
+   * \param id The datapath id.
+   */
+  static void UnregisterDatapath (uint64_t id);
 
 protected:
   // Inherited from Object
@@ -534,18 +549,6 @@ private:
    */
   static bool CopyTags (Ptr<const Packet> srcPkt, Ptr<const Packet> dstPkt);
 
-  /**
-   * Insert a new OpenFlow device in global map. Called by device constructor.
-   * \param id The datapath id.
-   * \param dev The Ptr<OFSwitch13Device> pointer.
-   */
-  static void RegisterDatapath (uint64_t id, Ptr<OFSwitch13Device> dev);
-
-  /**
-   * Remove an existing OpenFlow device from global map. Called by DoDispose.
-   * \param id The datapath id.
-   */
-  static void UnregisterDatapath (uint64_t id);
 
   /** Structure to save the list of ports in this datapath. */
   typedef std::vector<Ptr<OFSwitch13Port> > PortList_t;

@@ -1,6 +1,7 @@
 #ifndef ROUTING_H
 #define ROUTING_H 1
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <map>
@@ -51,7 +52,7 @@ public:
 class StructuredRouting: public Routing
 {
 private:
-    Paths _extend_reachable(int frontier_layer);
+    Paths _extend_reachable(uint32_t frontier_layer);
 
 public:
     NodePaths src_paths;
@@ -86,6 +87,8 @@ public:
     HashedStructuredRouting(FatTreeTopo topo);
     static Path choose_random(Paths paths, std::string src, std::string dst, uint8_t *data);   
 };
+
+StructuredRouting *get_routing(std::string routing, FatTreeTopo topo);
 
 }; // namespace ns3
 #endif

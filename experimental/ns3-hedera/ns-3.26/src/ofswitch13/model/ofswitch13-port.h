@@ -69,7 +69,7 @@ public:
    * \param openflowDev The OpenFlow device.
    */
   OFSwitch13Port (struct datapath *dp, Ptr<NetDevice> netDev,
-                  Ptr<OFSwitch13Device> openflowDev);
+                  Ptr<OFSwitch13Device> openflowDev, uint32_t port_num = 0);
 
   /**
    * Update the port state field based on NetDevice status, and notify the
