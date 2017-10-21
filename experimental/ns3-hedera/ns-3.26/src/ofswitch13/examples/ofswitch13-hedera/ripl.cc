@@ -73,10 +73,19 @@ RIPLController::add_flow(Ptr<const RemoteSwitch> sw,
 {
   uint64_t idle_timeout = 120;
   uint64_t hard_timeout = 10;
-  char cmd[] =  "flow-mod cmd=add,table=0,idle=%ld,hard=%ld, prio=%d %s %s";
+  char cmd[] =  "flow-mod cmd=add,table=0,idle=%ld,hard=%ld,prio=%d %s %s";
   DpctlExecute (sw, format(cmd, idle_timeout, hard_timeout, prio, match.c_str(), instructions.c_str()));           
 }
 
+std::vector<uint64_t>
+RIPLController::_raw_dpids(std::vector<std::string> nodes)
+{
+  std::vector<uint64_t> dpids;
+  for (auto n: nodes){
+    dpids.push_back(FatTreeTopo::id_gen(n).dpid);
+  }
+  return dpids;
+}
 
 std::string 
 RIPLController::match_from_packet(uint8_t *pkt)
@@ -95,9 +104,10 @@ RIPLController::match_from_packet(uint8_t *pkt)
   eth_src48.CopyFrom(eth_src);
   eth_dst48.CopyFrom(eth_dst);
 
-  char cmd[] = "eth_type=%d, eth_src=%s, eth_dst=%s";
-  std::string cur_cmd = format(cmd, ntohs(type), eth_src48, eth_dst48);
-  ptr += 12;
+  std::ostringstream cmd;
+  cmd << "eth_type=" << ntohs(type) << ",eth_src=" << eth_src48 << ",eth_dst=" << eth_dst48;
+  std::string cur_cmd = cmd.str();
+  ptr += 14;
   if (ntohs(type) == 0x0800) {
       uint32_t ip_src;
       uint32_t ip_dst;
@@ -106,15 +116,23 @@ RIPLController::match_from_packet(uint8_t *pkt)
       std::memcpy(&ip_src, ptr + 12, 4);
       std::memcpy(&ip_dst, ptr + 16, 4);
 
-      char new_cmd[] = "ip_proto=%d, ip_src=%d, ip_dst=%d, %s";
-      cur_cmd = format(new_cmd, ip_proto, ip_src, ip_dst, cur_cmd.c_str());
+      Ipv4Address v4_src = Ipv4Address(ip_src);
+      Ipv4Address v4_dst = Ipv4Address(ip_dst);
+      std::ostringstream str_src;
+      std::ostringstream str_dst;
+
+      v4_src.Print(str_src);
+      v4_dst.Print(str_dst);
+
+      char new_cmd[] = "ip_proto=%d,ip_src=%s,ip_dst=%s,%s";
+      cur_cmd = format(new_cmd, ip_proto, str_src.str().c_str(), str_dst.str().c_str(), cur_cmd.c_str());
       ptr += 20;
       if (ip_proto == 6){
         uint16_t tcp_src;
         uint16_t tcp_dst;
         std::memcpy(&tcp_src, ptr , 2);
         std::memcpy(&tcp_dst, ptr + 2, 2);
-        char new_cmd[] = "tcp_src=%d, tcp_dst=%d, %s";
+        char new_cmd[] = "tcp_src=%d,tcp_dst=%d,%s";
         cur_cmd = format(new_cmd, tcp_src, tcp_dst, cur_cmd.c_str());
 
       }
@@ -123,7 +141,7 @@ RIPLController::match_from_packet(uint8_t *pkt)
         uint16_t udp_dst;
         std::memcpy(&udp_src, ptr , 2);
         std::memcpy(&udp_dst, ptr + 2, 2);
-        char new_cmd[] = "udp_src=%d, udp_dst=%d, %s";
+        char new_cmd[] = "udp_src=%d,udp_dst=%d,%s";
         cur_cmd = format(new_cmd, udp_src, udp_dst, cur_cmd.c_str());
       }
   }
@@ -144,10 +162,19 @@ RIPLController::match_from_packet(uint8_t *pkt)
       
       arp_sha48.CopyFrom(arp_sha);
       arp_tha48.CopyFrom(arp_tha);
+      Ipv4Address v4_arp_spa = Ipv4Address(ntohl(arp_spa));
+      Ipv4Address v4_arp_tpa = Ipv4Address(ntohl(arp_tpa));
 
-      char new_cmd[] = "arp_op=%d, arp_spa=%d, arp_tpa=%d, arp_tha=%s, arp_sha= %s, %s";
-      
-      cur_cmd = format(new_cmd, arp_op, arp_spa, arp_tpa, arp_tha48, arp_sha48, cur_cmd.c_str());
+      std::ostringstream str_arp_spa;
+      std::ostringstream str_arp_tpa;
+
+      v4_arp_spa.Print(str_arp_spa);
+      v4_arp_tpa.Print(str_arp_tpa);
+
+      std::ostringstream cmd;
+      cmd << "arp_op=" << ntohs(arp_op) << ",arp_spa="<< str_arp_spa.str() << ",arp_tpa=" << str_arp_tpa.str() << ",arp_tha=" << arp_tha48 << ",arp_sha=" << arp_sha48;
+      char new_cmd[] = "%s,%s"; 
+      cur_cmd = format(new_cmd, cur_cmd.c_str(), cmd.str().c_str());
   }
   return cur_cmd;
 }
@@ -159,7 +186,8 @@ RIPLController::_install_path(Ptr<const RemoteSwitch> sw,
     uint64_t dpId = sw->GetDpId ();
     std::string in_name = FatTreeTopo::id_gen(dpId).NameStr();
     std::string out_name = FatTreeTopo::id_gen(out_dpid).NameStr();
-    Path route = this->routing->get_route(in_name, out_name, pkt);
+    Path route = this->routing->get_route(in_name, out_name, pkt);  
+
     size_t route_size = route.size(); 
     if (route_size > 0){
         std::string match = this->match_from_packet(pkt);
@@ -168,7 +196,7 @@ RIPLController::_install_path(Ptr<const RemoteSwitch> sw,
           uint64_t node_dpid = FatTreeTopo::id_gen(node).dpid;
           uint32_t out_port;
           if (i < (route_size - 1)) {
-            std::string next_node = route[i+1];  
+            std::string next_node = route[i + 1];  
             std::pair<uint32_t, uint32_t> ports = this->topo.port(node, next_node);
             out_port = ports.first;
           }
@@ -178,10 +206,43 @@ RIPLController::_install_path(Ptr<const RemoteSwitch> sw,
           char cmd[] = "apply:output=%d";
           std::string actions = format(cmd, out_port);
           this->add_flow(this->switches[node_dpid], 10, match, actions);
+          i += 1;
         }
     }
 }                    
  
+void RIPLController::send_packet_out(Ptr<const RemoteSwitch> sw, uint32_t xid,
+                                   uint32_t in_port, uint32_t out_port, uint8_t* data, uint32_t data_length)
+{
+      // Lets send the packet out to switch.
+      struct ofl_msg_packet_out reply;
+      reply.header.type = OFPT_PACKET_OUT;
+      reply.buffer_id = 0xffffffff;
+      reply.in_port = in_port;
+      reply.data_length = 0;
+      reply.data = 0;
+
+      // if (buffer_id == NO_BUFFER)
+        // {
+          // No packet buffer. Send data back to switch
+      reply.data_length = data_length;
+      reply.data = data;
+        // }
+
+      // Create output action
+      struct ofl_action_output *a =
+        (struct ofl_action_output*)xmalloc (sizeof (struct ofl_action_output));
+      a->header.type = OFPAT_OUTPUT;
+      a->port = out_port;
+      a->max_len = 0;
+
+      reply.actions_num = 1;
+      reply.actions = (struct ofl_action_header**)&a;
+
+      SendToSwitch (sw, (struct ofl_msg_header*)&reply, xid);
+      free (a);
+}
+
 ofl_err
 RIPLController::HandlePacketIn (
   struct ofl_msg_packet_in *msg, Ptr<const RemoteSwitch> swtch,
@@ -196,120 +257,68 @@ RIPLController::HandlePacketIn (
     ofl_structs_match_to_string ((struct ofl_match_header*)msg->match, 0);
   NS_LOG_DEBUG ("DP "<< dpId << " Packet in match: " << msgStr);
   free (msgStr);
+  uint8_t reason = msg->reason;
+  uint8_t *pkt = NULL;
 
-  // if (reason == OFPR_NO_MATCH)
-  //   {
-  //     // Let's get necessary information (input port and mac address)
-  //     uint32_t inPort;
-  //     size_t portLen = OXM_LENGTH (OXM_OF_IN_PORT); // (Always 4 bytes)
-  //     struct ofl_match_tlv *input =
-  //       oxm_match_lookup (OXM_OF_IN_PORT, (struct ofl_match*)msg->match);
-  //     memcpy (&inPort, input->value, portLen);
+  if (reason == OFPR_NO_MATCH)
+  {
+      // Let's get necessary information (input port and mac address)
+      uint32_t inPort;
+      size_t portLen = OXM_LENGTH (OXM_OF_IN_PORT); // (Always 4 bytes)
+      struct ofl_match_tlv *input =
+        oxm_match_lookup (OXM_OF_IN_PORT, (struct ofl_match*)msg->match);
+      memcpy (&inPort, input->value, portLen);
 
-  //     Mac48Address src48;
-  //     struct ofl_match_tlv *ethSrc =
-  //       oxm_match_lookup (OXM_OF_ETH_SRC, (struct ofl_match*)msg->match);
-  //     src48.CopyFrom (ethSrc->value);
+      Mac48Address src48;
+      struct ofl_match_tlv *ethSrc =
+        oxm_match_lookup (OXM_OF_ETH_SRC, (struct ofl_match*)msg->match);
+      src48.CopyFrom (ethSrc->value);
 
-  //     Mac48Address dst48;
-  //     struct ofl_match_tlv *ethDst =
-  //       oxm_match_lookup (OXM_OF_ETH_DST, (struct ofl_match*)msg->match);
-  //     dst48.CopyFrom (ethDst->value);
+      Mac48Address dst48;
+      struct ofl_match_tlv *ethDst =
+        oxm_match_lookup (OXM_OF_ETH_DST, (struct ofl_match*)msg->match);
+      dst48.CopyFrom (ethDst->value);
 
-  //     // Get L2Table for this datapath
-  //     DatapathMap_t::iterator it = m_learnedInfo.find (dpId);
-  //     if (it != m_learnedInfo.end ())
-  //       {
-  //         L2Table_t *l2Table = &it->second;
+      this->macTable[src48] = std::make_pair(dpId, inPort);
+      // self.macTable[src] = (dpid, in_port)
+       
+      // if (msg->buffer_id == NO_BUFFER){
+      pkt = msg->data; 
+      // printf("Buffer %d\n", msg->data_length);
+      // }
 
-  //         // Looking for out port based on dst address (except for broadcast)
-  //         if (!dst48.IsBroadcast ())
-  //           {
-  //             L2Table_t::iterator itDst = l2Table->find (dst48);
-  //             if (itDst != l2Table->end ())
-  //               {
-  //                 outPort = itDst->second;
-  //               }
-  //             else
-  //               {
-  //                 NS_LOG_DEBUG ("No L2 info for mac " << dst48 << ". Flood.");
-  //               }
-  //           }
+      macTable_t::iterator it = this->macTable.find(dst48);
+      if (it != this->macTable.end()) {
+          uint64_t out_dpid = this->macTable[dst48].first;
+          uint32_t out_port = this->macTable[dst48].second;
 
-  //         // Learning port from source address
-  //         NS_ASSERT_MSG (!src48.IsBroadcast (), "Invalid src broadcast addr");
-  //         L2Table_t::iterator itSrc = l2Table->find (src48);
-  //         if (itSrc == l2Table->end ())
-  //           {
-  //             std::pair <L2Table_t::iterator, bool> ret;
-  //             ret = l2Table->insert (
-  //                 std::pair<Mac48Address, uint32_t> (src48, inPort));
-  //             if (ret.second == false)
-  //               {
-  //                 NS_LOG_ERROR ("Can't insert mac48address / port pair");
-  //               }
-  //             else
-  //               {
-  //                 NS_LOG_DEBUG ("Learning that mac " << src48 <<
-  //                               " can be found at port " << inPort << " In DP " << dpId);
-
-  //                 // Send a flow-mod to switch creating this flow. Let's
-  //                 // configure the flow entry to 10s idle timeout and to
-  //                 // notify the controller when flow expires. (flags=0x0001)
-  //                 std::ostringstream cmd;
-  //                 cmd << "flow-mod cmd=add,table=0,idle=10,flags=0x0001"
-  //                     << ",prio=" << ++prio << " eth_dst=" << src48
-  //                     << " apply:output=" << inPort;
-  //                 DpctlExecute (swtch, cmd.str ());
-  //               }
-  //           }
-  //         else
-  //           {
-  //             std::cout << itSrc->second << " " << inPort << "\n";
-  //             NS_ASSERT_MSG (itSrc->second == inPort,
-  //                            "Inconsistent L2 switching table");
-  //           }
-  //       }
-  //     else
-  //       {
-  //         NS_LOG_ERROR ("No L2 table for this datapath id " << dpId);
-  //       }
-
-  //     // Lets send the packet out to switch.
-  //     struct ofl_msg_packet_out reply;
-  //     reply.header.type = OFPT_PACKET_OUT;
-  //     reply.buffer_id = msg->buffer_id;
-  //     reply.in_port = inPort;
-  //     reply.data_length = 0;
-  //     reply.data = 0;
-
-  //     if (msg->buffer_id == NO_BUFFER)
-  //       {
-  //         // No packet buffer. Send data back to switch
-  //         reply.data_length = msg->data_length;
-  //         reply.data = msg->data;
-  //       }
-
-  //     // Create output action
-  //     struct ofl_action_output *a =
-  //       (struct ofl_action_output*)xmalloc (sizeof (struct ofl_action_output));
-  //     a->header.type = OFPAT_OUTPUT;
-  //     a->port = outPort;
-  //     a->max_len = 0;
-
-  //     reply.actions_num = 1;
-  //     reply.actions = (struct ofl_action_header**)&a;
-
-  //     SendToSwitch (swtch, (struct ofl_msg_header*)&reply, xid);
-  //     free (a);
-  //   }
-  // else
-  //   {
-  //     NS_LOG_WARN ("This controller can't handle the packet. Unkwnon reason.");
-  //   }
+          char cmd[] = "apply:output=%d";
+          std::string actions = format(cmd, out_port);
+          _install_path(swtch, out_dpid, out_port, pkt);
+          send_packet_out(this->switches[out_dpid], xid, inPort, 
+                          out_port, msg->data, msg->data_length);
+      } 
+      else {
+          std::vector<uint64_t> dps = _raw_dpids(this->topo.layer_nodes(LAYER_EDGE));
+          for (auto  dp: dps){
+              std::vector<uint32_t> ports;
+              std::string sw_name = FatTreeTopo::id_gen(dp).NameStr();
+              for (auto host: this->topo.down_nodes(sw_name)){
+                  uint32_t sw_port =  this->topo.port(sw_name, host).first;
+                  if (dp != dpId || (dp == dpId && inPort != sw_port)){
+                      ports.push_back(sw_port);
+                }
+              }
+              for (auto port: ports){
+                send_packet_out(this->switches[dp], xid, 
+                                inPort, port, msg->data, msg->data_length);
+            }
+          }
+      }
+  }
 
   // // All handlers must free the message when everything is ok
-  // ofl_msg_free ((struct ofl_msg_header*)msg, 0);
+  ofl_msg_free ((struct ofl_msg_header*)msg, 0);
   return 0;
 }
 
@@ -375,12 +384,12 @@ RIPLController::HandshakeSuccessful (
   // to 128 bytes the maximum amount of data from a packet that should be sent
   // to the controller.
   DpctlExecute (sw, "flow-mod cmd=add,table=0,prio=0 "
-                "apply:output=ctrl:128");
+                "apply:output=ctrl:1500");
 
   // Configure te switch to buffer packets and send only the first 128 bytes of
   // each packet sent to the controller when not using an output action to the
   // OFPP_CONTROLLER logical port.
-  DpctlExecute (sw, "set-config miss=128");
+  DpctlExecute (sw, "set-config miss=1500");
 
   // Create an empty L2SwitchingTable and insert it into m_learnedInfo
   // L2Table_t l2Table;

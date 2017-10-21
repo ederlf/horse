@@ -10,6 +10,9 @@ def build(bld):
     obj = bld.create_ns3_program('ofswitch13-first', ['ofswitch13', 'internet-apps'])
     obj.source = 'ofswitch13-first.cc'
 
+    obj = bld.create_ns3_program('ofswitch13-linear', ['ofswitch13', 'internet-apps'])
+    obj.source = 'ofswitch13-linear.cc'
+
     obj = bld.create_ns3_program('ofswitch13-logical-port', ['ofswitch13', 'internet-apps', 'lte'])
     obj.source = ['ofswitch13-logical-port/main.cc', 'ofswitch13-logical-port/tunnel-controller.cc', 'ofswitch13-logical-port/gtp-tunnel-app.cc']
 

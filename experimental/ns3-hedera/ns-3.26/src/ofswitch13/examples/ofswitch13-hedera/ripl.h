@@ -44,6 +44,8 @@ public:
   /** Destructor implementation */
   virtual void DoDispose ();
 
+  std::vector<uint64_t>
+  _raw_dpids(std::vector<std::string> nodes);
 
   void 
   add_flow(Ptr<const RemoteSwitch> sw, 
@@ -53,8 +55,13 @@ public:
   match_from_packet(uint8_t *pkt);
 
   void 
-  _install_path(Ptr<const RemoteSwitch> sw, 
-                              uint64_t out_dpid, uint32_t final_out_port, uint8_t *pkt);
+  _install_path(Ptr<const RemoteSwitch> sw, uint64_t out_dpid, 
+                uint32_t final_out_port, uint8_t *pkt);
+
+  void 
+  send_packet_out(Ptr<const RemoteSwitch> sw, uint32_t xid, 
+                   uint32_t in_port, uint32_t out_port, 
+                  uint8_t* data, uint32_t data_length);
 
   /**
    * Handle packet-in messages sent from switch to this controller. Look for L2

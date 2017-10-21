@@ -134,7 +134,7 @@ OFSwitch13LearningController::HandlePacketIn (
                   // configure the flow entry to 10s idle timeout and to
                   // notify the controller when flow expires. (flags=0x0001)
                   std::ostringstream cmd;
-                  cmd << "flow-mod cmd=add,table=0,idle=10,flags=0x0001"
+                  cmd << "flow-mod cmd=add,table=0,idle=0,flags=0x0001"
                       << ",prio=" << ++prio << " eth_dst=" << src48
                       << " apply:output=" << inPort;
                   DpctlExecute (swtch, cmd.str ());
