@@ -16,6 +16,8 @@ int ping_handle_netflow(struct netflow *flow)
             uint32_t ip_dst = flow->match.ipv4_src;
             flow->match.icmpv4_type = ECHO_REPLY;
             flow->match.ipv4_dst = ip_dst;
+            netflow_new_flow_id(flow);
+             
             return 1;
         }
         /* Received echo reply */
@@ -23,7 +25,8 @@ int ping_handle_netflow(struct netflow *flow)
             uint64_t start_time;
             memcpy(&start_time, flow->icmp_info.data, sizeof(uint64_t));
             // printf("Start time %ld and End time %ld\n", flow->end_time, start_time );
-            uint64_t end_time = flow->end_time - start_time;
+            uint64_t end_time = flow->start_time - start_time;
+            printf("End time %ld %ld %ld\n", end_time, flow->start_time, start_time  );
             printf("ECHO_REPLY ms:%lu.%lu Src:%x Dst:%x\n", end_time / 1000, end_time % 1000, flow->match.ipv4_dst, flow->match.ipv4_src );
             return 0;  
         }
@@ -45,16 +48,15 @@ ping_request(uint64_t start, struct netflow *flow, uint32_t ip_dst){
     flow->icmp_info.identifier = 0x42;
     /* Set the timestamp in the first 8 bytes */
     memcpy(flow->icmp_info.data, &start, sizeof(uint64_t));
-    flow->start_time = flow->end_time = start;
+    flow->start_time = start;
 }
 
-struct netflow ping_start(uint64_t start, void* ip_dst){
-    struct netflow n;
-    netflow_init(&n);
+struct netflow *ping_start(uint64_t start, void* ip_dst){
+    struct netflow *nf = netflow_new();
     uint32_t *ip = (uint32_t*) ip_dst;
     /* Creates ping request */
-    ping_request(start, &n, *ip);
-    return n;
+    ping_request(start, nf, *ip);
+    return nf;
 }
 
 

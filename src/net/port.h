@@ -9,9 +9,10 @@
  */
 
 #ifndef INTERFACE_H
-#define INTERFACE_H value
+#define INTERFACE_H 1
 
 #include "lib/packets.h"
+#include "buffer_state.h"
 #include <stdint.h>
 #include <uthash/uthash.h>
 
@@ -74,15 +75,17 @@ struct port {
     uint8_t state;                 /* Interface up or down.          */ 
     char name[MAX_PORT_NAME];
     struct port_stats stats;       /* Current port statistics.       */
+    struct port_stats prev_stats;  /* Used to calculate the rate     */ 
     uint8_t eth_address[ETH_LEN];  /* Ethernet hardware address.     */
     struct ipv4_info *ipv4_addr;   /* Port may have an IPv4 assigned */ 
     struct ipv6_info *ipv6_addr;   /* Port may have an IPv6 assigned */
+    struct buffer_state buffer_state;
     UT_hash_handle hh;             /* Make the struct hashable       */
 };
 
 struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
-
 void port_add_v4addr(struct port *p, uint32_t ipv4_addr, uint32_t netmask);
 void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN], uint8_t netmask[IPV6_LEN]);
+
 
 #endif

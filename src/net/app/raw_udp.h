@@ -13,6 +13,6 @@ struct raw_udp_args {
 };
 
 int raw_udp_handle_netflow(struct netflow *flow);
-struct netflow raw_udp_start(uint64_t start, void* args);
+struct netflow *raw_udp_start(uint64_t start, void* args);
 
 #endif

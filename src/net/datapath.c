@@ -25,9 +25,6 @@ struct datapath {
     struct of_settings *dp_settings;
 };
 
-static void dp_recv_netflow(struct datapath *n, struct netflow *flow);
-static void dp_send_netflow(struct datapath *n, struct netflow *flow);
-
 /* Creates a new datapath.
 *
 *  A datapath starts without any port assigned.
@@ -39,7 +36,8 @@ dp_new(uint64_t dp_id, char *ip, int port)
     struct datapath *dp = xmalloc(sizeof(struct datapath));
     int i;
     node_init(&dp->base, DATAPATH);
-    dp->base.handle_netflow = dp_handle_netflow;
+    dp->base.recv_netflow = dp_recv_netflow;
+    dp->base.send_netflow = dp_send_netflow;
     /* TODO: Remove redundant dpid field */
     dp->dp_id = dp_id;
     /* Create flow tables*/
@@ -123,96 +121,89 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
     }
 }
 
-void
-dp_handle_netflow(struct node *n, struct netflow *flow) {
-
-    struct datapath *dp = (struct datapath*) n;
-    /* There are no out ports, it is receiving */
-    if (!flow->out_ports) {
-        dp_recv_netflow(dp, flow);
-    }
-    dp_send_netflow(dp, flow);
-}
-
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
-void
-dp_recv_netflow(struct datapath *dp, struct netflow *flow)
+bool
+dp_recv_netflow(struct node *n, struct netflow **nf)
 {
     /* Get the input port and update rx counters*/
     uint8_t table_id;
     struct flow *f;
     /* Buffering to be implemented */
-    flow->metadata.buffer_id = OFP_NO_BUFFER;
-    uint32_t in_port = flow->match.in_port;
+    struct datapath *dp = (struct datapath*) n;
+    (*nf)->metadata.buffer_id = OFP_NO_BUFFER;
+    uint32_t in_port = (*nf)->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
         struct flow_table *table;
         struct action_set acts;
         action_set_init(&acts);
-        p->stats.rx_bytes += flow->byte_cnt;
-        p->stats.rx_packets += flow->pkt_cnt;
+        p->stats.rx_bytes += (*nf)->byte_cnt;
+        p->stats.rx_packets += (*nf)->pkt_cnt;
+        // printf("receiving Flow %s from %x to %x  at %ld\n", p->name, (*nf)->match.ipv4_src, (*nf)->match.ipv4_dst, (*nf)->start_time);
         /* Reset metadata */
-        flow->match.metadata = 0;
+        (*nf)->match.metadata = 0;
         /* Enter pipeline */
         table = dp->tables[0];
-        table_id = flow->metadata.table_id = 0;
+        table_id = (*nf)->metadata.table_id = 0;
         while (table) {
-            f = flow_table_lookup(table, &flow->match, flow->start_time);
+            f = flow_table_lookup(table, &(*nf)->match, (*nf)->start_time);
             table = NULL;
             if (f != NULL) {
                 uint8_t next_table_id = 0;
                 /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
                 /* Increase the flow counters */
-                f->pkt_cnt += flow->pkt_cnt;
-                f->byte_cnt += flow->byte_cnt;
-                flow->metadata.cookie = f->cookie;
+                f->pkt_cnt += (*nf)->pkt_cnt;
+                f->byte_cnt += (*nf)->byte_cnt;
+                (*nf)->metadata.cookie = f->cookie;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &next_table_id, flow, &acts);
+                execute_instructions(&f->insts, &next_table_id, *nf, &acts);
                 if (next_table_id > table_id) {
-                    table_id = flow->metadata.table_id = next_table_id;
+                    table_id = (*nf)->metadata.table_id = next_table_id;
                     table = dp->tables[table_id];
                 }
                 else {
                     /* Execute action and clean */
-                    execute_action_set(&acts, flow);
+                    execute_action_set(&acts, *nf);
                     action_set_clean(&acts);
+                    /* It only makes sense to continue later if it 
+                       will be forwarded.
+                    */
+                    if ((*nf)->out_ports){
+                        return true;
+                    }
                 }
             }
         }
     }
+    return false;
 }
 
 void
-dp_send_netflow(struct datapath *dp, struct netflow *flow)
+dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port)
 {
-    struct out_port *op, *tmp;
-    LL_FOREACH_SAFE(flow->out_ports, op, tmp) {
-        struct port *p, *tmp_port;
-        /* Handle flooding */
-        if (op->port == OFPP_FLOOD) {
-            LL_DELETE(flow->out_ports, op);
-            free(op);
-            HASH_ITER(hh, dp->base.ports, p, tmp_port) {
-                if (p->port_id != flow->match.in_port) {
-                    struct out_port *new_port = xmalloc(sizeof(struct out_port));
-                    new_port->port = p->port_id;
-                    LL_APPEND(flow->out_ports, new_port);
-                }
-            }
-            /* Get back to the loop and process all the ports added*/
-            op = tmp = flow->out_ports;
-            continue;
+    struct datapath *dp = (struct datapath*) n;
+    struct port *p = dp_port(dp, out_port);
+    if (p != NULL) {
+        uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
+        if (upnlive) {
+            // printf("Sending flow %s Time %ld\n", p->name, flow->start_time);
+            p->stats.tx_packets += flow->pkt_cnt;
+            p->stats.tx_bytes += flow->byte_cnt;
+           
         }
-        p = dp_port(dp, op->port);
-        if (p != NULL) {
-            uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
-            if (upnlive) {
-                p->stats.tx_packets += flow->pkt_cnt;
-                p->stats.tx_bytes += flow->byte_cnt;
-                /* Start time of the flow will be the same as the end */
-                netflow_update_send_time(flow, p->curr_speed);
-            }
+    }
+}
+
+void 
+dp_create_flood(struct datapath *dp, struct netflow *nf)
+{
+    struct port *p, *tmp_port;
+    HASH_ITER(hh, dp_ports(dp), p, tmp_port) {
+        if (p->port_id != nf->match.in_port) {
+            struct out_port *new_port = xmalloc(sizeof(struct out_port));
+            new_port->port = p->port_id;
+            LL_APPEND(nf->out_ports, new_port);
         }
     }
 }
@@ -478,13 +469,15 @@ of_object_t*
 dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uint64_t time)
 {
     struct action_list al;
-    nf->start_time = nf->end_time = time;
+    nf->start_time = time;
     action_list_init(&al);
     unpack_packet_out(obj, nf, &al);
     execute_action_list(&al, nf);
     /* TODO: Buffering */
-    dp_send_netflow(dp, nf);
+    // printf("Sending packet_out\n");
+    // dp_send_netflow((struct node*) dp, nf);
     action_list_clean(&al);
+    UNUSED(dp);
     return NULL;
 }
 
@@ -521,12 +514,28 @@ struct of_settings
     return dp->dp_settings;
 }
 
+struct port* 
+dp_ports(const struct datapath *dp)
+{
+    return dp->base.ports;
+}
+
 void 
 dp_write_stats(const struct datapath *dp, uint64_t time, FILE *fp)
 {
     struct port *p, *tmp;
+    uint64_t total_tx = 0; 
+    uint64_t total_rx = 0;
+    uint64_t t = time / 1000000;
     HASH_ITER(hh, dp->base.ports, p, tmp) {
-        uint64_t t = time / 1000000;
-        fprintf (fp, "%"PRIu64";%s;%"PRIu64";%"PRIu64"\n", t, p->name, p->stats.tx_bytes, p->stats.rx_bytes);
+        uint64_t tx_rate, rx_rate;
+        tx_rate = p->stats.tx_bytes - p->prev_stats.tx_bytes;
+        rx_rate = p->stats.rx_bytes - p->prev_stats.rx_bytes;
+        total_tx += tx_rate;
+        total_rx += rx_rate;
+        fprintf (fp, "%"PRIu64",%s,%"PRIu64",%"PRIu64"\n", t, p->name, tx_rate, rx_rate);
+        p->prev_stats.tx_bytes = p->stats.tx_bytes;
+        p->prev_stats.rx_bytes = p->stats.rx_bytes;
     }
+    // fprintf (fp, "%"PRIu64";%s;%"PRIu64";%"PRIu64"\n", t, "total", total_tx, total_rx);
 }

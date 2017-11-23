@@ -24,6 +24,7 @@ struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t spee
     /* TODO: Set port speed */
     p->max_speed = speed;
     p->curr_speed = curr_speed;
+    buffer_state_init(&p->buffer_state);
     return p;
 }
 

@@ -63,15 +63,17 @@ flow_table_del_expired(struct flow_table *ft, struct mini_flow_table *mft, struc
             del = true;
         }
     }
-    else if (f->idle_timeout) {
-        uint64_t idle_remove = f->last_used + f->idle_timeout;
+    if (f->idle_timeout) {
+        uint64_t idle_remove = f->last_used + (f->idle_timeout * 1000000);
         if ( idle_remove < time) {
             del = true;
         }
     }
+
     if (del) {
         flow_table_del_flow(ft, mft, f);
     }
+
     return del;
 }
 
@@ -152,8 +154,8 @@ add_flow(struct flow_table *ft, struct flow *f, uint64_t time)
     bool added = false;
     struct mini_flow_table *nxt_mft;
     /* Check if a mini flow table for the flow exists.*/
-    f->remove_at = f->hard_timeout + time;
-    f->last_used = time + f->idle_timeout;
+    f->remove_at = (f->hard_timeout * 1000000) + time;
+    f->last_used =  time;
     DL_FOREACH(ft->flows, nxt_mft) {
         /* Masks are equal if a mini flow table exists. */
         if (flow_key_cmp(&f->mask, &nxt_mft->mask)) {

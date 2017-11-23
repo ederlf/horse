@@ -12,6 +12,7 @@
 
 static 
 int priocmp(struct sim_event *a, struct sim_event *b) {
+    // printf("Comparing\n");
     if (a->time < b->time)
         return -1;  // Return -1 if you want ascending, 1 if you want descending order. 
     else if (a->time > b->time)
@@ -52,7 +53,7 @@ scheduler_destroy(struct scheduler *sch)
 void 
 scheduler_insert(struct scheduler *sch, struct sim_event *ev)
 {
-    pthread_mutex_unlock(&sch->sch_mutex);
+    pthread_mutex_lock(&sch->sch_mutex);
     // heap_insert(sch->ev_queue, (struct heap_node*) ev, ev->time);
     // DL_APPEND(sch->ev_queue, ev);
     // DL_SORT(sch->ev_queue, ev)

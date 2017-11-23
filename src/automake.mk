@@ -17,8 +17,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/instruction_set.c \
                 src/lib/json_topology.h \
                 src/lib/json_topology.c \
-		src/lib/netflow.h \
-		src/lib/netflow.c \
+				src/lib/netflow.h \
+				src/lib/netflow.c \
                 src/lib/of_pack.h \
                 src/lib/of_pack.c \
                 src/lib/packets.h \
@@ -39,6 +39,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/app/raw_udp.c \
                 src/net/arp_table.h \
                 src/net/arp_table.c \
+                src/net/buffer_state.h \
+                src/net/buffer_state.c \
                 src/net/datapath.h \
                 src/net/datapath.c \
                 src/net/dp_control.h \

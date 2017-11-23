@@ -3,6 +3,7 @@
 
 #include "flow.h"
 #include "packets.h"
+#include <uthash/uthash.h>
 
 #define STACK_EMPTY -1
 
@@ -43,13 +44,15 @@ struct dp_meta {
 
 /* Description of a network flow */
 struct netflow {
+    uint64_t flow_id;
     uint64_t pkt_cnt;           /* Number of packets in the flow.           */
     uint64_t byte_cnt;          /* Total number of packets in the flow.     */
     uint64_t start_time;
-    uint64_t end_time;
     uint64_t exec_id;           /* Tracks the app that triggered it*/
+    uint32_t rate;              /* Current rate of the flow                 */
     struct ofl_flow_key match;      /* The fields belonging to a flow.      */
     struct tag_stack tags;
+    
     union { 
         uint16_t tcp_flags;          /* Bitmap of TCP flags present 
                                        in the flow  */
@@ -59,9 +62,14 @@ struct netflow {
     uint16_t payload_len;        /* Size of the payload */
     struct dp_meta metadata;    /* Any additional information. e.g: pkt out */
     struct out_port *out_ports; /* List of ports the flow may be sent       */
+    UT_hash_handle hh;          /* Make it hashable */
 };
 
+struct netflow *netflow_new(void);
+struct netflow *netflow_new_from_netflow(struct netflow *to_copy);
+void netflow_new_flow_id(struct netflow *nf);
 void netflow_init(struct netflow *nf);
+void netflow_destroy(struct netflow *nf);
 void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);
 void netflow_push_mpls(struct netflow *nf, uint16_t eth_type);
 void netflow_pop_vlan(struct netflow *nf);

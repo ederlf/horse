@@ -2,6 +2,15 @@ from horse import *
 from random import randint
 import sys
 
+import signal
+import sys
+def signal_handler(signal, frame):
+        print('You pressed Ctrl+C!')
+        sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
 def rand_mac():
     return "%02x:%02x:%02x:%02x:%02x:%02x" % (
         randint(0, 255),
@@ -19,7 +28,7 @@ topo = Topology()
 # "00:00:00:00:00:0%s"% i
 last_switch = None
 for i in range(1, k):
-    sw = SDNSwitch(i)
+    sw = SDNSwitch("s%s" %i, i)
     h = Host("h%s" % i)
     h.add_port(port = 1, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i), 
                netmask = "255.255.255.0")
@@ -38,10 +47,9 @@ time = 5000000
 for i, h in enumerate(hosts):
     for z in range(1, k):
       if z != i + 1:
+        # print "10.0.0.%s" % (z)
         h.ping("10.0.0.%s" % (z), time)
         time += 1000000
 end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000  
 sim = Sim(topo, ctrl_interval = 100000, end_time = end_time)
 sim.start()
-
-

@@ -1,7 +1,8 @@
 #include "node.h"
 #include <stdio.h>
 
-static uint64_t current_uuid = 0;
+/* Starts from 1, zero is used to indicate None */
+static uint64_t current_uuid = 0; 
 
 void 
 node_init(struct node* n, uint16_t type)
@@ -12,6 +13,7 @@ node_init(struct node* n, uint16_t type)
     n->ports = NULL;
     n->type = type;
     n->flow_buff.tail = 0;
+    buffer_state_init(&n->buffer_state);
 }
 
 void 
@@ -48,13 +50,23 @@ node_port(const struct node *n, uint32_t port)
     return p;
 }
 
+void 
+node_add_tx_time(struct node *n, uint32_t out_port, struct netflow *flow)
+{
+    struct port *p = node_port(n, out_port);
+    if (p != NULL) {
+        netflow_update_send_time(flow, p->curr_speed);
+    }
+}
+
 bool 
 node_is_buffer_empty(struct node *n)
 {
     return !n->flow_buff.tail;
 }
 
-bool node_flow_push(struct node *n, struct netflow flow){
+bool 
+node_flow_push(struct node *n, struct netflow *flow){
     if (!(n->flow_buff.tail - (BUFFER_MAX-1))){
         return 0;
     }
@@ -63,8 +75,38 @@ bool node_flow_push(struct node *n, struct netflow flow){
     return 1;
 }
 
-struct netflow node_flow_pop(struct node *n){
-    struct netflow f = n->flow_buff.flows[n->flow_buff.tail];
+struct netflow*
+node_flow_pop(struct node *n){
+    struct netflow *f = n->flow_buff.flows[n->flow_buff.tail];
     n->flow_buff.tail--;
     return f;
+}
+
+void node_calculate_loss(struct node *n, struct netflow *nf, uint32_t out_port)
+{
+    struct port *p = node_port(n, out_port);
+    if (p) {
+        buffer_state_calculate_loss(&n->buffer_state, p->curr_speed);
+    }
+    UNUSED(nf);
+}
+
+void
+node_update_port_capacity(struct node *n, int bits, uint32_t out_port)
+{
+    struct port *p = node_port(n, out_port);
+    if (p) {
+        // printf("Updating capacity of port %s %d\n", p->name, bits);
+        buffer_state_update_capacity(&p->buffer_state, bits);
+    }
+}
+
+void node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port)
+{
+    struct port *p = node_port(n, out_port);
+    if (p) {
+        // printf("Checking loss on port %s\n", p->name);
+        buffer_state_calculate_loss(&p->buffer_state, p->curr_speed);
+    }
+    UNUSED(nf);
 }

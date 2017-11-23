@@ -16,15 +16,16 @@
 #include "lib/flow.h"
 #include "lib/netflow.h"
 
-#define EVENTS_NUM 7
+#define EVENTS_NUM 8
 
 enum events {
-    EVENT_FLOW = 0, 
-    EVENT_PACKET = 1,          /* For the future case of hybrid simulation. */
-    EVENT_PORT = 2,            /* Port changes */
-    EVENT_OF_MSG_IN = 3,       /* OF message from controller to simulator */
-    EVENT_OF_MSG_OUT = 4,      /* Send OF message to controller */
-    EVENT_APP_START = 5,       /* Event to mark the start of an app */
+    EVENT_FLOW_RECV = 0,
+    EVENT_FLOW_SEND = 1, 
+    EVENT_PACKET = 2,          /* For the future case of hybrid simulation. */
+    EVENT_PORT = 3,            /* Port changes */
+    EVENT_OF_MSG_IN = 4,       /* OF message from controller to simulator */
+    EVENT_OF_MSG_OUT = 5,      /* Send OF message to controller */
+    EVENT_APP_START = 6,       /* Event to mark the start of an app */
     EVENT_END = UINT8_MAX,     /* Final event for the simulation */
 };
 
@@ -46,10 +47,25 @@ struct sim_event {
 /*  A flow event represents 
 *   traffic arriving in a switch.
 */
-struct sim_event_flow {
+struct sim_event_flow_recv {
     struct sim_event hdr;       
     uint64_t node_id;           /* The node to process the event.     */
-    struct netflow flow;
+    uint64_t src_id;            /* Id of the sender */
+    uint32_t src_port;          /* Port of the sender */
+    uint32_t rate;              /* Rate of flow arrived */
+    struct netflow *flow;       /* Pointer to the flow, it 
+                                   can be modified by the state*/
+};
+
+/*  A flow event represents 
+*   traffic arriving in a switch.
+*/
+struct sim_event_flow_send {
+    struct sim_event hdr;       
+    uint64_t node_id;           /* The node to process the event.     */
+    uint32_t out_port;
+    struct netflow *flow;       /* Pointer to the flow, it 
+                                   can be modified by the state*/
 };
 
 /* Used for events of OpenFlow Messages */
@@ -59,7 +75,6 @@ struct sim_event_of {
     uint8_t *data;  
     size_t len;        
 };
-
 
 /* Start of an application */
 struct sim_event_app_start {
@@ -100,7 +115,15 @@ struct event_port {
 
 struct sim_event* sim_event_new(uint64_t time);
 void sim_event_free(struct sim_event* ev);
-struct sim_event_flow *sim_event_flow_new(uint64_t time, uint64_t node_id);
+ 
+struct sim_event_flow_recv *sim_event_flow_recv_new(uint64_t time, 
+                                               uint64_t node_id, uint64_t src_id, 
+                                               uint32_t src_port, uint32_t rate); 
+
+struct sim_event_flow_send *sim_event_flow_send_new(uint64_t time, 
+                                                    uint64_t node_id, 
+                                                    uint32_t out_port);
+
 struct sim_event_of *sim_event_of_msg_in_new(uint64_t time, 
                                              uint64_t dp_id, void *data, 
                                              size_t len);

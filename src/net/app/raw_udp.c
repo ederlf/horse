@@ -15,8 +15,9 @@ raw_udp_flow(uint64_t start, struct netflow *flow,
                   struct raw_udp_args *args){
     
     uint64_t pkt_cnt, byte_cnt;
-    pkt_cnt = args->rate / (1470 * 8);
-    byte_cnt =  pkt_cnt * 1470 * args->interval;
+    uint32_t pkt_size = 1470 + 34; /* Datagram plus headers */
+    pkt_cnt = args->rate / (pkt_size * 8);
+    byte_cnt =  pkt_cnt * pkt_size * args->interval;
     // printf("Packets %ld Bytes %ld\n", pkt_cnt, byte_cnt);
     flow->match.eth_type = ETH_TYPE_IP;
     flow->match.ip_proto = IP_PROTO_UDP;
@@ -26,13 +27,13 @@ raw_udp_flow(uint64_t start, struct netflow *flow,
     flow->pkt_cnt = pkt_cnt;
     flow->byte_cnt = byte_cnt;
     flow->start_time = start;
+    printf("UDP start time %ld\n", start);
 }
 
-struct netflow raw_udp_start(uint64_t start, void* args){
-    struct netflow n;
-    netflow_init(&n);
+struct netflow *raw_udp_start(uint64_t start, void* args){
+    struct netflow *n = netflow_new();
     struct raw_udp_args *udp_args = (struct raw_udp_args*) args;
     /* Creates initial udp flow */
-    raw_udp_flow(start, &n, udp_args);
+    raw_udp_flow(start, n, udp_args);
     return n;
 }

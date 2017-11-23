@@ -9,19 +9,28 @@
 struct host; 
 
 struct host *host_new(void);
+
 void host_destroy(struct host *h);
+
 void host_add_port(struct host *h, uint32_t port_id, 
                  uint8_t eth_addr[ETH_LEN], uint32_t speed, 
                  uint32_t curr_speed);
+
 void host_set_intf_ipv4(struct host *h, uint32_t port_id, 
                         uint32_t addr, uint32_t netmask);
-void host_handle_netflow(struct node *n, struct netflow *flow);
+
+bool host_recv_netflow(struct node *n, struct netflow **flow);
+
+void host_send_netflow(struct node *n, struct netflow *flow, 
+                       uint32_t out_port);
 
 /* Apps */
 void host_add_app(struct host *h, uint16_t type);
+
 void host_add_app_exec(struct host *h, uint64_t id, uint16_t type, 
                   uint64_t start_time, void *args, size_t arg_size);
-struct netflow host_execute_app(struct host *h, struct exec *exec);
+
+struct netflow *host_execute_app(struct host *h, struct exec *exec);
 
 void host_set_name(struct host* h, char *name);
 

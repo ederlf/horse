@@ -517,6 +517,8 @@ unpack_packet_out(of_object_t *obj, struct netflow* f, struct action_list *al)
     pkt = (uint8_t*) octets->data;
     if (pkt != NULL){
         pkt_to_netflow(pkt, f, octets->bytes);
+        f->pkt_cnt = 1;
+        f->byte_cnt = octets->bytes;
     }
     of_object_delete(action_list);
     return 0;

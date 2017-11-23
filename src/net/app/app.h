@@ -27,7 +27,7 @@ struct app {
     /* Start the application on time in microseconds 
      * Returns the first generated flow.
     */     
-    struct netflow (*start) (uint64_t, void*);
+    struct netflow* (*start) (uint64_t, void*);
     /* Handle the packet  */
     int (*handle_netflow) (struct netflow*);
     UT_hash_handle hh;  

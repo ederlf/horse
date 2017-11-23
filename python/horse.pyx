@@ -48,7 +48,7 @@ cdef class SDNSwitch:
     #     cdef uint8_t *c_eth_addr = mac
     #     dp_add_port(self._dp_ptr, intf.port_id, c_eth_addr, intf.max_speed, intf.cur_speed) 
 
-    def add_port(self, port, eth_addr, max_speed = 1000000, cur_speed = 1000000):
+    def add_port(self, port, eth_addr, max_speed = 1000000, cur_speed = 10000):
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
         dp_add_port(self._dp_ptr, port, c_eth_addr, max_speed, cur_speed)
@@ -82,7 +82,7 @@ cdef class Host:
         self.name = name
 
     def add_port(self, port, eth_addr, ip = None, 
-                netmask = None, max_speed = 1000000, cur_speed = 1000000):
+                netmask = None, max_speed = 1000000, cur_speed = 10000):
         # TODO: Add mac converstion to utils...
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
@@ -115,7 +115,7 @@ cdef class Host:
         args.interval = interval
         times = duration / interval
         init_time = start_time
-        microsec_interval = interval * 1000000
+        microsec_interval = interval * 1000000 
         for i in range(0, times):
             host_add_app_exec(self._host_ptr, self.exec_id, 17, init_time, <void*> &args, sizeof(raw_udp_args))
             init_time = init_time +  microsec_interval
@@ -229,7 +229,7 @@ cdef class Sim:
     # Default interval is 0.5 seconds
     def __cinit__(self, topo, mode = 1, end_time = UINT64_MAX, 
                   ctrl_interval = 10000):
-        self.topo = topo
+        self.topo = <Topology> topo
         # self._topo_ptr = topo._topo_ptr
         # print topo.topo_ptr()
         self.config =  SimConfig()

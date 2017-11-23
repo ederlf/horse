@@ -21,8 +21,14 @@ sim_event_new(uint64_t time)
 void sim_event_free(struct sim_event* ev){
     
     switch (ev->type){
-        case EVENT_FLOW: {
-            free((struct sim_event_flow*) ev);
+        case EVENT_FLOW_RECV:{
+            free((struct sim_event_flow_recv*) ev);
+            break;
+        } 
+        case EVENT_FLOW_SEND: {
+            /* The pointer fields should be released in 
+               the end of their lifetime */
+            free((struct sim_event_flow_send*) ev);
             break;
         }
         case EVENT_OF_MSG_IN:
@@ -45,14 +51,29 @@ void sim_event_free(struct sim_event* ev){
     } 
 }
  
-struct sim_event_flow*
-sim_event_flow_new(uint64_t time, uint64_t node_id)
+struct sim_event_flow_recv *sim_event_flow_recv_new(uint64_t time, 
+                                               uint64_t node_id, uint64_t src_id, 
+                                               uint32_t src_port, uint32_t rate) 
 {
-    struct sim_event_flow *flow = xmalloc(sizeof(struct sim_event_flow));
+    struct sim_event_flow_recv *flow = xmalloc(sizeof(struct sim_event_flow_recv));
     flow->hdr.time = time;
-    flow->hdr.type = EVENT_FLOW;
+    flow->hdr.type = EVENT_FLOW_RECV;
     flow->node_id = node_id;
+    flow->src_id = src_id;
+    flow->rate = rate;
+    flow->src_port = src_port;
     return flow;   
+}
+
+struct sim_event_flow_send *sim_event_flow_send_new(uint64_t time, 
+                                          uint64_t node_id, uint32_t out_port)
+{
+    struct sim_event_flow_send *flow = xmalloc(sizeof(struct sim_event_flow_send));
+    flow->hdr.time = time;
+    flow->hdr.type = EVENT_FLOW_SEND;
+    flow->node_id = node_id;
+    flow->out_port = out_port;
+    return flow;  
 }
 
 static struct sim_event_of* 

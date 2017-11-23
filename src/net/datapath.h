@@ -43,7 +43,11 @@ void dp_add_port(struct datapath *dp, uint32_t port_id,
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
 
-void dp_handle_netflow(struct node *n, struct netflow *flow);
+bool dp_recv_netflow(struct node *n, struct netflow **flow);
+
+void dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port);
+
+void dp_create_flood(struct datapath *dp, struct netflow *nf);
 
 of_object_t* dp_handle_flow_mod(const struct datapath *dp,
                                 of_flow_modify_t *obj, uint64_t time);
@@ -71,6 +75,8 @@ char* dp_name(struct datapath *dp);
 uint64_t dp_uuid(const struct datapath* dp);
 
 uint64_t dp_id(const struct datapath* dp);
+
+struct port* dp_ports(const struct datapath *dp);
 
 /* Just for tests */
 struct flow_table *dp_flow_table(const struct datapath *dp, uint8_t table_id);

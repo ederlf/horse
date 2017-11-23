@@ -1,16 +1,51 @@
 #include "netflow.h"
 #include <uthash/utlist.h>
 
-void netflow_init(struct netflow *nf)
+/* Starts from 0 */
+static uint64_t flow_id = 0;
+
+struct netflow 
+*netflow_new(void)
+{
+    struct netflow *nf = xmalloc(sizeof(struct netflow));
+    netflow_init(nf);
+    return nf;
+}
+
+struct netflow *netflow_new_from_netflow(struct netflow *to_copy)
+{
+    struct netflow *nf = xmalloc(sizeof(struct netflow));
+    memcpy(nf, to_copy, sizeof(struct netflow));
+    nf->flow_id = flow_id++;
+    return nf;
+}
+
+void netflow_new_flow_id(struct netflow *nf)
+{
+    nf->flow_id = flow_id++;
+}
+
+void 
+netflow_init(struct netflow *nf)
 {
     memset(nf, 0x0, sizeof(struct netflow));
     /* Cannot guarantee that the representation 
      *  of a NULL pointer is all bits 0, so initialize
      *  the pointer. 
     */
+    nf->flow_id = flow_id++;
     nf->payload = NULL;
     nf->out_ports = NULL;
 }
+
+void netflow_destroy(struct netflow *nf)
+{
+    if (nf) {
+        free(nf->payload);
+        free(nf->out_ports);
+        free(nf);
+    }
+}   
 
 void 
 netflow_push_vlan(struct netflow *nf, uint16_t eth_type)
@@ -477,7 +512,8 @@ void netflow_clean_out_ports(struct netflow *flow)
 void 
 netflow_update_send_time(struct netflow *flow, uint32_t port_speed)
 {
-    flow->start_time = flow->end_time;
-    /* Port speed is converted to bits per microseconds */
-    flow->end_time += (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000);
-}
+  /* Port speed is converted to bits per microseconds */
+  flow->start_time +=  (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000);
+  // printf("Added time %ld %ld\n", (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000), flow->byte_cnt);
+}   
+    
