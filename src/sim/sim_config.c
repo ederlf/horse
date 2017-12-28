@@ -1,10 +1,11 @@
 #include "sim_config.h"
 #include "lib/util.h"
+#include "log/log.h"
 
 struct sim_config {
     enum sim_mode mode;
     uint64_t end_time;
-    uint64_t ctrl_idle_interval; 
+    uint64_t ctrl_idle_interval;
 };
 
 struct sim_config *sim_config_new(void)
@@ -35,6 +36,11 @@ sim_config_set_ctrl_idle_interval(struct sim_config *conf, uint64_t interval)
     conf->ctrl_idle_interval =  interval;
 }
 
+void sim_config_set_log_level(int level)
+{
+    log_set_level(level);
+}
+
 int 
 sim_config_get_mode(struct sim_config *conf)
 {
@@ -51,4 +57,5 @@ uint64_t sim_config_get_ctrl_idle_interval(struct sim_config *conf)
 {
     return conf->ctrl_idle_interval;
 }
+
 

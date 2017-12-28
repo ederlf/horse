@@ -72,4 +72,4 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/sim/sim_config.h \
                 src/sim/sim_config.c 
 
-libhorse_la_LIBADD = libjson.la libpatricia.la
+libhorse_la_LIBADD = libjson.la libpatricia.la liblog.la

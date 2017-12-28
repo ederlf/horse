@@ -98,28 +98,21 @@ cdef class Host:
         cdef int ip
         ip_parts = dst.split('.')
         ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-        host_add_app_exec(self._host_ptr, self.exec_id, 1, start_time, <void*> &ip, sizeof(int))
+        host_add_app_exec(self._host_ptr, self.exec_id, 1, 1, start_time, <void*> &ip, sizeof(int))
         self.exec_id += 1
 
     # Rate in Mbps, duration and interval in seconds
-    def udp(self, dst, start_time, duration = 60, interval = 5, rate = 10, dst_port = 5001, src_port = random.randint(5002, 65000)):
+    def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001, src_port = random.randint(5002, 65000)):
         cdef int ip
         cdef raw_udp_args args
         ip_parts = dst.split('.')
-        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-        args.duration = duration
+        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3]) 
         args.rate = rate * 1000000 #Mbits to bits
         args.ip_dst = ip
         args.dst_port = dst_port
-        args.src_port = src_port
-        args.interval = interval
-        times = duration / interval
-        init_time = start_time
-        microsec_interval = interval * 1000000 
-        for i in range(0, times):
-            host_add_app_exec(self._host_ptr, self.exec_id, 17, init_time, <void*> &args, sizeof(raw_udp_args))
-            init_time = init_time +  microsec_interval
-            self.exec_id += 1
+        args.src_port = src_port 
+        host_add_app_exec(self._host_ptr, self.exec_id, 17, duration, start_time, <void*> &args, sizeof(raw_udp_args))
+        self.exec_id += 1
 
     property name:
         def __get__(self):
@@ -138,6 +131,9 @@ cdef class SimConfig:
 
     def __cinit__(self):
         self._config_ptr = sim_config_new()
+
+    def set_log_level(self, level):
+        sim_config_set_log_level(level)
 
     @property
     def mode(self):
@@ -221,14 +217,20 @@ cdef class Topology:
     def links_num(self):
         return topology_links_num(self._topo_ptr)
 
-    
+cdef class  LogLevels: #logging 
+    LOG_TRACE = 0 
+    LOG_DEBUG = 1
+    LOG_INFO = 2 
+    LOG_WARN = 3
+    LOG_ERROR = 4
+    LOG_FATAL = 5 
 
 cdef class Sim:
     cdef Topology topo
     cdef SimConfig config
     # Default interval is 0.5 seconds
     def __cinit__(self, topo, mode = 1, end_time = UINT64_MAX, 
-                  ctrl_interval = 10000):
+                  ctrl_interval = 10000, log_level = None):
         self.topo = <Topology> topo
         # self._topo_ptr = topo._topo_ptr
         # print topo.topo_ptr()
@@ -236,6 +238,10 @@ cdef class Sim:
         self.config.set_mode(mode)
         self.config.set_end_time(end_time)
         self.config.set_ctrl_idle_interval(ctrl_interval)
+        if log_level != None:
+            self.config.set_log_level(log_level)
+        else:
+            self.config.set_log_level(LogLevels.LOG_FATAL + 1)
 
     def start(self):
         topo = <Topology> self.topo

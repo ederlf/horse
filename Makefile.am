@@ -7,6 +7,7 @@ noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 
 include vendor/patricia/automake.mk
+include vendor/log/automake.mk
 include vendor/json/automake.mk
 include src/automake.mk
 
