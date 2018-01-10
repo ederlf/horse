@@ -48,18 +48,18 @@ public:
   _raw_dpids(std::vector<std::string> nodes);
 
   void 
-  add_flow(Ptr<const RemoteSwitch> sw, 
+  add_flow(Ptr<const RemoteSwitch> sw, uint32_t buffer_id,
                           uint32_t prio, std::string match, std::string instructions);
 
   std::string 
   match_from_packet(uint8_t *pkt);
 
   void 
-  _install_path(Ptr<const RemoteSwitch> sw, uint64_t out_dpid, 
+  _install_path(Ptr<const RemoteSwitch> sw, uint64_t out_dpid, uint32_t buffer_id,
                 uint32_t final_out_port, uint8_t *pkt);
 
   void 
-  send_packet_out(Ptr<const RemoteSwitch> sw, uint32_t xid, 
+  send_packet_out(Ptr<const RemoteSwitch> sw, uint32_t xid,
                    uint32_t in_port, uint32_t out_port, 
                   uint8_t* data, uint32_t data_length);
 
@@ -100,8 +100,10 @@ protected:
 private:
 
   typedef std::map<Mac48Address, std::pair<uint64_t, uint32_t>> macTable_t;
+  typedef std::map<Ipv4Address, Mac48Address> ipMACTable_t;   
   bool all_switches_up;
   std::map<uint64_t, Ptr<const RemoteSwitch>> switches;
+  ipMACTable_t ipTable;
   macTable_t macTable;
   FatTreeTopo topo;
   StructuredRouting *routing;

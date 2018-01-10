@@ -734,8 +734,15 @@ OFSwitch13Device::GetOFSwitch13Port (uint32_t no)
   NS_LOG_FUNCTION (this << no);
 
   // Assert port no (starts at 1).
-  NS_ASSERT_MSG (no > 0 && no <= m_ports.size (), "Port is out of range.");
-  return m_ports.at (no - 1);
+  // NS_ASSERT_MSG (no > 0 && no <= m_ports.size (), "Port is out of range.");
+  for (auto port: m_ports) {
+    if (port->GetPortNo() == no){
+      return port;
+    }
+  }
+  return NULL;
+  // NS_ASSERT_MSG (no > 0 && no <= m_ports.size (), "Port is out of range.");
+  // return m_ports.at (no - 1);
 }
 
 int
@@ -1165,7 +1172,10 @@ OFSwitch13Device::BufferPacketRetrieve (uint64_t packetId)
 
   // Find packet in buffer.
   IdPacketMap_t::iterator it = m_bufferPkts.find (packetId);
-  NS_ASSERT_MSG (it != m_bufferPkts.end (), "Packet not found in buffer.");
+  if (it == m_bufferPkts.end ()){
+    return;
+  }
+  // NS_ASSERT_MSG (it != m_bufferPkts.end (), "Packet not found in buffer.");
 
   // Save packet into pipeline structure.
   m_pipePkt.SetPacket (it->first, it->second);

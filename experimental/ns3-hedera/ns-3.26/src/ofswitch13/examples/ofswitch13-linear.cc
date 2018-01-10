@@ -31,9 +31,12 @@
 #include <ns3/core-module.h>
 #include <ns3/network-module.h>
 #include <ns3/csma-module.h>
+#include <ns3/applications-module.h>
 #include <ns3/internet-module.h>
 #include <ns3/ofswitch13-module.h>
 #include <ns3/internet-apps-module.h>
+#include <ns3/traffic-control-helper.h>
+#include <ns3/traffic-control-helper.h>
 
 using namespace ns3;
 
@@ -57,15 +60,17 @@ main (int argc, char *argv[])
   if (verbose)
     {
       OFSwitch13Helper::EnableDatapathLogs ();
-      LogComponentEnable ("OFSwitch13Interface", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13Device", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13Port", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13Queue", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13SocketHandler", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13Controller", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13Interface", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13Device", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13Port", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13Queue", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13SocketHandler", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13Controller", LOG_LEVEL_ALL);
       LogComponentEnable ("OFSwitch13LearningController", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13Helper", LOG_LEVEL_ALL);
-      LogComponentEnable ("OFSwitch13InternalHelper", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13Helper", LOG_LEVEL_ALL);
+      // LogComponentEnable ("OFSwitch13InternalHelper", LOG_LEVEL_ALL);
+      LogComponentEnable ("UdpClient", LOG_LEVEL_ALL);
+      LogComponentEnable ("UdpServer", LOG_LEVEL_ALL);
     }
 
   // Enable checksum computations (required by OFSwitch13 module)
@@ -123,21 +128,62 @@ main (int argc, char *argv[])
   hostIpIfaces = ipv4helpr.Assign (hostDevices);
 
   // Configure ping application between hosts
-  int seconds = 1;
+  // int seconds = 1;
+  // for(size_t i = 0; i < hosts.GetN(); ++i){
+  //   for(size_t j = 0; j < hosts.GetN(); ++j){
+  //     if (i == j){
+  //       continue;
+  //     }
+  //     // std::cout << hostIpIfaces.GetAddress (j) << "\n";
+  //     V4PingHelper pingHelper = V4PingHelper (hostIpIfaces.GetAddress (j));
+  //     pingHelper.SetAttribute ("Verbose", BooleanValue (true));
+  //     ApplicationContainer pingApps = pingHelper.Install (hosts.Get (i));
+  //     pingApps.Start (Seconds (seconds));
+  //     pingApps.Stop (Seconds (seconds+1));
+  //     seconds += 1;
+  //   }    
+  // }
+
+  // Configure UDP Test
+  /* Receivers */
+  uint16_t port = 5001;
+  // ApplicationContainer apps;
+  ApplicationContainer app;
+  for(size_t i = 0; i < hosts.GetN(); ++i){
+      UdpServerHelper server (port);
+      app = server.Install (hosts.Get (i));
+      app.Start(Seconds(1.0));
+      app.Stop(Seconds(simTime));
+      // apps.Add(app.Get(0));
+  }
+  // apps.Start (Seconds (1.0));
+  // apps.Stop (Seconds (simTime));
+  // ApplicationContainer client_apps;
+  
+  /* Senders */
+  uint32_t MaxPacketSize = 1400;
+  Time interPacketInterval = Seconds (0.000999);
+  uint32_t maxPacketCount = 850 * (simTime - 2);
   for(size_t i = 0; i < hosts.GetN(); ++i){
     for(size_t j = 0; j < hosts.GetN(); ++j){
       if (i == j){
         continue;
       }
-      // std::cout << hostIpIfaces.GetAddress (j) << "\n";
-      V4PingHelper pingHelper = V4PingHelper (hostIpIfaces.GetAddress (j));
-      pingHelper.SetAttribute ("Verbose", BooleanValue (true));
-      ApplicationContainer pingApps = pingHelper.Install (hosts.Get (i));
-      pingApps.Start (Seconds (seconds));
-      pingApps.Stop (Seconds (seconds+1));
-      seconds += 1;
-    }    
+      UdpClientHelper client (hostIpIfaces.GetAddress(j));
+      client.SetAttribute ("MaxPackets", UintegerValue (maxPacketCount));
+      client.SetAttribute ("Interval", TimeValue (interPacketInterval));
+      client.SetAttribute ("PacketSize", UintegerValue (MaxPacketSize));
+      app = client.Install (hosts.Get (i));
+      app.Start(Seconds(2.0));
+      app.Stop(Seconds(simTime));
+      // client_apps.Add(app.Get(0));
+    }
+    break;
   }
+
+  // client_apps.Start (Seconds (2.0));
+  // client_apps.Stop (Seconds (simTime));
+
 
   // Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
   if (trace)
@@ -149,7 +195,7 @@ main (int argc, char *argv[])
     }
 
   // Run the simulation
-  Simulator::Stop (Seconds (seconds));
+  Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
   Simulator::Destroy ();
 }

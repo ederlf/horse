@@ -210,7 +210,8 @@ Path HashedStructuredRouting::choose_random(Paths paths, std::string src, std::s
 
     Path path;
     type = *((uint16_t*)(data + offset));
-    if (ntohs(type) == 0x800) {
+    // std::cout << ntohs(type);
+    if (ntohs(type) == 0x800 || ntohs(type) == 0x806) {
         /* Advance to IP fields */
         offset += 11;
         uint8_t ip_proto = *((uint8_t*)(data + offset));
@@ -227,6 +228,7 @@ Path HashedStructuredRouting::choose_random(Paths paths, std::string src, std::s
         crc = crc32(crc, bytes, 14);
         int choice = crc % paths.size();
         std::sort (paths.begin(), paths.end(), lexiCompare);
+        // std::cout << choice << "\n";
         path = paths[choice];
     } 
     return path;

@@ -141,12 +141,12 @@ main (int argc, char *argv[])
     bool hedera = false;
     bool verbose = false;
     bool trace = false;
-    int k = 4;
+    int k = 2;
     char traffic[]= "stag,0.2,0.3";
     int flowPerHost = 1;
     int seed = 1111;
     int trial = 1;
-    char routing[] = "random";
+    char routing[] = "hashed";
 
     // Configure command line parameters
     CommandLine cmd;
@@ -166,17 +166,17 @@ main (int argc, char *argv[])
     if (verbose)
     {
       OFSwitch13Helper::EnableDatapathLogs ();
-      // LogComponentEnable ("OFSwitch13Interface", LOG_LEVEL_ALL);
+      LogComponentEnable ("OFSwitch13Interface", LOG_LEVEL_ALL);
       LogComponentEnable ("OFSwitch13Device", LOG_LEVEL_ALL);
-      // LogComponentEnable ("OFSwitch13Port", LOG_LEVEL_ALL);
+      LogComponentEnable ("OFSwitch13Port", LOG_LEVEL_ALL);
       // LogComponentEnable ("OFSwitch13Queue", LOG_LEVEL_ALL);
       // LogComponentEnable ("OFSwitch13SocketHandler", LOG_LEVEL_ALL);
       // LogComponentEnable ("OFSwitch13Controller", LOG_LEVEL_ALL);
       LogComponentEnable ("RIPLController", LOG_LEVEL_ALL);
       // LogComponentEnable ("OFSwitch13Helper", LOG_LEVEL_ALL);
       // LogComponentEnable ("OFSwitch13InternalHelper", LOG_LEVEL_ALL);
-      // LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-      // LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
+      // LogComponentEnable ("UdpClient", LOG_LEVEL_ALL);
+      // LogComponentEnable ("UdpServer", LOG_LEVEL_ALL);
     }
 
     // Configure dedicated connections between controller and switches
@@ -194,7 +194,7 @@ main (int argc, char *argv[])
 
     CsmaHelper csmaHelper;
     csmaHelper.SetChannelAttribute ("DataRate", DataRateValue (DataRate ("10Mbps")));
-    csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (1)));
+    csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0.0)));
     NodePortMap node_ports = create_links(topo, name_id, switches, 
                                           hosts, csmaHelper);    
 
@@ -271,41 +271,59 @@ main (int argc, char *argv[])
 
     /* Receivers */
     uint16_t port = 5001;
-    ApplicationContainer apps;
+    // ApplicationContainer apps;
     ApplicationContainer app;
     for (auto dst: traffic_matrix) {
         std::string dest_host_name = get_host_name(k, dst.second);       
         UdpServerHelper server (port);
         app = server.Install (hosts.Get (name_id[dest_host_name]));
-        apps.Add(app.Get(0));
+        app.Start(Seconds(1.0));
+        app.Stop(Seconds(simTime));
+        // apps.Add(app.Get(0));
+
     } 
-    apps.Start (Seconds (1.0));
-    apps.Stop (Seconds (simTime));
-    ApplicationContainer client_apps;
+    // apps.Start (Seconds (1.0));
+    // apps.Stop (Seconds (simTime));
+    // ApplicationContainer client_apps;
     /* Senders */
-    uint32_t MaxPacketSize = 1024;
-    Time interPacketInterval = Seconds (0.05);
-    uint32_t maxPacketCount = 320;
+    // Ipv4AddressHelper ipv4helpr;
+    uint32_t MaxPacketSize = 1470;
+    Time interPacketInterval = Seconds(0.002125);
+    uint32_t maxPacketCount = 3400 * (simTime);
+    // int seconds = 1;
     for (auto t: traffic_matrix){
         int src_index = t.first;
         uint32_t dest_index = t.second;
         std::string dest_host_name = get_host_name(k, dest_index);
         std::string src_name = get_host_name(k, src_index);
         std::string dst_ip = topo.node_info[dest_host_name]["ip"];
+        
+          // V4PingHelper pingHelper = V4PingHelper (Ipv4Address(dst_ip.c_str()));
+          // pingHelper.SetAttribute ("Verbose", BooleanValue (true));
+          // ApplicationContainer pingApps = pingHelper.Install (hosts.Get (name_id[src_name]));
+          // pingApps.Start (Seconds (seconds));
+          // pingApps.Stop (Seconds (seconds+1));
+          // seconds += 1;  
+
         UdpClientHelper client (Address(Ipv4Address(dst_ip.c_str())), port);
         client.SetAttribute ("MaxPackets", UintegerValue (maxPacketCount));
         client.SetAttribute ("Interval", TimeValue (interPacketInterval));
         client.SetAttribute ("PacketSize", UintegerValue (MaxPacketSize));
         app = client.Install (hosts.Get (name_id[src_name]));
-        client_apps.Add(app.Get(0));
+        app.Start(Seconds(2.0));
+        app.Stop(Seconds(simTime));
+        // client_apps.Add(app.Get(0));
     }
 
-    client_apps.Start (Seconds (2.0));
-    client_apps.Stop (Seconds (simTime));
+    // client_apps.Start (Seconds (2.0));
+    // client_apps.Stop (Seconds (simTime));
     // Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
     if (trace)
     {
-      OFHelper->EnableOpenFlowPcap ("openflow");
+      // AsciiTraceHelper ascii;
+      // Ptr<OutputStreamWrapper> stream = ascii.CreateFileStream ("link-stats.tr");
+      // csmaHelper.EnableAsciiAll(stream);
+      // OFHelper->EnableOpenFlowPcap ("openflow");
       OFHelper->EnableDatapathStats ("switch-stats");
       // csmaHelper.EnablePcap ("switch", switchPorts, true);
       // csmaHelper.EnablePcap ("switch", switches, true);

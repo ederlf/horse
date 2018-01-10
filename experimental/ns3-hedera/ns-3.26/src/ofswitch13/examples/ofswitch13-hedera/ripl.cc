@@ -40,6 +40,18 @@ RIPLController::RIPLController (std::string routing, FatTreeTopo topo)
   this->routing = get_routing(routing, topo);
   NS_ASSERT_MSG (this->routing != NULL,
                              "Invalid routing type");
+
+  /* Fill macTable in advance, so no need to broadcast avoiding buffering problem */
+  std::vector<std::string> hosts = this->topo.layer_nodes(LAYER_HOST);
+  for(auto h: hosts) {
+    std::vector<std::string> edge = this->topo.up_nodes(h);
+    Mac48Address src = Mac48Address(this->topo.id_gen(h).MACStr().c_str());
+    std::pair<uint32_t, uint32_t> ports = this->topo.port(edge[0], h);
+    uint64_t dpid = this->topo.id_gen(edge[0]).dpid;
+    this->macTable[src] = std::make_pair(dpid, ports.first); 
+    Ipv4Address ip = Ipv4Address(this->topo.id_gen(h).IPStr().c_str());
+    this->ipTable[ip] = src;
+  }
   NS_LOG_FUNCTION (this);
 }
 
@@ -68,13 +80,13 @@ RIPLController::DoDispose ()
 }
 
 void 
-RIPLController::add_flow(Ptr<const RemoteSwitch> sw, 
+RIPLController::add_flow(Ptr<const RemoteSwitch> sw, uint32_t buffer_id,
                           uint32_t prio, std::string match, std::string instructions)
 {
   uint64_t idle_timeout = 120;
-  uint64_t hard_timeout = 10;
-  char cmd[] =  "flow-mod cmd=add,table=0,idle=%ld,hard=%ld,prio=%d %s %s";
-  DpctlExecute (sw, format(cmd, idle_timeout, hard_timeout, prio, match.c_str(), instructions.c_str()));           
+  uint64_t hard_timeout = 60;
+  char cmd[] =  "flow-mod cmd=add,table=0,idle=%ld,buffer=%d,hard=%ld,prio=%d %s %s";
+  DpctlExecute (sw, format(cmd, idle_timeout, buffer_id, hard_timeout, prio, match.c_str(), instructions.c_str()));           
 }
 
 std::vector<uint64_t>
@@ -116,8 +128,8 @@ RIPLController::match_from_packet(uint8_t *pkt)
       std::memcpy(&ip_src, ptr + 12, 4);
       std::memcpy(&ip_dst, ptr + 16, 4);
 
-      Ipv4Address v4_src = Ipv4Address(ip_src);
-      Ipv4Address v4_dst = Ipv4Address(ip_dst);
+      Ipv4Address v4_src = Ipv4Address(ntohl(ip_src));
+      Ipv4Address v4_dst = Ipv4Address(ntohl(ip_dst));
       std::ostringstream str_src;
       std::ostringstream str_dst;
 
@@ -133,7 +145,7 @@ RIPLController::match_from_packet(uint8_t *pkt)
         std::memcpy(&tcp_src, ptr , 2);
         std::memcpy(&tcp_dst, ptr + 2, 2);
         char new_cmd[] = "tcp_src=%d,tcp_dst=%d,%s";
-        cur_cmd = format(new_cmd, tcp_src, tcp_dst, cur_cmd.c_str());
+        cur_cmd = format(new_cmd, htons(tcp_src), htons(tcp_dst), cur_cmd.c_str());
 
       }
       else if (ip_proto == 17){
@@ -142,7 +154,7 @@ RIPLController::match_from_packet(uint8_t *pkt)
         std::memcpy(&udp_src, ptr , 2);
         std::memcpy(&udp_dst, ptr + 2, 2);
         char new_cmd[] = "udp_src=%d,udp_dst=%d,%s";
-        cur_cmd = format(new_cmd, udp_src, udp_dst, cur_cmd.c_str());
+        cur_cmd = format(new_cmd, htons(udp_src), htons(udp_dst), cur_cmd.c_str());
       }
   }
   else if (ntohs(type) == 0x0806 ){
@@ -181,18 +193,21 @@ RIPLController::match_from_packet(uint8_t *pkt)
 
 void 
 RIPLController::_install_path(Ptr<const RemoteSwitch> sw, 
-                              uint64_t out_dpid, uint32_t final_out_port, uint8_t *pkt)
+                              uint64_t out_dpid,  uint32_t buffer_id, 
+                              uint32_t final_out_port, uint8_t *pkt)
 {
     uint64_t dpId = sw->GetDpId ();
     std::string in_name = FatTreeTopo::id_gen(dpId).NameStr();
     std::string out_name = FatTreeTopo::id_gen(out_dpid).NameStr();
     Path route = this->routing->get_route(in_name, out_name, pkt);  
 
-    size_t route_size = route.size(); 
+    size_t route_size = route.size();
+    // NS_LOG_DEBUG("ROUTE SIZE " << route.size() << " IN " << in_name << " out " <<  out_name);
     if (route_size > 0){
         std::string match = this->match_from_packet(pkt);
         size_t i = 0;
         for (auto node: route){
+          // NS_LOG_DEBUG("NODE in the path " << node);
           uint64_t node_dpid = FatTreeTopo::id_gen(node).dpid;
           uint32_t out_port;
           if (i < (route_size - 1)) {
@@ -205,42 +220,59 @@ RIPLController::_install_path(Ptr<const RemoteSwitch> sw,
           }
           char cmd[] = "apply:output=%d";
           std::string actions = format(cmd, out_port);
-          this->add_flow(this->switches[node_dpid], 10, match, actions);
+          if (!i){
+            this->add_flow(this->switches[node_dpid], buffer_id, 10, match, actions);
+          }
+          else {
+            this->add_flow(this->switches[node_dpid], NO_BUFFER, 10, match, actions);
+          }
           i += 1;
         }
     }
 }                    
  
 void RIPLController::send_packet_out(Ptr<const RemoteSwitch> sw, uint32_t xid,
-                                   uint32_t in_port, uint32_t out_port, uint8_t* data, uint32_t data_length)
+                                   uint32_t in_port, uint32_t out_port, uint8_t* data, 
+				   uint32_t data_length)
 {
       // Lets send the packet out to switch.
       struct ofl_msg_packet_out reply;
       reply.header.type = OFPT_PACKET_OUT;
-      reply.buffer_id = 0xffffffff;
+      reply.buffer_id = NO_BUFFER;
       reply.in_port = in_port;
-      reply.data_length = 0;
-      reply.data = 0;
+      // reply.data_length = 0;
+      // reply.data = 0;
 
       // if (buffer_id == NO_BUFFER)
-        // {
+         // {
           // No packet buffer. Send data back to switch
+      // Ptr<Packet> pkt =  Create<Packet>(data, data_length, true);
+      // uint8_t pktData[pkt->GetSize ()];
+      // pkt->CopyData (pktData, pkt->GetSize ());
+
       reply.data_length = data_length;
       reply.data = data;
-        // }
-
-      // Create output action
-      struct ofl_action_output *a =
-        (struct ofl_action_output*)xmalloc (sizeof (struct ofl_action_output));
-      a->header.type = OFPAT_OUTPUT;
-      a->port = out_port;
-      a->max_len = 0;
-
       reply.actions_num = 1;
-      reply.actions = (struct ofl_action_header**)&a;
-
-      SendToSwitch (sw, (struct ofl_msg_header*)&reply, xid);
-      free (a);
+      if (out_port){
+        // Create output actions
+        struct ofl_action_output *a =
+        (struct ofl_action_output*)xmalloc (sizeof (struct ofl_action_output));
+      	a->header.type = OFPAT_OUTPUT;
+      	a->port = out_port;
+      	a->max_len = 0;
+        reply.actions = (struct ofl_action_header**)&a;
+        SendToSwitch (sw, (struct ofl_msg_header*)&reply, xid);
+        free (a);
+      }
+      else {
+        struct ofl_action_group *a =
+          (struct ofl_action_group*) xmalloc (sizeof (struct ofl_action_group) );
+        a->header.type = OFPAT_GROUP;
+        a->group_id = 1;
+        reply.actions = (struct ofl_action_header**)&a;
+        SendToSwitch (sw, (struct ofl_msg_header*)&reply, xid);
+        free (a);
+      }
 }
 
 ofl_err
@@ -278,32 +310,48 @@ RIPLController::HandlePacketIn (
       struct ofl_match_tlv *ethDst =
         oxm_match_lookup (OXM_OF_ETH_DST, (struct ofl_match*)msg->match);
       dst48.CopyFrom (ethDst->value);
-
-      this->macTable[src48] = std::make_pair(dpId, inPort);
+      // this->macTable[src48] = std::make_pair(dpId, inPort);
       // self.macTable[src] = (dpid, in_port)
-       
+      // NS_LOG_DEBUG("DP "<< dpId << " MAC " << dst48 << " Broadcast? " << dst48.IsBroadcast());
+      if(dst48.IsBroadcast()) {
+         struct ofl_match_tlv *arp_tpa =
+        oxm_match_lookup (OXM_OF_ARP_TPA, (struct ofl_match*)msg->match);
+        Ipv4Address ip = Ipv4Address( ntohl(*((uint32_t*) arp_tpa->value)));
+        ipMACTable_t::iterator it = this->ipTable.find(ip);
+        if (it != ipTable.end()){
+            // NS_LOG_DEBUG("DP "<< dpId << " Broadcast " << dst48);
+            uint8_t newMac[6];
+            this->ipTable[ip].CopyTo(newMac);
+            dst48.CopyFrom(newMac);
+            // NS_LOG_DEBUG("DP "<< dpId << " Changed " << dst48);
+        }
+      } 
+
       // if (msg->buffer_id == NO_BUFFER){
       pkt = msg->data; 
+      // NS_LOG_DEBUG ("DP "<< dpId << " Buffer " << msg->buffer_id);
       // printf("Buffer %d\n", msg->data_length);
       // }
-
       macTable_t::iterator it = this->macTable.find(dst48);
       if (it != this->macTable.end()) {
           uint64_t out_dpid = this->macTable[dst48].first;
           uint32_t out_port = this->macTable[dst48].second;
-
           char cmd[] = "apply:output=%d";
           std::string actions = format(cmd, out_port);
-          _install_path(swtch, out_dpid, out_port, pkt);
-          send_packet_out(this->switches[out_dpid], xid, inPort, 
-                          out_port, msg->data, msg->data_length);
+           NS_LOG_DEBUG ("DP "<< dpId << " Installing Path");
+          _install_path(swtch, out_dpid, msg->buffer_id, out_port, pkt);
+          // send_packet_out(this->switches[out_dpid], xid, OFPP_CONTROLLER, 
+                          // out_port, msg->data, msg->data_length);
       } 
+      /* Should never get here */
       else {
+          NS_LOG_DEBUG ("Sending packet out I should not");
           std::vector<uint64_t> dps = _raw_dpids(this->topo.layer_nodes(LAYER_EDGE));
           for (auto  dp: dps){
               std::vector<uint32_t> ports;
               std::string sw_name = FatTreeTopo::id_gen(dp).NameStr();
               for (auto host: this->topo.down_nodes(sw_name)){
+                  NS_LOG_DEBUG("Switch "<< sw_name << " Host " << host);
                   uint32_t sw_port =  this->topo.port(sw_name, host).first;
                   if (dp != dpId || (dp == dpId && inPort != sw_port)){
                       ports.push_back(sw_port);
@@ -311,9 +359,10 @@ RIPLController::HandlePacketIn (
               }
               for (auto port: ports){
                 send_packet_out(this->switches[dp], xid, 
-                                inPort, port, msg->data, msg->data_length);
-            }
-          }
+                             OFPP_CONTROLLER, port, msg->data, 
+                            msg->data_length);
+              }
+         }
       }
   }
 
@@ -386,6 +435,24 @@ RIPLController::HandshakeSuccessful (
   DpctlExecute (sw, "flow-mod cmd=add,table=0,prio=0 "
                 "apply:output=ctrl:1500");
 
+
+  // Add a group that broadcast to every host
+  // std::vector<uint32_t> ports;
+  // std::string sw_name = FatTreeTopo::id_gen(dpId).NameStr();
+  // for (auto host: this->topo.down_nodes(sw_name)){
+  //     NS_LOG_DEBUG("Switch "<< sw_name << " Host " << host);
+  //     uint32_t sw_port =  this->topo.port(sw_name, host).first;
+  //     ports.push_back(sw_port);
+  // }  
+  // std::ostringstream cmd;
+  // cmd << "group-mod cmd=add,type=all,group=1 ";
+  // for (auto port: ports){
+  //   char ext_cmd[] = "weight=0,port=any,group=any output=%d ";
+  //   cmd << format(ext_cmd, port);
+  // }
+  // // std::cout << cmd.str() << "\n";
+  // // abort();
+  // DpctlExecute (sw, cmd.str());
   // Configure te switch to buffer packets and send only the first 128 bytes of
   // each packet sent to the controller when not using an output action to the
   // OFPP_CONTROLLER logical port.

@@ -322,8 +322,7 @@ FatTreeTopo FatTreeTopo::build(uint32_t k, uint32_t speed)
                 InfoDict host_opts = topo.def_nopts(LAYER_HOST, host_id);
                 topo.addNode(host_id, host_opts);
                 std::pair<int, int> src_dst = topo.port(edge_id, host_id);
-                topo.addLink(edge_id, src_dst.first, host_id, src_dst.second);
-                // std::cout << src_dst.first << " " << src_dst.second << "\n";  
+                topo.addLink(edge_id, src_dst.first, host_id, src_dst.second); 
             }
             for (auto &a: agg_sws) {
                 std::string agg_id = topo.id_gen(p, a, 1).NameStr();
