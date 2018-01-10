@@ -15,7 +15,8 @@ enum app_type {
 
 struct exec {
     uint64_t id;         /* Creation id of the execution */
-    uint16_t type;       /* Retrieve from apps of the node */
+    uint32_t type;       /* Retrieve from apps of the node */
+    uint32_t exec_cnt;    /* How many times it should be executed */
     uint64_t start_time; /* Initial time of the application */  
     void *args;          /* Argument specific to the execution */
     UT_hash_handle hh;  
@@ -34,8 +35,8 @@ struct app {
 };
 
 struct app *app_creator(uint16_t type);
-struct exec *app_new_exec(uint64_t id, uint16_t type, uint64_t start_time, 
-                          void *args, size_t arg_size);
+struct exec *app_new_exec(uint64_t id, uint32_t type, uint32_t execs_num, 
+                        uint64_t start_time, void *args, size_t arg_size);
 void app_destroy(struct app *app);
 void app_destroy_exec(struct exec *exec);
 

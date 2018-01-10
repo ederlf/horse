@@ -27,7 +27,7 @@ void host_send_netflow(struct node *n, struct netflow *flow,
 /* Apps */
 void host_add_app(struct host *h, uint16_t type);
 
-void host_add_app_exec(struct host *h, uint64_t id, uint16_t type, 
+void host_add_app_exec(struct host *h, uint64_t id, uint32_t type, uint32_t execs_num, 
                   uint64_t start_time, void *args, size_t arg_size);
 
 struct netflow *host_execute_app(struct host *h, struct exec *exec);

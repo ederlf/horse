@@ -46,7 +46,7 @@ cdef extern from "sim/sim.h":
     void host_set_name(host *h, char* name)
     char* host_name(const host *h)
     void host_add_app(host *h, uint16_t type)
-    void host_add_app_exec(host *h, uint64_t id, uint16_t type, uint64_t 
+    void host_add_app_exec(host *h, uint64_t id, uint32_t type, uint32_t execs_num, uint64_t 
                         start_time, void* args, size_t arg_len)
     void host_start_app(host *h, uint64_t id)
 
@@ -70,6 +70,7 @@ cdef extern from "sim/sim.h":
     void sim_config_set_mode(sim_config *conf, int mode)
     int sim_config_get_mode(sim_config *conf)
     void sim_config_set_end_time(sim_config *conf, uint64_t end_time)
+    void sim_config_set_log_level(int level)
     uint64_t sim_config_get_end_time(sim_config *conf)
     void sim_config_set_ctrl_idle_interval(sim_config *conf, 
                                        uint64_t interval)

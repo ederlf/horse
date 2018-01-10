@@ -4,9 +4,7 @@
 #include "lib/netflow.h"
 
 struct raw_udp_args {
-    uint64_t duration;  /* How long it lasts? */
-    uint64_t rate;      /* How many packets and bytes to be sent */
-    uint8_t interval;  /* It basically splits a flow. Value in seconds*/
+    uint64_t rate;      /* How many packets and bytes to be sent per flow */
     uint32_t ip_dst;    /* Destination to send the UDP flows */
     uint16_t dst_port;  /* Destination port */
     uint16_t src_port;   /* Source port */

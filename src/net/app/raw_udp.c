@@ -17,8 +17,8 @@ raw_udp_flow(uint64_t start, struct netflow *flow,
     uint64_t pkt_cnt, byte_cnt;
     uint32_t pkt_size = 1470 + 34; /* Datagram plus headers */
     pkt_cnt = args->rate / (pkt_size * 8);
-    byte_cnt =  pkt_cnt * pkt_size * args->interval;
-    // printf("Packets %ld Bytes %ld\n", pkt_cnt, byte_cnt);
+    byte_cnt =  pkt_cnt * pkt_size;
+    printf("Packets %ld Bytes %ld\n", pkt_cnt, byte_cnt);
     flow->match.eth_type = ETH_TYPE_IP;
     flow->match.ip_proto = IP_PROTO_UDP;
     flow->match.ipv4_dst = args->ip_dst;

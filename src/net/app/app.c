@@ -22,12 +22,13 @@ struct app *app_creator(uint16_t type)
     return a;
 }
 
-struct exec *app_new_exec(uint64_t id, uint16_t type, uint64_t start_time, 
-                          void *args, size_t arg_size)
+struct exec *app_new_exec(uint64_t id, uint32_t type, uint32_t execs_num, 
+                        uint64_t start_time, void *args, size_t arg_size)
 {
     struct exec *exec = xmalloc(sizeof(struct exec));
     exec->id = id;
     exec->type = type;
+    exec->exec_cnt = execs_num;
     exec->start_time = start_time;
     exec->args = xmalloc(arg_size);
     memcpy(exec->args, args, arg_size);

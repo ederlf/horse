@@ -26,7 +26,7 @@ int ping_handle_netflow(struct netflow *flow)
             memcpy(&start_time, flow->icmp_info.data, sizeof(uint64_t));
             // printf("Start time %ld and End time %ld\n", flow->end_time, start_time );
             uint64_t end_time = flow->start_time - start_time;
-            printf("End time %ld %ld %ld\n", end_time, flow->start_time, start_time  );
+            // printf("End time %ld %ld %ld\n", end_time, flow->start_time, start_time  );
             printf("ECHO_REPLY ms:%lu.%lu Src:%x Dst:%x\n", end_time / 1000, end_time % 1000, flow->match.ipv4_dst, flow->match.ipv4_src );
             return 0;  
         }
