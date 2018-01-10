@@ -52,6 +52,6 @@ bool node_flow_push(struct node *n, struct netflow *flow);
 struct netflow *node_flow_pop(struct node *n);
 void node_calculate_loss(struct node *n, struct netflow *nf, uint32_t out_port);
 void node_update_port_capacity(struct node *n, int bits, uint32_t out_port);
-void node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port);
+int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port);
 
 #endif

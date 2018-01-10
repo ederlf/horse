@@ -101,12 +101,13 @@ node_update_port_capacity(struct node *n, int bits, uint32_t out_port)
     }
 }
 
-void node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port)
+int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port)
 {
     struct port *p = node_port(n, out_port);
     if (p) {
         // printf("Checking loss on port %s\n", p->name);
-        buffer_state_calculate_loss(&p->buffer_state, p->curr_speed);
+        return buffer_state_calculate_loss(&p->buffer_state, p->curr_speed);
     }
+    return 0;
     UNUSED(nf);
 }

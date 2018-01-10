@@ -56,15 +56,14 @@ handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node,
             /* Need to copy because of multicast 
                Is there a way to avoid that?
             */
-
+            
             // Update sender and receiver buffers
             int rate = (nf->byte_cnt * 8) / 1000;
             node_update_port_capacity(node, rate, op->port);
-            /* Calculate the rate of transmission */
+            /* Calculate the time to transmit. The flow send event will happen then */
             node_add_tx_time(node, op->port, nf);
             struct netflow *new = netflow_new_from_netflow(nf);
-            
-
+            printf("Scheduling to send %x %ld %d %ld\n", nf->match.eth_type, nf->start_time, op->port, sch->clock);
             send = sim_event_flow_send_new(nf->start_time, 
                                             node->uuid, op->port);
            
@@ -104,6 +103,22 @@ handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node,
     struct topology *topo = ev_hdl->topo;
     /* May have or not ports to send the flow */
     /* Set completion time and in_port*/
+    uint64_t exec_id = nf->exec_id;
+    struct exec *exec;
+    /* Does the host has more to send? */
+    if (node->type == HOST) {
+        HASH_FIND(hh, host_execs((struct host*) node), &exec_id, sizeof(uint64_t), exec); 
+        if ( exec && exec->exec_cnt ){
+            printf("Scheduling next app exec %ld\n", nf->start_time );
+            /* Schedule 1 microsecond after the time the next flow will start on the next hop
+               Otherwise the app risks to start before sending the flow, which may cause a non
+               existent congestion. 
+            */
+            exec->start_time = nf->start_time + 1;
+            struct sim_event_app_start *ev = sim_event_app_start_new(nf->start_time, node->uuid, exec);
+            scheduler_insert(sch, (struct sim_event*) ev);
+        } 
+    }
 
     if (topology_next_hop(topo, node->uuid, out_port, 
                            &dst_uuid, &dst_port, &latency)){
@@ -125,9 +140,11 @@ handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node,
         
         new_flow->flow = nf;
         new_flow->flow->match.in_port = dst_port;
+        printf("Scheduling to receive %x %ld\n", nf->match.eth_type, nf->start_time);
         scheduler_insert(sch, (struct sim_event*) new_flow);
     }
     else {
+        printf("Could not find next hop\n");
         netflow_destroy(nf);  
     }
 }
@@ -138,18 +155,25 @@ handle_send_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
     struct sim_event_flow_send *ev_flow = (struct sim_event_flow_send *)ev;
     /* Retrieve node to handle the flow */
     struct node *node = topology_node(topo, ev_flow->node_id);
+    printf("Sending %ld %x %ld\n", ev->time, ev_flow->flow->match.eth_type, ev_flow->flow->start_time);
     if (node) {
         // handle_before_flow_send();
-         int rate = (ev_flow->flow->byte_cnt * 8) / 1000;
+        int rate = (ev_flow->flow->byte_cnt * 8) / 1000;
+        int loss = node_calculate_port_loss(node, ev_flow->flow, ev_flow->out_port);
         /* Calculate loss */
-        node_calculate_port_loss(node, ev_flow->flow, ev_flow->out_port);
+        if (loss){
+           /* Remove capacity from buffer and drop whole flow for now */
+           node_update_port_capacity(node, -rate, ev_flow->out_port);
+           printf("Dropping %d\n", loss); 
+        }
         // struct node *dst_node = topology_node(topo, dst_uuid);
-        
-        node_update_port_capacity(node, -rate, ev_flow->out_port);
-        /* Calculate loss here */
-        node->send_netflow(node, ev_flow->flow, ev_flow->out_port);
-        // printf("Handle after\n");
-        handle_after_flow_send(ev_hdl, node, ev_flow->out_port, ev_flow->flow);
+        else {
+            node_update_port_capacity(node, -rate, ev_flow->out_port);
+            /* Calculate loss here */
+            node->send_netflow(node, ev_flow->flow, ev_flow->out_port);
+            // printf("Handle after\n");
+            handle_after_flow_send(ev_hdl, node, ev_flow->out_port, ev_flow->flow);
+        }
     }
 }
 
@@ -199,6 +223,7 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
         }
         struct sim_event_flow_send *send; 
         struct netflow *new = netflow_new_from_netflow(nf);
+        printf("Scheduling new send from packet out %ld %x\n", nf->start_time, nf->match.eth_type );
         send = sim_event_flow_send_new(nf->start_time, 
                                        dp_uuid(dp), op->port);
         // printf("Next flow %d %ld\n", dst_port, dst_uuid);
@@ -257,6 +282,7 @@ handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev)
                 struct sim_event_flow_send *send; 
                 struct netflow *new = netflow_new_from_netflow(nf);
                 node_add_tx_time(node, op->port, new);
+                printf("Scheduling send from app start %ld %x\n", nf->start_time, nf->match.eth_type );
                 send = sim_event_flow_send_new(nf->start_time, 
                                                 node->uuid, op->port);
                 /* Need to copy because of multicast 
