@@ -16,7 +16,6 @@ int ping_handle_netflow(struct netflow *flow)
             uint32_t ip_dst = flow->match.ipv4_src;
             flow->match.icmpv4_type = ECHO_REPLY;
             flow->match.ipv4_dst = ip_dst;
-            netflow_new_flow_id(flow);
              
             return 1;
         }

@@ -1,9 +1,6 @@
 #include "netflow.h"
 #include <uthash/utlist.h>
 
-/* Starts from 0 */
-static uint64_t flow_id = 0;
-
 struct netflow 
 *netflow_new(void)
 {
@@ -16,13 +13,7 @@ struct netflow *netflow_new_from_netflow(struct netflow *to_copy)
 {
     struct netflow *nf = xmalloc(sizeof(struct netflow));
     memcpy(nf, to_copy, sizeof(struct netflow));
-    nf->flow_id = flow_id++;
     return nf;
-}
-
-void netflow_new_flow_id(struct netflow *nf)
-{
-    nf->flow_id = flow_id++;
 }
 
 void 
@@ -33,7 +24,6 @@ netflow_init(struct netflow *nf)
      *  of a NULL pointer is all bits 0, so initialize
      *  the pointer. 
     */
-    nf->flow_id = flow_id++;
     nf->payload = NULL;
     nf->out_ports = NULL;
 }
@@ -514,6 +504,6 @@ netflow_update_send_time(struct netflow *flow, uint32_t port_speed)
 {
   /* Port speed is converted to bits per microseconds */
   flow->start_time +=  (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000);
-  // printf("Added time %ld %ld\n", (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000), flow->byte_cnt);
+  printf("Added time %ld %ld\n", (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000), flow->byte_cnt);
 }   
     
