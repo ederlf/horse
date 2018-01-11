@@ -64,7 +64,6 @@ struct netflow {
 
 struct netflow *netflow_new(void);
 struct netflow *netflow_new_from_netflow(struct netflow *to_copy);
-void netflow_new_flow_id(struct netflow *nf);
 void netflow_init(struct netflow *nf);
 void netflow_destroy(struct netflow *nf);
 void netflow_push_vlan(struct netflow *nf, uint16_t eth_type);
@@ -76,6 +75,7 @@ bool netflow_is_vlan_tagged(struct netflow *nf);
 size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer);
 void pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len);
 void netflow_clean_out_ports(struct netflow *flow);
+void netflow_add_out_port(struct netflow *nf, uint32_t out_port);
 void netflow_update_send_time(struct netflow *flow, uint32_t port_speed);
 
 #endif

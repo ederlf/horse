@@ -166,11 +166,8 @@ l2_recv_netflow(struct host *h, struct netflow **flow){
             /* Learns MAC of the requester */
             if (!ae){
                 // log_debug("Learning %p\n", ae);
-                struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
-                memset(e, 0x0, sizeof(struct arp_table_entry));
-                e->ip = (*flow)->match.arp_spa;
-                memcpy(e->eth_addr, (*flow)->match.eth_src, ETH_LEN);
-                e->iface = (*flow)->match.in_port;
+                struct arp_table_entry *e = arp_table_entry_new((*flow)->match.arp_spa, 
+                                            (*flow)->match.eth_src, (*flow)->match.in_port);
                 arp_table_add_entry(&h->ep.at, e);
             }
             /* Craft reply */
@@ -179,15 +176,11 @@ l2_recv_netflow(struct host *h, struct netflow **flow){
             memcpy((*flow)->match.arp_tha, (*flow)->match.eth_src, ETH_LEN);
             memcpy((*flow)->match.eth_dst, (*flow)->match.eth_src, ETH_LEN);
             memcpy((*flow)->match.eth_src, p->eth_address, ETH_LEN);
-            
             (*flow)->match.arp_spa = (*flow)->match.arp_tpa;
             (*flow)->match.arp_tpa = ip_dst;
             (*flow)->match.arp_op = ARP_REPLY;
             /* Add outport */
-            struct out_port *op = xmalloc(sizeof(struct out_port));
-            op->port = (*flow)->match.in_port;
-            LL_APPEND((*flow)->out_ports, op);
-            // netflow_update_send_time(*flow, p->curr_speed); 
+            netflow_add_out_port((*flow), (*flow)->match.in_port);
             // log_debug("destination eth address " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS((*flow)->match.eth_src));
         }
         /* ARP Reply */
@@ -195,11 +188,8 @@ l2_recv_netflow(struct host *h, struct netflow **flow){
             /* Add ARP table */
             uint64_t start_time = (*flow)->start_time;
             log_debug("Received ARP reply %ld\n", (*flow)->start_time);
-            struct arp_table_entry *e = xmalloc(sizeof(struct arp_table_entry));
-            memset(e, 0x0, sizeof(struct arp_table_entry));
-            e->ip = (*flow)->match.arp_spa;
-            memcpy(e->eth_addr, (*flow)->match.arp_sha, ETH_LEN);
-            e->iface = (*flow)->match.in_port;
+            struct arp_table_entry *e = arp_table_entry_new((*flow)->match.arp_spa, 
+                                (*flow)->match.arp_sha, (*flow)->match.in_port);
             arp_table_add_entry(&h->ep.at, e);
             /* Cleans ARP flow */
             netflow_destroy(*flow);
@@ -265,9 +255,7 @@ ip_lookup(struct host *h, struct netflow *flow){
         re = ipv4_lookup(&h->ep.rt, 0);
     }
     if (re){
-        struct out_port *op = xmalloc(sizeof(struct out_port));
-        op->port = re->iface;
-        LL_APPEND(flow->out_ports, op);
+        netflow_add_out_port(flow, re->iface);
         /* IP of the next hop to search in the ARP table */
         return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
     } 
@@ -306,9 +294,7 @@ resolve_mac(struct host *h, struct netflow **flow, uint32_t ip){
             memcpy(arp_req->match.eth_src, p->eth_address, ETH_LEN);
             memcpy(arp_req->match.arp_sha, p->eth_address, ETH_LEN);
             arp_req->match.arp_spa = p->ipv4_addr->addr;
-            struct out_port *ap = xmalloc(sizeof(struct out_port));
-            ap->port = op->port;
-            LL_APPEND(arp_req->out_ports, ap);
+            netflow_add_out_port(arp_req, op->port);
         }
         /* Set Destination address */
         memcpy(arp_req->match.eth_dst, bcast_eth_addr, ETH_LEN); 

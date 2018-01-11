@@ -201,9 +201,7 @@ dp_create_flood(struct datapath *dp, struct netflow *nf)
     struct port *p, *tmp_port;
     HASH_ITER(hh, dp_ports(dp), p, tmp_port) {
         if (p->port_id != nf->match.in_port) {
-            struct out_port *new_port = xmalloc(sizeof(struct out_port));
-            new_port->port = p->port_id;
-            LL_APPEND(nf->out_ports, new_port);
+            netflow_add_out_port(nf, p->port_id);
         }
     }
 }

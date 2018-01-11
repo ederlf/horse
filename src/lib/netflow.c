@@ -500,10 +500,17 @@ void netflow_clean_out_ports(struct netflow *flow)
 }
 
 void 
+netflow_add_out_port(struct netflow *nf, uint32_t out_port)
+{
+    struct out_port *op = xmalloc(sizeof(struct out_port));
+    op->port = out_port;
+    LL_APPEND(nf->out_ports, op);
+}
+
+void 
 netflow_update_send_time(struct netflow *flow, uint32_t port_speed)
 {
   /* Port speed is converted to bits per microseconds */
   flow->start_time +=  (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000);
-  printf("Added time %ld %ld\n", (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000), flow->byte_cnt);
 }   
     
