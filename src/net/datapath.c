@@ -123,60 +123,60 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
 
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
-bool
-dp_recv_netflow(struct node *n, struct netflow **nf)
+struct netflow*
+dp_recv_netflow(struct node *n, struct netflow *nf)
 {
     /* Get the input port and update rx counters*/
     uint8_t table_id;
     struct flow *f;
     /* Buffering to be implemented */
     struct datapath *dp = (struct datapath*) n;
-    (*nf)->metadata.buffer_id = OFP_NO_BUFFER;
-    uint32_t in_port = (*nf)->match.in_port;
+    nf->metadata.buffer_id = OFP_NO_BUFFER;
+    uint32_t in_port = nf->match.in_port;
     struct port *p = dp_port(dp, in_port);
     if (p != NULL) {
         struct flow_table *table;
         struct action_set acts;
         action_set_init(&acts);
-        p->stats.rx_bytes += (*nf)->byte_cnt;
-        p->stats.rx_packets += (*nf)->pkt_cnt;
+        p->stats.rx_bytes += nf->byte_cnt;
+        p->stats.rx_packets += nf->pkt_cnt;
         // printf("receiving Flow %s from %x to %x  at %ld\n", p->name, (*nf)->match.ipv4_src, (*nf)->match.ipv4_dst, (*nf)->start_time);
         /* Reset metadata */
-        (*nf)->match.metadata = 0;
+        nf->match.metadata = 0;
         /* Enter pipeline */
         table = dp->tables[0];
-        table_id = (*nf)->metadata.table_id = 0;
+        table_id = nf->metadata.table_id = 0;
         while (table) {
-            f = flow_table_lookup(table, &(*nf)->match, (*nf)->start_time);
+            f = flow_table_lookup(table, &nf->match, nf->start_time);
             table = NULL;
             if (f != NULL) {
                 uint8_t next_table_id = 0;
                 /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
                 /* Increase the flow counters */
-                f->pkt_cnt += (*nf)->pkt_cnt;
-                f->byte_cnt += (*nf)->byte_cnt;
-                (*nf)->metadata.cookie = f->cookie;
+                f->pkt_cnt += nf->pkt_cnt;
+                f->byte_cnt += nf->byte_cnt;
+                nf->metadata.cookie = f->cookie;
                 /* Execute instructions */
-                execute_instructions(&f->insts, &next_table_id, *nf, &acts);
+                execute_instructions(&f->insts, &next_table_id, nf, &acts);
                 if (next_table_id > table_id) {
-                    table_id = (*nf)->metadata.table_id = next_table_id;
+                    table_id = nf->metadata.table_id = next_table_id;
                     table = dp->tables[table_id];
                 }
                 else {
                     /* Execute action and clean */
-                    execute_action_set(&acts, *nf);
+                    execute_action_set(&acts, nf);
                     action_set_clean(&acts);
                     /* It only makes sense to continue later if it 
                        will be forwarded.
                     */
-                    if ((*nf)->out_ports){
-                        return true;
+                    if (nf->out_ports){
+                        return nf;
                     }
                 }
             }
         }
     }
-    return false;
+    return NULL;
 }
 
 void

@@ -52,16 +52,13 @@ void sim_event_free(struct sim_event* ev){
 }
  
 struct sim_event_flow_recv *sim_event_flow_recv_new(uint64_t time, 
-                                               uint64_t node_id, uint64_t src_id, 
-                                               uint32_t src_port, uint32_t rate) 
+                                               uint64_t node_id, uint32_t rate) 
 {
     struct sim_event_flow_recv *flow = xmalloc(sizeof(struct sim_event_flow_recv));
     flow->hdr.time = time;
     flow->hdr.type = EVENT_FLOW_RECV;
     flow->node_id = node_id;
-    flow->src_id = src_id;
     flow->rate = rate;
-    flow->src_port = src_port;
     return flow;   
 }
 

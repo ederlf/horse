@@ -14,6 +14,7 @@
 #include <uthash/utlist.h>
 #include <valgrind/memcheck.h>
 #include "lib/openflow.h"
+#include <log/log.h>
 
 #define EV_NUM 1000000
 
@@ -40,7 +41,6 @@ initial_events(struct sim *s)
             struct exec *exec, *exec_tmp;
             HASH_ITER(hh, host_execs((struct host*) node), exec, exec_tmp) {
                 struct sim_event_app_start *ev = sim_event_app_start_new(exec->start_time, node->uuid, exec);
-
                 scheduler_insert(sch, (struct sim_event*) ev);
             }   
         }
@@ -63,6 +63,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->config = config;
     s->evh.topo = topo;
     s->evh.sch = scheduler_new();
+    s->evh.live_flows = NULL;
     s->cont.exec = cont_mode;
     initial_events(s); 
     if (sim_config_get_mode(s->config) == EMU_CTRL){
@@ -150,9 +151,11 @@ des_mode(void *args){
 
         struct sim_event *ev = scheduler_dispatch(sch);
         sch->clock = ev->time;
+        // printf("DES next event time %ld, type %d, update %ld\n", ev->time, ev->type, (sch->clock - last_stats) / 1000000);
         /* Update status */
         if ((sch->clock - last_stats) / 1000000){
-            // printf("Updating stats %ld %ld %ld %ld\n", ev->time, last_stats, sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
+            // printf("Updating stats %ld %ld %ld %ld\n", ev->time, last_stats, 
+                // sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
             update_stats(s->evh.topo, sch->clock);
             last_stats = sch->clock;
         }
@@ -162,14 +165,14 @@ des_mode(void *args){
             /* Execute */
             handle_event(&s->evh, ev);
             /* TODO: NOT DRY AAAARGH */
-            if (sch->clock - last_wrt > 10000000 ){
+            if ((sch->clock - last_wrt) > 10000000 ){
                 // printf("Switching to CONT WRT\n");
                 handle_event(&s->evh, make_time_msg(sch->clock));
-                last_wrt = sch->clock;
                 /* Wake up timer */
                 pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
                 sch->mode = CONTINUOUS;
+                last_wrt = sch->clock;
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
             }
@@ -180,7 +183,7 @@ des_mode(void *args){
                 pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
                 sch->mode = CONTINUOUS;
-                // printf("Switching to CONT\n");
+                printf("Switching to CONT\n");
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
             
@@ -220,19 +223,24 @@ cont_mode(void* args)
     cur_ev = scheduler_retrieve(sch); 
     sch->clock += delta_us;     
 
-    if ((sch->clock - last_stats) / 1000000){
-        update_stats(s->evh.topo, sch->clock);
-        last_stats = sch->clock;
-    }
-
     /* Time will be shared now */
-    if (sch->clock - last_wrt > 10000000){
+    if ((sch->clock - last_wrt) > 10000000){
         handle_event(&s->evh, make_time_msg(sch->clock));
         last_wrt = sch->clock;
     }
-
+    // if (cur_ev->type == EVENT_FLOW_SEND){
+    //     struct sim_event_flow_send *send = (struct sim_event_flow_send *) cur_ev;
+    //     // printf("Next event CONT Before loop %ld %d %ld %x\n", cur_ev->time, cur_ev->type, sch->clock, send->flow->match.eth_type );
+    // }
     while (cur_ev->time <= sch->clock){
         /* Execute */
+        if ((cur_ev->time - last_stats) / 1000000){
+            // printf("Updating stats CONT %ld %ld %ld %ld\n", cur_ev->time, last_stats, 
+                // sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
+            update_stats(s->evh.topo, cur_ev->time);
+            last_stats = cur_ev->time ;
+        }
+
         if (cur_ev->type == EVENT_OF_MSG_OUT || 
              cur_ev->type == EVENT_OF_MSG_IN ) {
             last_ctrl = cur_ev->time;
@@ -244,14 +252,18 @@ cont_mode(void* args)
         scheduler_delete(sch, cur_ev);
         sim_event_free(cur_ev);
         cur_ev = scheduler_retrieve(sch);
+        // printf("Next event CONT %ld %d\n", cur_ev->time, cur_ev->type );
     }
-            
+
+    /* Update only after events are executed */
+    
+
     check_idle:
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
     /* Check if controller is idle for some time */
     if ( (sch->clock - last_ctrl) > 
         sim_config_get_ctrl_idle_interval(s->config)) {
-        // printf("Switching to DES\n");
+        printf("Switching to DES %ld\n", sch->clock);
         pthread_mutex_lock( &mtx_mode );
         sch->mode = DES;
         /* Wake up timer */
@@ -264,9 +276,9 @@ cont_mode(void* args)
 void 
 start(struct topology *topo, struct sim_config *config) 
 {
-    struct sim s;
+    struct sim s; 
     memset(&s, 0x0, sizeof(struct sim));
     sim_init(&s, topo, config);
-    sim_close(&s);    
+    sim_close(&s);
 }
 
