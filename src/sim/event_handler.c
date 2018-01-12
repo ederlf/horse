@@ -146,13 +146,13 @@ handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node,
     if (node->type == HOST) {
         HASH_FIND(hh, host_execs((struct host*) node), &exec_id, sizeof(uint64_t), exec); 
         if ( exec && exec->exec_cnt ){
-            log_debug("Scheduling next app exec %ld\n", nf->start_time );
             /* Schedule 1 microsecond after the time the next flow will start on the next hop
                Otherwise the app risks to start before sending the flow, which may cause a non
                existent congestion. 
             */
-            exec->start_time = nf->start_time + 1;
-            struct sim_event_app_start *ev = sim_event_app_start_new(nf->start_time, node->uuid, exec);
+            exec->start_time = nf->start_time + 1000000;
+            log_debug("Scheduling next app exec %ld\n", nf->start_time );
+            struct sim_event_app_start *ev = sim_event_app_start_new(exec->start_time, node->uuid, exec);
             scheduler_insert(sch, (struct sim_event*) ev);
         } 
     }
