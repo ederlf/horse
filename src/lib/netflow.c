@@ -216,6 +216,11 @@ size_t netflow_to_pkt(struct netflow *nf, uint8_t *buffer)
         }
     }
 
+    if (m.eth_type == ETH_TYPE_LLDP) {
+        memcpy(buffer + offset, nf->payload, nf->payload_len);
+        return offset + nf->payload_len;
+    }
+
     if (m.eth_type == ETH_TYPE_ARP) {
         struct arp_eth_header *arp = (struct arp_eth_header*) (buffer + 
                                                                offset);
@@ -391,6 +396,13 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
             offset += sizeof(struct mpls);
             /* no processing past MPLS */
             return;
+    }
+
+    if (m->eth_type == ETH_TYPE_LLDP) {
+        nf->payload_len = pkt_len - offset;
+        nf->payload = xmalloc(nf->payload_len);
+        memcpy(nf->payload, buffer + offset, nf->payload_len);
+        return;
     }
 
     /* ARP */

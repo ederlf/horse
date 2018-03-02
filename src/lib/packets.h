@@ -11,6 +11,7 @@
 #define ETH_TYPE_IPV6          0x86dd
 #define ETH_TYPE_ARP           0x0806
 #define ETH_TYPE_VLAN          0x8100
+#define ETH_TYPE_LLDP          0x88cc
 #define ETH_TYPE_VLAN_QinQ     0x88a8
 #define ETH_TYPE_MPLS          0x8847
 #define ETH_TYPE_MPLS_MCAST    0x8848
