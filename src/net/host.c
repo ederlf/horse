@@ -344,7 +344,7 @@ host_execute_app(struct host *h, struct exec *exec)
     if (app) {
         flow = app->start(exec->start_time, exec->args);
         flow->exec_id = exec->id;
-        log_debug("Flow Start time APP %ld\n", flow-> start_time);
+        log_info("Flow Start time APP %ld Execs %d\n", flow-> start_time, exec->exec_cnt);
         exec->exec_cnt -= 1;
         return find_forwarding_ports(h, flow);
         
