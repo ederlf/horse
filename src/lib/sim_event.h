@@ -50,8 +50,7 @@ struct sim_event {
 struct sim_event_flow_recv {
     struct sim_event hdr;       
     uint64_t node_id;           /* The node to process the event.     */
-    uint64_t src_id;            /* Id of the sender */
-    uint32_t src_port;          /* Port of the sender */
+    uint64_t flow_id;
     uint32_t rate;              /* Rate of flow arrived */
     struct netflow *flow;       /* Pointer to the flow, it 
                                    can be modified by the state*/
@@ -63,6 +62,7 @@ struct sim_event_flow_recv {
 struct sim_event_flow_send {
     struct sim_event hdr;       
     uint64_t node_id;           /* The node to process the event.     */
+    uint64_t flow_id;           /* Retrieve flow */
     uint32_t out_port;
     struct netflow *flow;       /* Pointer to the flow, it 
                                    can be modified by the state*/
@@ -117,8 +117,7 @@ struct sim_event* sim_event_new(uint64_t time);
 void sim_event_free(struct sim_event* ev);
  
 struct sim_event_flow_recv *sim_event_flow_recv_new(uint64_t time, 
-                                               uint64_t node_id, uint64_t src_id, 
-                                               uint32_t src_port, uint32_t rate); 
+                                               uint64_t node_id, uint32_t rate); 
 
 struct sim_event_flow_send *sim_event_flow_send_new(uint64_t time, 
                                                     uint64_t node_id, 

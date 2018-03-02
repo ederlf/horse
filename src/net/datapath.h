@@ -43,7 +43,7 @@ void dp_add_port(struct datapath *dp, uint32_t port_id,
 
 struct port* dp_port(const struct datapath *dp, uint32_t port_id);
 
-bool dp_recv_netflow(struct node *n, struct netflow **flow);
+struct netflow* dp_recv_netflow(struct node *n, struct netflow *flow);
 
 void dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port);
 

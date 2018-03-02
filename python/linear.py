@@ -51,5 +51,5 @@ for i, h in enumerate(hosts):
         h.ping("10.0.0.%s" % (z), time)
         time += 1000000
 end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000  
-sim = Sim(topo, ctrl_interval = 100000, end_time = end_time, log_level = LogLevels.LOG_TRACE)
+sim = Sim(topo, ctrl_interval = 100000, end_time = end_time, log_level = LogLevels.LOG_INFO)
 sim.start()

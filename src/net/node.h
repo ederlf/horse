@@ -20,7 +20,7 @@ enum node_type {
    flows that cannot be sent before the the completion of an event. e.g: after an ARP REPLY.
 */
 struct buffer {
-    struct netflow *flows[BUFFER_MAX];
+    struct netflow *flows[BUFFER_MAX]; /* Store the flow id */
     int tail;  
 };
 
@@ -35,7 +35,7 @@ struct node {
     uint16_t type;
     struct buffer flow_buff; /* Buffer for packets waiting to be sent */
     struct buffer_state buffer_state; 
-    bool (*recv_netflow) (struct node *, struct netflow **); /* true indicates 
+    struct netflow* (*recv_netflow) (struct node *, struct netflow *); /* true indicates 
                                                          further processing */
     void (*send_netflow) (struct node *, struct netflow *, uint32_t out_port);
     UT_hash_handle hh;  

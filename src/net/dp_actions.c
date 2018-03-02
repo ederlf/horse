@@ -186,9 +186,7 @@ static void
 output(struct action *act, struct netflow *nf)
 {
     struct output out = act->out;
-    struct out_port *op = xmalloc(sizeof(struct out_port));
-    op->port = out.port;
-    LL_APPEND(nf->out_ports, op);
+    netflow_add_out_port(nf, out.port);
 }
 
 /* Array of function pointers for the actions. */ 
