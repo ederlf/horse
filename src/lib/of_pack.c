@@ -542,19 +542,15 @@ of_object_t *pack_packet_in(struct netflow *f, size_t *len)
         return NULL;
     }
     pkt_len = netflow_to_pkt(f, of_octets.data);
-    // printf("Needs to send packet_in %d\n", of_packet_in->length);
     of_octets.bytes = pkt_len;
     if ((of_packet_in_data_set(of_packet_in, &of_octets)) != OF_ERROR_NONE) {
-        printf("Failed to write packet data to packet-in message\n");
+        fprintf(stderr, "Failed to write packet data to packet-in message\n");
         of_packet_in_delete(of_packet_in);
         return NULL;
     }
     of_packet_in_total_len_set(of_packet_in, pkt_len);
     *len = of_packet_in->length;
-    // of_object_wire_buffer_steal((of_object_t*) of_packet_in, &buf);
-    // buf = (uint8_t*) WBUF_BUF(OF_OBJECT_TO_WBUF(of_packet_in));
     free(of_octets.data);
-    // of_packet_in_delete(of_packet_in);
     return of_packet_in;
 }
 
@@ -602,10 +598,8 @@ of_object_t *pack_flow_stats_reply(struct flow **flows, uint32_t xid,
         return NULL;
     }
 
-    // of_object_wire_buffer_steal((of_object_t*) reply, &buf);
     of_flow_stats_entry_delete(stat_entry);
     of_list_flow_stats_entry_delete(stats_list);
-    // of_flow_stats_reply_delete(reply);
     return reply;
 }
 

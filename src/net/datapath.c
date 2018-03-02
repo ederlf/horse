@@ -140,7 +140,6 @@ dp_recv_netflow(struct node *n, struct netflow *nf)
         action_set_init(&acts);
         p->stats.rx_bytes += nf->byte_cnt;
         p->stats.rx_packets += nf->pkt_cnt;
-        // printf("receiving Flow %s from %x to %x  at %ld\n", p->name, (*nf)->match.ipv4_src, (*nf)->match.ipv4_dst, (*nf)->start_time);
         /* Reset metadata */
         nf->match.metadata = 0;
         /* Enter pipeline */
@@ -187,10 +186,8 @@ dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port)
     if (p != NULL) {
         uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
         if (upnlive) {
-            // printf("Sending flow %s Time %ld\n", p->name, flow->start_time);
             p->stats.tx_packets += flow->pkt_cnt;
-            p->stats.tx_bytes += flow->byte_cnt;
-           
+            p->stats.tx_bytes += flow->byte_cnt; 
         }
     }
 }
@@ -213,7 +210,6 @@ dp_handle_flow_mod(const struct datapath *dp,
     struct flow_table *ft;
     struct flow *f = flow_new();
     unpack_flow_mod(obj, f);
-
     /*  Redundant switch here,
      *  but it is better than repeat code to handle the different
      *  objects that loci has for the flow mod.
@@ -472,8 +468,6 @@ dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uin
     unpack_packet_out(obj, nf, &al);
     execute_action_list(&al, nf);
     /* TODO: Buffering */
-    // printf("Sending packet_out\n");
-    // dp_send_netflow((struct node*) dp, nf);
     action_list_clean(&al);
     UNUSED(dp);
     return NULL;

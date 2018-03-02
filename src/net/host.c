@@ -97,7 +97,6 @@ struct netflow*
 host_recv_netflow(struct node *n, struct netflow *flow)
 {
     struct host *h = (struct host*) n;
-    // log_debug("Received HOST %ld %x\n", h->ep.base.uuid, flow->match.eth_type);
     /* Check MAC and IP addresses. Only returns true if
        both have the node destination MAC and IP       */
     uint16_t eth_type = flow->match.eth_type;
@@ -122,7 +121,6 @@ host_recv_netflow(struct node *n, struct netflow *flow)
         /* End here if there is not further processing */
         return nf;
     }
-    // log_debug("No need to continue\n");
     return NULL;
 }
 
@@ -142,7 +140,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
 
     struct port *p = host_port(h, flow->match.in_port);
     if (!p) {
-        log_debug("No port %d\n", flow->match.in_port);
+        log_debug("Port %d was not found\n", flow->match.in_port);
         return 0;
     }
     uint8_t *eth_dst = flow->match.eth_dst;
@@ -150,7 +148,6 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
     /* Return 0 if destination is other */
     if (memcmp(p->eth_address, eth_dst, ETH_LEN) && 
         memcmp(bcast_eth_addr, eth_dst, ETH_LEN)){
-        // log_debug("Leaving " ETH_ADDR_FMT   "\n", ETH_ADDR_ARGS(eth_dst));
         return 0;
     }
     /* Handle ARP */
@@ -167,7 +164,6 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, flow->match.arp_spa);
             /* Learns MAC of the requester */
             if (!ae){
-                // log_debug("Learning %p\n", ae);
                 struct arp_table_entry *e = arp_table_entry_new(flow->match.arp_spa, 
                                             flow->match.eth_src, flow->match.in_port);
                 arp_table_add_entry(&h->ep.at, e);
@@ -183,7 +179,6 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
             flow->match.arp_op = ARP_REPLY;
             /* Add outport */
             netflow_add_out_port(flow, flow->match.in_port);
-            // log_debug("destination eth address " ETH_ADDR_FMT "\n", ETH_ADDR_ARGS(flow->match.eth_src));
         }
         /* ARP Reply */
         else if (flow->match.arp_op == ARP_REPLY) {
@@ -208,10 +203,6 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
                     memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
                 }
                 memcpy(flow->match.eth_dst, e->eth_addr, ETH_LEN);
-                /* Start and end time should be equal to the ARP */
-                // netflow_update_send_time(*flow, p->curr_speed);
-                // log_debug("%p\n", *flow);
-                log_debug("To send TYPE %x %ld %p\n", flow->match.eth_type, flow->start_time, flow );
             }
             else {
                 /* There is nothing else to send */
@@ -224,7 +215,6 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
 
 static int 
 l3_recv_netflow(struct host *h, struct netflow *flow){
-    // log_debug("%p\n", flow);
     struct port *p = host_port(h, flow->match.in_port);
     /* IPv4 Assigned and flow is IPv4 */
     if (p->ipv4_addr && flow->match.ipv4_dst){
@@ -268,7 +258,6 @@ ip_lookup(struct host *h, struct netflow *flow){
 static struct netflow*
 resolve_mac(struct host *h, struct netflow *flow, uint32_t ip){
     struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, ip);
-    // log_debug("Looking up MAC for ip %x %p\n", ip, ae);
     if (ae){
         /* Fill Missing information */
         struct out_port *op;
@@ -299,7 +288,6 @@ resolve_mac(struct host *h, struct netflow *flow, uint32_t ip){
         }
         /* Set Destination address */
         memcpy(arp_req->match.eth_dst, bcast_eth_addr, ETH_LEN); 
-        // log_debug("IP requested %x\n", ip);
         arp_req->match.arp_tpa = ip;
         arp_req->match.arp_op = ARP_REQUEST;
         arp_req->start_time = flow->start_time;
@@ -308,7 +296,6 @@ resolve_mac(struct host *h, struct netflow *flow, uint32_t ip){
         /* Put the current packet in the queue and flow becomes ARP */ 
         node_flow_push((struct node*) h, flow);
         flow = arp_req;
-        // log_debug("%p\n", flow);
     }
     return flow;
 }
@@ -347,11 +334,6 @@ host_execute_app(struct host *h, struct exec *exec)
         log_info("Flow Start time APP %ld Execs %d\n", flow-> start_time, exec->exec_cnt);
         exec->exec_cnt -= 1;
         return find_forwarding_ports(h, flow);
-        
-        // log_debug("%x %p\n", flow->match.eth_type, flow);
-        // host_send_netflow((struct node*) h, flow);
-        // log_debug("Flow Start time %ld\n", flow.start_time);
-        // log_debug("%x\n", flow.match.eth_type);
     }
     return NULL;
 }

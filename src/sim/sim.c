@@ -157,33 +157,26 @@ des_mode(void *args){
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;   
     while (1){
-        // printf("DP %d %d %d\n", cur_time, events[cur_ev].tm, cur_ev);
         /* Only execute in DES mode */
         pthread_mutex_lock( &mtx_mode );
         while(sch->mode){
-            // printf("Waiting\n");
             pthread_cond_wait( &mode_cond_var, &mtx_mode );
         }
         pthread_mutex_unlock( &mtx_mode );
 
         struct sim_event *ev = scheduler_dispatch(sch);
         sch->clock = ev->time;
-        // printf("DES next event time %ld, type %d, update %ld\n", ev->time, ev->type, (sch->clock - last_stats) / 1000000);
         /* Update status */
         if ((sch->clock - last_stats) / 1000000){
-            printf("Updating stats %ld %ld %ld %ld\n", ev->time, last_stats, 
-                sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
             update_stats(s->evh.topo, sch->clock);
             last_stats = sch->clock;
         }
-
         /* Need to make it more sane ... */
         if (ev->type != EVENT_END) {
             /* Execute */
             handle_event(&s->evh, ev);
-            /* TODO: NOT DRY AAAARGH */
+            /* TODO: Very ugly right now*/
             if ((sch->clock - last_wrt) > 10000000 ){
-                // printf("Switching to CONT WRT\n");
                 handle_event(&s->evh, make_time_msg(sch->clock));
                 /* Wake up timer */
                 pthread_mutex_lock( &mtx_mode );
@@ -200,7 +193,6 @@ des_mode(void *args){
                 pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
                 sch->mode = CONTINUOUS;
-                printf("Switching to CONT\n");
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
             
@@ -208,13 +200,11 @@ des_mode(void *args){
             sim_event_free(ev);
         }
         else {
-            printf("End\n");
+            log_info("End of the Simulation\n");
             sim_event_free(ev);
             break;
         }
-        
     }
-    printf("Over timer %p\n", s);
     shutdown_timer(&s->cont);
     return 0;
 } 
@@ -245,15 +235,9 @@ cont_mode(void* args)
         handle_event(&s->evh, make_time_msg(sch->clock));
         last_wrt = sch->clock;
     }
-    // if (cur_ev->type == EVENT_FLOW_SEND){
-    //     struct sim_event_flow_send *send = (struct sim_event_flow_send *) cur_ev;
-    //     // printf("Next event CONT Before loop %ld %d %ld %x\n", cur_ev->time, cur_ev->type, sch->clock, send->flow->match.eth_type );
-    // }
     while (cur_ev->time <= sch->clock){
         /* Execute */
         if ((cur_ev->time - last_stats) / 1000000){
-            printf("Updating stats CONT %ld %ld %ld %ld\n", cur_ev->time, last_stats, 
-                sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
             update_stats(s->evh.topo, cur_ev->time);
             last_stats = cur_ev->time ;
         }
@@ -269,18 +253,14 @@ cont_mode(void* args)
         scheduler_delete(sch, cur_ev);
         sim_event_free(cur_ev);
         cur_ev = scheduler_retrieve(sch);
-        // printf("Next event CONT %ld %d\n", cur_ev->time, cur_ev->type );
     }
 
-    /* Update only after events are executed */
-    
-
-    check_idle:
+    /* store last time here */
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
+    check_idle:
     /* Check if controller is idle for some time */
     if ( (sch->clock - last_ctrl) > 
         sim_config_get_ctrl_idle_interval(s->config)) {
-        printf("Switching to DES %ld\n", sch->clock);
         pthread_mutex_lock( &mtx_mode );
         sch->mode = DES;
         /* Wake up timer */

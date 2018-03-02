@@ -62,7 +62,6 @@ handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node,
             of_object_wire_buffer_steal(msg, &data);
             /* Create an of out event */
             struct sim_event_of *ev_of;
-            // printf("Packet in start time %ld\n", nf->start_time);
             ev_of = sim_event_of_msg_out_new(nf->start_time, 
                                              dp_id(dp), data, 
                                              len);
@@ -93,15 +92,12 @@ handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node,
             node_update_port_capacity(node, rate, op->port);
             /* Calculate the time to transmit. The flow send event will happen then */
             node_add_tx_time(node, op->port, nf);
-            // struct netflow *new = netflow_new_from_netflow(nf);
             log_debug("Scheduling to send %x %ld %d %ld\n", nf->match.eth_type, nf->start_time, op->port, sch->clock);
             send = sim_event_flow_send_new(nf->start_time, 
                                             node->uuid, op->port);
            
-            // new->out_ports = NULL;
             send->flow = nf;
             send->flow_id = flow_id;
-            // node_add_buffer_state_egress_flow(node, &new, op->port);
             scheduler_insert(sch, (struct sim_event*) send);
         }
         LL_DELETE(nf->out_ports, op);
@@ -159,9 +155,7 @@ handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node,
 
     if (topology_next_hop(topo, node->uuid, out_port, 
                            &dst_uuid, &dst_port, &latency)){
-        // printf("%ld %d %d\n", dst_uuid, dst_port, out_port);
         struct sim_event_flow_recv *new_flow;   
-
         int rate = (nf->byte_cnt * 8) / 1000;
         // /* Calculate loss */
         // node_calculate_port_loss(node, nf, out_port);
@@ -198,14 +192,13 @@ handle_send_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
         if (loss){
            /* Remove capacity from buffer and drop whole flow for now */
            node_update_port_capacity(node, -rate, ev_flow->out_port);
-           printf("Dropping %d\n", loss); 
+           /*TODO: Calculate loss */
         }
         // struct node *dst_node = topology_node(topo, dst_uuid);
         else {
             node_update_port_capacity(node, -rate, ev_flow->out_port);
             /* Calculate loss here */
             node->send_netflow(node, nf, ev_flow->out_port);
-            // printf("Handle after\n");
             handle_after_flow_send(ev_hdl, node, ev_flow->out_port, nf, ev_flow->flow_id);
         }
     }
@@ -265,7 +258,6 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
         log_debug("Scheduling new send from packet out %ld %x %d\n", nf->start_time, nf->match.eth_type, op->port);
         send = sim_event_flow_send_new(nf->start_time, 
                                        dp_uuid(dp), op->port);
-        // printf("Next flow %d %ld\n", dst_port, dst_uuid);
         /* Need to copy because of broadcasting 
            Is there a way to avoid that?
         */
@@ -299,7 +291,6 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
     struct of_manager *om = ev_hdl->om;
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
-    // printf("Will send message to controller\n");
     of_manager_send(om, ev_of->dp_id, ev_of->data, ev_of->len);
 }
 
@@ -312,7 +303,6 @@ handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev)
     struct scheduler *sch =  ev_hdl->sch;
     struct sim_event_app_start *ev_app = (struct sim_event_app_start *)ev;
     /* Retrieve node to handle the flow */
-    // printf("App start %ld %ld %x\n", ev->time, ev_app->node_id, *((uint32_t*) ev_app->exec->args));
     struct node *node = topology_node(topo, ev_app->node_id);
     if (node) {
         nf = host_execute_app((struct host*) node, ev_app->exec);

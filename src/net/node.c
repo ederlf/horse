@@ -96,7 +96,6 @@ node_update_port_capacity(struct node *n, int bits, uint32_t out_port)
 {
     struct port *p = node_port(n, out_port);
     if (p) {
-        // printf("Updating capacity of port %s %d\n", p->name, bits);
         buffer_state_update_capacity(&p->buffer_state, bits);
     }
 }
@@ -105,7 +104,6 @@ int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_po
 {
     struct port *p = node_port(n, out_port);
     if (p) {
-        // printf("Checking loss on port %s\n", p->name);
         return buffer_state_calculate_loss(&p->buffer_state, p->curr_speed);
     }
     return 0;
