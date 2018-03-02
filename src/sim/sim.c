@@ -56,6 +56,24 @@ struct timespec last = {0};
 struct timespec now = {0};
 FILE *pFile;
 
+static void 
+wait_all_switches_connect(struct topology *topo, struct of_manager *om)
+{
+    uint32_t switches;
+    uint32_t time = 0;
+    switches = HASH_COUNT(om->of->active_conns);
+    while (switches < topology_dps_num(topo))  {
+        sleep(1);
+        switches = HASH_COUNT(om->of->active_conns);
+        time++;
+        /* Exit if it takes too long to connect */ 
+        if (time > 60) {
+            fprintf(stderr, "Connection time expired\n");
+            exit(1);
+        }
+    } 
+}
+
 static void
 sim_init(struct sim *s, struct topology *topo, struct sim_config *config) 
 {   
@@ -81,8 +99,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
         of_client_start(s->evh.om->of, false);
     }
     pFile = fopen ("bwm.txt","w");
-    
-    // sleep(5);
+    wait_all_switches_connect(topo, s->evh.om);
     init_timer(&s->cont, (void*)s);
     set_periodic_timer(/* 1 */1000);
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
@@ -154,8 +171,8 @@ des_mode(void *args){
         // printf("DES next event time %ld, type %d, update %ld\n", ev->time, ev->type, (sch->clock - last_stats) / 1000000);
         /* Update status */
         if ((sch->clock - last_stats) / 1000000){
-            // printf("Updating stats %ld %ld %ld %ld\n", ev->time, last_stats, 
-                // sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
+            printf("Updating stats %ld %ld %ld %ld\n", ev->time, last_stats, 
+                sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
             update_stats(s->evh.topo, sch->clock);
             last_stats = sch->clock;
         }
@@ -235,8 +252,8 @@ cont_mode(void* args)
     while (cur_ev->time <= sch->clock){
         /* Execute */
         if ((cur_ev->time - last_stats) / 1000000){
-            // printf("Updating stats CONT %ld %ld %ld %ld\n", cur_ev->time, last_stats, 
-                // sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
+            printf("Updating stats CONT %ld %ld %ld %ld\n", cur_ev->time, last_stats, 
+                sch->clock - last_stats,(sch->clock - last_stats) / 1000000);
             update_stats(s->evh.topo, cur_ev->time);
             last_stats = cur_ev->time ;
         }
