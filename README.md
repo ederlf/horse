@@ -1,5 +1,7 @@
 # Horse: A hybrid tool for network reproduction
 
+[![Build Status](https://travis-ci.org/ederlf/horse.svg?branch=master)](https://travis-ci.org/ederlf/horse)
+
 Horse is a hybrid simulation tool to reproduce network experiments. 
 It employs emulation for the control plane and simulation for the data plane.
 
