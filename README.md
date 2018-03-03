@@ -22,7 +22,7 @@ gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04.3)
 Installing Cython:
 
 ```bash
-$ sudo apt-get install pip
+$ sudo apt-get install python-pip
 $ pip install cython
 ```
 
