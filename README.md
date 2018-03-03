@@ -36,11 +36,12 @@ $ sudo apt-get install libevent-dev
 
 ### Installing
 
-The first step is to install the C version of libfluid base.
+The first step is to install the C version of libfluid base from the multi-client branch.
 
 ```bash
 $ git clone https://github.com/ederlf/libcfluid_base.git
 $ cd libcfluid_base
+$ git checkout multi-client
 $ ./autogen
 $ ./configure
 $ make

@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <time.h>
 #include <uthash/utlist.h>
-#include <valgrind/memcheck.h>
 #include "lib/openflow.h"
 #include <log/log.h>
 
