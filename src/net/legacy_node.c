@@ -1,5 +1,6 @@
 #include "legacy_node.h"
 #include <uthash/utlist.h>
+#include <log/log.h>
 
 void
 legacy_node_init(struct legacy_node *ln, uint16_t type)
@@ -99,4 +100,105 @@ find_forwarding_ports(struct legacy_node *ln, struct netflow *flow)
         return resolve_mac(ln, flow, ip);    
     }
     return NULL;
+}
+
+struct netflow* 
+l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
+{
+
+    struct port *p = node_port(&ln->base, flow->match.in_port);
+    if (!p) {
+        log_debug("Port %d was not found\n", flow->match.in_port);
+        return 0;
+    }
+    uint8_t *eth_dst = flow->match.eth_dst;
+    uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    /* Return 0 if destination is other */
+    if (memcmp(p->eth_address, eth_dst, ETH_LEN) && 
+        memcmp(bcast_eth_addr, eth_dst, ETH_LEN)){
+        return 0;
+    }
+    /* Handle ARP */
+    if (flow->match.eth_type == ETH_TYPE_ARP){
+        /* ARP request */
+        if (flow->match.arp_op == ARP_REQUEST){
+
+            /* Returns if port is not the target */
+            if (p->ipv4_addr != NULL && 
+                flow->match.arp_tpa != p->ipv4_addr->addr){
+                return 0;
+            } 
+            log_debug("Received ARP Request from %x in %x %ld\n",
+                      flow->match.arp_spa, flow->match.arp_tpa, 
+                      flow->start_time);
+            struct arp_table_entry *ae = arp_table_lookup(&ln->at,
+                                                          flow->match.arp_spa);
+            /* Learns MAC of the requester */
+            if (!ae){
+                struct arp_table_entry *e = arp_table_entry_new(
+                                            flow->match.arp_spa, 
+                                            flow->match.eth_src, 
+                                            flow->match.in_port);
+                arp_table_add_entry(&ln->at, e);
+            }
+            /* Craft reply */
+            uint32_t ip_dst = flow->match.arp_spa;
+            memcpy(flow->match.arp_sha, p->eth_address, ETH_LEN);
+            memcpy(flow->match.arp_tha, flow->match.eth_src, ETH_LEN);
+            memcpy(flow->match.eth_dst, flow->match.eth_src, ETH_LEN);
+            memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+            flow->match.arp_spa = flow->match.arp_tpa;
+            flow->match.arp_tpa = ip_dst;
+            flow->match.arp_op = ARP_REPLY;
+            /* Add outport */
+            netflow_add_out_port(flow, flow->match.in_port);
+        }
+        /* ARP Reply */
+        else if (flow->match.arp_op == ARP_REPLY) {
+            /* Add ARP table */
+            uint64_t start_time = flow->start_time;
+            log_debug("Received ARP reply %ld", flow->start_time);
+            struct arp_table_entry *e = arp_table_entry_new(
+                                        flow->match.arp_spa, 
+                                        flow->match.arp_sha, 
+                                        flow->match.in_port);
+            arp_table_add_entry(&ln->at, e);
+            /* Cleans ARP flow */
+            netflow_destroy(flow);
+            flow = NULL;
+            /* Check the stack for a flow waiting for the ARP reply */
+            if (!node_is_buffer_empty((struct node*) ln)){
+                flow = node_flow_pop((struct node*) ln);
+                /* Update the start and end time with the previous ones */ 
+                flow->start_time = start_time;
+                /* Fill l2 information */
+                struct out_port *op;
+                LL_FOREACH(flow->out_ports, op) {
+                    struct port *p = node_port(&ln->base, op->port);
+                    memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+                }
+                memcpy(flow->match.eth_dst, e->eth_addr, ETH_LEN);
+            }
+            else {
+                /* There is nothing else to send */
+                return NULL;
+            }
+        }
+    }
+    return flow;
+}
+
+int 
+l3_recv_netflow(struct legacy_node *ln, struct netflow *flow)
+{
+    struct port *p = node_port(&ln->base, flow->match.in_port);
+    /* IPv4 Assigned and flow is IPv4 */
+    if (p->ipv4_addr && flow->match.ipv4_dst){
+
+        return p->ipv4_addr->addr == flow->match.ipv4_dst;
+    }
+    else if (p->ipv6_addr){
+        return !(memcmp(p->ipv6_addr, flow->match.ipv6_dst, IPV6_LEN));
+    }
+    return 0;
 }

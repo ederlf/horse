@@ -44,4 +44,6 @@ struct netflow* resolve_mac(struct legacy_node *ln, struct netflow *flow,
                             uint32_t ip);
 struct netflow* find_forwarding_ports(struct legacy_node *ln,
                                       struct netflow *flow);
+struct netflow* l2_recv_netflow(struct legacy_node *ln, struct netflow *flow);
+int l3_recv_netflow(struct legacy_node *ln, struct netflow *flow);
 #endif
