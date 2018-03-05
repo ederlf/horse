@@ -69,29 +69,8 @@ host_add_port(struct host *h, uint32_t port_id,
 void
 host_set_intf_ipv4(struct host *h, uint32_t port_id, 
                    uint32_t addr, uint32_t netmask){
-    struct port *p = host_port(h, port_id);
-    port_add_v4addr(p, addr, netmask);
-    /* Add entry to route table */
-    struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
-    memset(e, 0x0, sizeof(struct route_entry_v4));
-    e->ip = addr & netmask;
-    e->netmask = netmask;
-    e->iface = port_id;
-    add_ipv4_entry(&h->ep.rt, e);
+    legacy_node_set_intf_ipv4(&h->ep, port_id, addr, netmask);   
 }
-
-// void host_handle_netflow(struct node *n, struct netflow *flow)
-// {
-
-//     int cont = 0;
-//     struct host *h = (struct host*) n;
-//     if (!flow->out_ports){
-//         cont = host_recv_netflow(h, flow);
-//     }
-//     if (cont){
-//         host_send_netflow(h, flow);
-//     }
-// }
 
 struct netflow*
 host_recv_netflow(struct node *n, struct netflow *flow)

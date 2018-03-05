@@ -8,7 +8,7 @@
 #include <inttypes.h>
 
 /* Administrative distance. Lowest distance wins.
-*    
+*
 *    Connected interface 0
 *    Static route    1
 *    Enhanced Interior Gateway Routing
@@ -23,11 +23,11 @@
 *    On Demand Routing (ODR) 160
 *    External EIGRP  170
 *    Internal BGP    200
-*    Unknown 255 
+*    Unknown 255
 */
 
 
-/* A legacy node can represent a simple host 
+/* A legacy node can represent a simple host
 *  or like a legacy switch or a router   */
 struct legacy_node {
     struct node base;
@@ -37,5 +37,7 @@ struct legacy_node {
 
 void legacy_node_init(struct legacy_node *ln, uint16_t type);
 void legacy_node_clean(struct legacy_node *ln);
+void legacy_node_set_intf_ipv4(struct legacy_node *ln, uint32_t port_id,
+                               uint32_t addr, uint32_t netmask);
 
 #endif
