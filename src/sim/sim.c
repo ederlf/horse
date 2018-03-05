@@ -199,7 +199,7 @@ des_mode(void *args){
             sim_event_free(ev);
         }
         else {
-            log_info("End of the Simulation\n");
+            log_info("End of the Simulation");
             sim_event_free(ev);
             break;
         }
@@ -213,7 +213,6 @@ struct sim_event *cur_ev = NULL;
 static void *
 cont_mode(void* args) 
 {
-
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
     /* The code below is just a demonstration. */
@@ -225,10 +224,10 @@ cont_mode(void* args)
     pthread_mutex_unlock( &mtx_mode );
     
     clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-    uint64_t delta_us = (now.tv_sec - last.tv_sec) * 1000000 + (now.tv_nsec - last.tv_nsec) / 1000;
+    uint64_t delta_us = (now.tv_sec - last.tv_sec) * 1000000 + 
+                        (now.tv_nsec - last.tv_nsec) / 1000;
     cur_ev = scheduler_retrieve(sch); 
     sch->clock += delta_us;     
-
     /* Time will be shared now */
     if ((sch->clock - last_wrt) > 10000000){
         handle_event(&s->evh, make_time_msg(sch->clock));
