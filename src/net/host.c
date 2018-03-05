@@ -15,11 +15,6 @@
 static struct netflow* l2_recv_netflow(struct host *h, struct netflow *flow);
 static int l3_recv_netflow(struct host *h, struct netflow *flow);
 
-static struct netflow* find_forwarding_ports(struct host *h, struct netflow *flow);
-static struct netflow* resolve_mac(struct host *h, struct netflow *flow, uint32_t ip);
-static uint32_t  ip_lookup(struct host *h, struct netflow *flow);
-
-
 struct host {
     struct legacy_node ep; /* Node is an endpoint */
     /* Hash Map of applications */
@@ -91,7 +86,7 @@ host_recv_netflow(struct node *n, struct netflow *flow)
             if (app){
 
                 if (app->handle_netflow(nf)){
-                    return find_forwarding_ports(h, nf);
+                    return find_forwarding_ports(&h->ep, nf);
                 }
             } 
         }
@@ -163,7 +158,7 @@ l2_recv_netflow(struct host *h, struct netflow *flow){
         else if (flow->match.arp_op == ARP_REPLY) {
             /* Add ARP table */
             uint64_t start_time = flow->start_time;
-            log_debug("Received ARP reply %ld\n", flow->start_time);
+            log_debug("Received ARP reply %ld", flow->start_time);
             struct arp_table_entry *e = arp_table_entry_new(flow->match.arp_spa, 
                                 flow->match.arp_sha, flow->match.in_port);
             arp_table_add_entry(&h->ep.at, e);
@@ -206,79 +201,6 @@ l3_recv_netflow(struct host *h, struct netflow *flow){
     return 0;
 }
 
-static struct netflow* 
-find_forwarding_ports(struct host *h, struct netflow *flow)
-{
-    uint32_t ip = ip_lookup(h, flow);
-    /* Only forward if the next hop ip is found */
-    if (ip) {
-        return resolve_mac(h, flow, ip);    
-    }
-    return NULL;
-}
-
-/* Returns the gateway of destination IP */
-static uint32_t 
-ip_lookup(struct host *h, struct netflow *flow){
-    struct route_entry_v4 *re = ipv4_lookup(&h->ep.rt, flow->match.ipv4_dst);
-    if (!re){
-        /* Default gateway */
-        re = ipv4_lookup(&h->ep.rt, 0);
-    }
-    if (re){
-        netflow_add_out_port(flow, re->iface);
-        /* IP of the next hop to search in the ARP table */
-        return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
-    } 
-    /* Could not find a route */
-    return 0;   
-}
-
-static struct netflow*
-resolve_mac(struct host *h, struct netflow *flow, uint32_t ip){
-    struct arp_table_entry *ae = arp_table_lookup(&h->ep.at, ip);
-    if (ae){
-        /* Fill Missing information */
-        struct out_port *op;
-        LL_FOREACH(flow->out_ports, op) {
-            struct port *p = host_port(h, op->port);
-            flow->match.ipv4_src = p->ipv4_addr->addr;
-            memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
-            // netflow_update_send_time(*flow, p->curr_speed);
-        }
-        memcpy(flow->match.eth_dst, ae->eth_addr, ETH_LEN);
-    }
-    else {
-        /*  ARP request before the flow*/
-        uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 
-                                            0xff, 0xff, 0xff};
-        /* Craft request */
-        struct netflow *arp_req = netflow_new();
-        arp_req->match.eth_type = ETH_TYPE_ARP;
-        struct out_port *op;
-        LL_FOREACH(flow->out_ports, op) {
-            struct port *p = host_port(h, op->port);
-            /* Need to set missing ip address info */
-            flow->match.ipv4_src = p->ipv4_addr->addr;
-            memcpy(arp_req->match.eth_src, p->eth_address, ETH_LEN);
-            memcpy(arp_req->match.arp_sha, p->eth_address, ETH_LEN);
-            arp_req->match.arp_spa = p->ipv4_addr->addr;
-            netflow_add_out_port(arp_req, op->port);
-        }
-        /* Set Destination address */
-        memcpy(arp_req->match.eth_dst, bcast_eth_addr, ETH_LEN); 
-        arp_req->match.arp_tpa = ip;
-        arp_req->match.arp_op = ARP_REQUEST;
-        arp_req->start_time = flow->start_time;
-        arp_req->pkt_cnt = 1;
-        arp_req->byte_cnt = 56;
-        /* Put the current packet in the queue and flow becomes ARP */ 
-        node_flow_push((struct node*) h, flow);
-        flow = arp_req;
-    }
-    return flow;
-}
-
 void 
 host_add_app(struct host *h, uint16_t type)
 {
@@ -310,9 +232,9 @@ host_execute_app(struct host *h, struct exec *exec)
     if (app) {
         flow = app->start(exec->start_time, exec->args);
         flow->exec_id = exec->id;
-        log_info("Flow Start time APP %ld Execs %d\n", flow-> start_time, exec->exec_cnt);
+        log_info("Flow Start time APP %ld", flow-> start_time);
         exec->exec_cnt -= 1;
-        return find_forwarding_ports(h, flow);
+        return find_forwarding_ports(&h->ep, flow);
     }
     return NULL;
 }
