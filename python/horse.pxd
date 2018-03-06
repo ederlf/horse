@@ -8,6 +8,9 @@ cdef extern from "sim/sim.h":
     cdef struct datapath:
         pass
 
+    cdef struct router:
+        pass
+
     cdef struct host:
         pass
 
@@ -34,12 +37,22 @@ cdef extern from "sim/sim.h":
     uint64_t dp_id(const datapath* dp)
     uint64_t dp_uuid(const datapath* dp)
 
-    # Host.h
+    # Router.h
+    router* router_new()
+    void router_destroy(router *r)
+    void router_add_port(router *r, uint32_t port_id, uint8_t *eth_addr,
+                         uint32_t speed, uint32_t cur_speed)
+    void router_set_intf_ipv4(router *h, uint32_t port_id, 
+                            uint32_t addr, uint32_t netmask) 
+    uint64_t router_uuid(const router* h)
+    void router_set_name(router *h, char* name)
+    char* router_name(const router *h)
 
+    # Host.h
     host* host_new()
     void host_destroy(host* h)
-    void host_add_port(host *h, uint32_t port_id, 
-                        uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
+    void host_add_port(host *h, uint32_t port_id, uint8_t *eth_addr,
+                       uint32_t speed, uint32_t cur_speed)
     void host_set_intf_ipv4(host *h, uint32_t port_id, 
                             uint32_t addr, uint32_t netmask)
     uint64_t host_uuid(const host* h)
@@ -49,8 +62,6 @@ cdef extern from "sim/sim.h":
     void host_add_app_exec(host *h, uint64_t id, uint32_t type, uint32_t execs_num, uint64_t 
                         start_time, void* args, size_t arg_len)
     void host_start_app(host *h, uint64_t id)
-
-   
 
     # Topology.h
     topology* topology_new()

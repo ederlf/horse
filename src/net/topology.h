@@ -13,6 +13,7 @@
 
 #include "datapath.h"
 #include "host.h"
+#include "router.h"
 #include "lib/util.h"
 
 /* Total number of possible datapaths

@@ -61,6 +61,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/port.c \
                 src/net/route_table.h \
                 src/net/route_table.c \
+                src/net/router.h \
+                src/net/router.c \
                 src/net/topology.h \
                 src/net/topology.c \
                 src/sim/of_manager.h \

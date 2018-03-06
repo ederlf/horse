@@ -13,7 +13,7 @@ include src/automake.mk
 
 bin_PROGRAMS = horse
 horse_SOURCES = src/horse.c
-horse_LDADD = .libs/libhorse.a -lcfluid_base -loci
+horse_LDADD = .libs/libhorse.a -lcfluid_base -loci 
 
 
 # Unit tests

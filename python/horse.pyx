@@ -69,6 +69,25 @@ cdef class SDNSwitch:
         return dp_uuid(self._dp_ptr)     
 
 
+cdef class Router:
+    cdef router* _router_ptr 
+
+    def __cinit__(self, name):
+        self._router_ptr = router_new()
+        # It needs to be improved when number of apps grow
+        self.name = name
+
+    property name:
+        def __get__(self):
+            return router_name(self._router_ptr)
+
+        def __set__(self, name):
+            router_set_name(self._router_ptr, name)
+
+    @property
+    def uuid(self):
+        return router_uuid(self._router_ptr)
+
 cdef class Host:
     cdef host* _host_ptr
     cdef int exec_id
@@ -83,7 +102,7 @@ cdef class Host:
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):
-        # TODO: Add mac converstion to utils...
+        # TODO: Add mac conversion to utils...
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
         host_add_port(self._host_ptr, port, c_eth_addr, max_speed, cur_speed)
