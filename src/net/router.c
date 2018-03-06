@@ -37,6 +37,23 @@ router_set_intf_ipv4(struct router *r, uint32_t port_id,
     legacy_node_set_intf_ipv4(&r->rt, port_id, addr, netmask);   
 }
 
+struct netflow* 
+router_recv_netflow(struct node *n, struct netflow *flow)
+{
+     // When a router receives an IP packet it 
+     //    performs a lookup in the routing table 
+    UNUSED(n);
+    UNUSED(flow);
+    return NULL;
+}
+
+void 
+router_send_netflow(struct node *n, struct netflow *flow,
+                         uint32_t out_port)
+{
+    node_update_port_stats(n, flow, out_port);
+}
+
 void 
 router_set_name(struct router* r, char *name)
 {

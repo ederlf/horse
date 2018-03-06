@@ -94,12 +94,7 @@ host_recv_netflow(struct node *n, struct netflow *flow)
 void 
 host_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port)
 {
-    
-    struct port *p = node_port(n, out_port);
-    if (p){
-        p->stats.tx_packets += flow->pkt_cnt;
-        p->stats.tx_bytes += flow->byte_cnt;
-    }
+    node_update_port_stats(n, flow, out_port);
 }
 
 void 

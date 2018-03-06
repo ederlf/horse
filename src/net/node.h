@@ -43,15 +43,19 @@ struct node {
 
 void node_init(struct node* n, uint16_t type);
 void node_destroy_ports(struct node *n);
-void node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed);
+void node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
+                   uint32_t speed, uint32_t curr_speed);
 struct port* node_port(const struct node *n, uint32_t port_id);
 void node_add_tx_time(struct node *n, uint32_t out_port, 
                       struct netflow *flow);
+void node_update_port_stats(struct node *n, struct netflow *flow,
+                            uint32_t out_port);
 bool node_is_buffer_empty(struct node *n);
 bool node_flow_push(struct node *n, struct netflow *flow);
 struct netflow *node_flow_pop(struct node *n);
 void node_calculate_loss(struct node *n, struct netflow *nf, uint32_t out_port);
 void node_update_port_capacity(struct node *n, int bits, uint32_t out_port);
-int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port);
+int node_calculate_port_loss(struct node *n, struct netflow *nf,
+                             uint32_t out_port);
 
 #endif

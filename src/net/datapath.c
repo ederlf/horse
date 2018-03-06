@@ -181,15 +181,7 @@ dp_recv_netflow(struct node *n, struct netflow *nf)
 void
 dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port)
 {
-    struct datapath *dp = (struct datapath*) n;
-    struct port *p = dp_port(dp, out_port);
-    if (p != NULL) {
-        uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
-        if (upnlive) {
-            p->stats.tx_packets += flow->pkt_cnt;
-            p->stats.tx_bytes += flow->byte_cnt; 
-        }
-    }
+    node_update_port_stats(n, flow, out_port);
 }
 
 void 

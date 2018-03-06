@@ -59,6 +59,19 @@ node_add_tx_time(struct node *n, uint32_t out_port, struct netflow *flow)
     }
 }
 
+void 
+node_update_port_stats(struct node *n, struct netflow *flow, uint32_t out_port)
+{
+    struct port *p = node_port(n, out_port);
+    if (p != NULL) {
+        uint8_t upnlive = (p->config & PORT_UP) && (p->state & PORT_LIVE);
+        if (upnlive) {
+            p->stats.tx_packets += flow->pkt_cnt;
+            p->stats.tx_bytes += flow->byte_cnt; 
+        }
+    }
+}
+
 bool 
 node_is_buffer_empty(struct node *n)
 {
