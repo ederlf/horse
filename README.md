@@ -157,7 +157,7 @@ The code executes ping between all hosts. You should see some informational logs
 
 ## Authors
 
-* **Eder Leao Fernandes** - *Initial work* - [Personal Page](www.eecs.qmul.ac.uk/~eleao/)
+* **Eder Leao Fernandes** - *Initial work* - [Personal Page](http://www.eecs.qmul.ac.uk/~eleao/)
 
 See also the list of [contributors](https://github.com/ederlf/horse/contributors) who participated in this project.
 
