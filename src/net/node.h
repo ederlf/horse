@@ -24,8 +24,6 @@ struct buffer {
     int tail;  
 };
 
-
-
 struct node {
     uint64_t uuid;      /* Sequential identification value 
                            in the simulator  */

@@ -70,23 +70,25 @@ host_recv_netflow(struct node *n, struct netflow *flow)
     uint16_t eth_type = flow->match.eth_type;
     struct netflow* nf = l2_recv_netflow(&h->ep, flow); 
     
-    if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
-        if (l3_recv_netflow(&h->ep, nf)){
-            struct app *app;
-            uint16_t ip_proto = flow->match.ip_proto;
-            HASH_FIND(hh, h->apps, &ip_proto, sizeof(uint16_t), app);
-            /* If gets here send to application */
-            log_debug("APP %d %p", ip_proto, app);
-            if (app){
-                if (app->handle_netflow(nf)){
-                    return find_forwarding_ports(&h->ep, nf);
-                }
-            } 
+    if (nf) {
+        if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
+            if (is_l3_destination(&h->ep, nf)){
+                struct app *app;
+                uint16_t ip_proto = flow->match.ip_proto;
+                HASH_FIND(hh, h->apps, &ip_proto, sizeof(uint16_t), app);
+                /* If gets here send to application */
+                log_debug("APP %d %p", ip_proto, app);
+                if (app){
+                    if (app->handle_netflow(nf)){
+                        return find_forwarding_ports(&h->ep, nf);
+                    }
+                } 
+            }
         }
-    }
-    else if (eth_type == ETH_TYPE_ARP){
-        /* End here if there is not further processing */
-        return nf;
+        else if (eth_type == ETH_TYPE_ARP){
+            /* End here if there is not further processing */
+            return nf;
+        }
     }
     return NULL;
 }

@@ -63,6 +63,10 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/route_table.c \
                 src/net/router.h \
                 src/net/router.c \
+                src/net/routing/bgp.h \
+                src/net/routing/bgp.c \
+                src/net/routing/routing.h \
+                src/net/routing/routing.c \
                 src/net/topology.h \
                 src/net/topology.c \
                 src/sim/of_manager.h \
@@ -76,4 +80,4 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/sim/sim_config.h \
                 src/sim/sim_config.c 
 
-libhorse_la_LIBADD = libjson.la libpatricia.la liblog.la
+libhorse_la_LIBADD = libjson.la liblog.la libnetemu.la libpatricia.la 

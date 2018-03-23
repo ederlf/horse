@@ -18,6 +18,7 @@ void router_set_intf_ipv4(struct router *r, uint32_t port_id,
 struct netflow* router_recv_netflow(struct node *n, struct netflow *flow);
 void router_send_netflow(struct node *n, struct netflow *flow,
                          uint32_t out_port);
+int router_start(struct router *rt);
 void router_set_name(struct router* r, char *name);
 char *router_name(struct router *r);
 struct port* router_port(const struct router *r, uint32_t port_id);

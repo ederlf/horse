@@ -109,14 +109,14 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
     struct port *p = node_port(&ln->base, flow->match.in_port);
     if (!p) {
         log_debug("Port %d was not found\n", flow->match.in_port);
-        return 0;
+        return NULL;
     }
     uint8_t *eth_dst = flow->match.eth_dst;
     uint8_t bcast_eth_addr[ETH_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-    /* Return 0 if destination is other */
+    /* Return NULL if destination is other */
     if (memcmp(p->eth_address, eth_dst, ETH_LEN) && 
         memcmp(bcast_eth_addr, eth_dst, ETH_LEN)){
-        return 0;
+        return NULL;
     }
     /* Handle ARP */
     if (flow->match.eth_type == ETH_TYPE_ARP){
@@ -126,7 +126,7 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
             /* Returns if port is not the target */
             if (p->ipv4_addr != NULL && 
                 flow->match.arp_tpa != p->ipv4_addr->addr){
-                return 0;
+                return NULL;
             } 
             log_debug("Received ARP Request from %x in %x %ld\n",
                       flow->match.arp_spa, flow->match.arp_tpa, 
@@ -188,8 +188,8 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
     return flow;
 }
 
-int 
-l3_recv_netflow(struct legacy_node *ln, struct netflow *flow)
+bool 
+is_l3_destination(struct legacy_node *ln, struct netflow *flow)
 {
     struct port *p = node_port(&ln->base, flow->match.in_port);
     /* IPv4 Assigned and flow is IPv4 */
@@ -198,7 +198,7 @@ l3_recv_netflow(struct legacy_node *ln, struct netflow *flow)
         return p->ipv4_addr->addr == flow->match.ipv4_dst;
     }
     else if (p->ipv6_addr){
-        return !(memcmp(p->ipv6_addr, flow->match.ipv6_dst, IPV6_LEN));
+        return (memcmp(p->ipv6_addr, flow->match.ipv6_dst, IPV6_LEN) == 0);
     }
-    return 0;
+    return false;
 }

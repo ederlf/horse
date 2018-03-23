@@ -25,6 +25,7 @@ struct topology;
 
 struct topology* topology_new(void);
 
+void topology_add_router(struct topology *topo, struct router *r);
 void topology_add_datapath(struct topology *topo, struct datapath *dp);
 void topology_add_host(struct topology *topo, struct host *h);
 

@@ -1,9 +1,12 @@
 #include "router.h"
 #include "legacy_node.h"
+#include <netemu/netns.h>
+#include <arpa/inet.h>
 
 struct router
 {
 	struct legacy_node rt;
+    
 	/* Specific fields may follow */
 };
 
@@ -17,9 +20,24 @@ router_new(void)
     return r;
 }
 
+static void
+router_stop(struct router *r){
+    char rname[16];
+    struct port *p, *tmp, *ports;
+    
+    memcpy(rname, r->rt.base.name, 16);
+    ports = r->rt.base.ports;
+    HASH_ITER(hh, ports, p, tmp) {
+        netns_run(NULL, "ip link del %s-%s",
+                    rname, p->name);
+    }
+    netns_delete(rname);
+}
+
 void 
 router_destroy(struct router *r)
 {
+    router_stop(r);
     legacy_node_clean(&r->rt);
     free(r);
 }
@@ -40,11 +58,78 @@ router_set_intf_ipv4(struct router *r, uint32_t port_id,
 struct netflow* 
 router_recv_netflow(struct node *n, struct netflow *flow)
 {
-     // When a router receives an IP packet it 
-     //    performs a lookup in the routing table 
-    UNUSED(n);
-    UNUSED(flow);
+    struct router *r = (struct router*) n;
+    /* L2 handling */
+    uint16_t eth_type = flow->match.eth_type;
+    struct netflow* nf = l2_recv_netflow(&r->rt, flow); 
+    
+    if (nf) {
+        /*L3 handling */
+        if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
+            /* Lookup */
+            if (is_l3_destination(&r->rt, nf)){
+                /* Do we need router apps? */
+            //     struct app *app;
+            //     uint16_t ip_proto = flow->match.ip_proto;
+            //     HASH_FIND(hh, h->apps, &ip_proto, sizeof(uint16_t), app);
+            //     /* If gets here send to application */
+            //     log_debug("APP %d %p", ip_proto, app);
+            //     if (app){
+            //         if (app->handle_netflow(nf)){
+            //             return find_forwarding_ports(&h->ep, nf);
+            //         }
+            //     } 
+            }
+        }
+        else if (eth_type == ETH_TYPE_ARP) {
+            /* End here if there is not further processing */
+            return nf;
+        }
+    }
     return NULL;
+}
+
+int 
+router_start(struct router *r)
+{
+    char rname[16];
+    struct port *p, *tmp, *ports;
+    
+    memcpy(rname, r->rt.base.name, 16);
+    if (netns_add(rname)) {
+            return -1;
+    }
+    ports = r->rt.base.ports;
+    HASH_ITER(hh, ports, p, tmp) {
+        /* Create interfaces and add to namespace*/
+        netns_run(NULL, "ip link add %s-%s type veth "
+                "peer name node-%s",
+                rname, p->name, p->name);
+        netns_run(NULL, "ip link set node-%s netns %s",
+                p->name, rname);
+        netns_run(NULL, "ip link set dev %s-%s up",
+                rname, p->name);
+        netns_run(rname, "ip link set node-%s name %s",
+            p->name, p->name);
+        netns_run(rname, "ip link set dev %s up", p->name);
+        /* Configure IP */
+        if (p->ipv4_addr){
+            char addr[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(p->ipv4_addr->addr), addr, INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, &(p->ipv4_addr->netmask), mask, INET_ADDRSTRLEN);
+            netns_run(rname, "ip addr add %s/%s dev %s",
+                addr, mask, p->name);
+        }
+        else if (p->ipv6_addr) {
+            char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, &(p->ipv6_addr->addr), addr, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, &(p->ipv6_addr->netmask), mask, INET6_ADDRSTRLEN);
+            netns_run(rname, "ip addr add %s/%s dev %s",
+                addr, mask, p->name);
+        }
+    }
+    netns_run(rname, "ip link set dev lo up");
+    return 0;
 }
 
 void 

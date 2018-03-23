@@ -77,6 +77,19 @@ cdef class Router:
         # It needs to be improved when number of apps grow
         self.name = name
 
+    def add_port(self, port, eth_addr, ip = None, 
+                netmask = None, max_speed = 1000000, cur_speed = 10000):
+        # TODO: Add mac conversion to utils...
+        mac = eth_addr.replace(':', '').decode('hex')
+        cdef uint8_t *c_eth_addr = mac
+        router_add_port(self._router_ptr, port, c_eth_addr, max_speed, cur_speed)
+        if ip != None and netmask != None:
+            ip_parts = ip.split('.')
+            int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+            nm_parts = netmask.split('.')
+            int_nm = (int(nm_parts[0]) << 24) + (int(nm_parts[1]) << 16) + (int(nm_parts[2]) << 8) + int(nm_parts[3])
+            router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
+
     property name:
         def __get__(self):
             return router_name(self._router_ptr)
@@ -197,24 +210,22 @@ cdef class Topology:
         return self._topo_ptr
 
     def add_node(self, Node, **kwargs):
+        if "name" in kwargs:
+            self.node_info[kwargs["name"]] = kwargs
+            self.nodes[kwargs["name"]] = Node
+    
         if isinstance(Node, SDNSwitch):
             dp = <SDNSwitch> Node
-            if "name" in kwargs:
-                self.node_info[kwargs["name"]] = kwargs
-                self.nodes[kwargs["name"]] = Node
             topology_add_datapath(self._topo_ptr, dp._dp_ptr)
-
         elif isinstance (Node, Host):
             h = <Host> Node
-            # TODO: Remember to improve it
-            if "name" in kwargs:
-                self.node_info[kwargs["name"]] = kwargs
-                self.nodes[kwargs["name"]] = Node
             topology_add_host(self._topo_ptr, h._host_ptr)
+        elif isinstance (Node, Router):
+            r = <Router> Node
+            topology_add_router(self._topo_ptr, r._router_ptr)
 
     def add_link(self, node1, node2, port1, port2, bw = 1, latency = 0):
         topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, bw, latency, False)
-
 
     property nodes:
         def __get__(self):

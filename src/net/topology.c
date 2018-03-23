@@ -60,6 +60,14 @@ struct topology* topology_new(void)
     return topo;
 }
 
+/* One function for each type is necessary because of the Python binding */
+void 
+topology_add_router(struct topology *topo, struct router *r)
+{
+    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) r);
+    topo->n_routers++;  
+}
+
 void 
 topology_add_datapath(struct topology *topo, struct datapath* dp)
 {
@@ -157,6 +165,9 @@ topology_destroy(struct topology *topo)
         }
         else if (cur_node->type == HOST){
             host_destroy((struct host*) cur_node);    
+        }
+        else if (cur_node->type == ROUTER){
+            router_destroy((struct router*) cur_node);    
         }
     }
     /* Clean datapath map */

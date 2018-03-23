@@ -28,7 +28,7 @@ uint64_t last_ctrl = 0;
 uint64_t last_stats = 0;
 
 static void 
-initial_events(struct sim *s)
+setup(struct sim *s)
 {
 
     struct scheduler *sch = s->evh.sch;
@@ -36,12 +36,20 @@ initial_events(struct sim *s)
     struct node *node, *tmp;
     /* Not very efficient now... */
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
-        if (node->type == HOST){
+        if (node->type == HOST) {
             struct exec *exec, *exec_tmp;
             HASH_ITER(hh, host_execs((struct host*) node), exec, exec_tmp) {
-                struct sim_event_app_start *ev = sim_event_app_start_new(exec->start_time, node->uuid, exec);
+                struct sim_event_app_start *ev = sim_event_app_start_new(
+                                            exec->start_time,
+                                            node->uuid, exec
+                                            );
                 scheduler_insert(sch, (struct sim_event*) ev);
             }   
+        }
+        if (node->type == ROUTER) {
+            struct router *r = (struct router*) node;
+            printf("Starting router\n");
+            router_start(r);
         }
     }
     /* Event to stop the simulator */
@@ -82,7 +90,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->evh.sch = scheduler_new();
     s->evh.live_flows = NULL;
     s->cont.exec = cont_mode;
-    initial_events(s); 
+    setup(s); 
     if (sim_config_get_mode(s->config) == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;

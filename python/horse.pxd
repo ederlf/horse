@@ -68,6 +68,7 @@ cdef extern from "sim/sim.h":
     void topology_destroy(topology *topo)
     void topology_add_datapath(topology *topo, datapath *dp)
     void topology_add_host(topology *topo, host *h)
+    void topology_add_router(topology *topo, router *r)
     uint32_t topology_dps_num(const topology *topo)
     uint32_t topology_links_num(const topology *topo)
     void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)

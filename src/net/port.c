@@ -12,7 +12,8 @@
 #include "port.h"
 #include <string.h>
 
-struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed) {
+struct port* port_new(uint32_t port_id, uint8_t eth_addr[ETH_LEN],
+                      uint32_t speed, uint32_t curr_speed) {
     struct port* p = xmalloc(sizeof(struct port));
     memset(p, 0x0, sizeof(struct port));
     p->port_id = port_id;
@@ -35,7 +36,8 @@ void port_add_v4addr(struct port *p, uint32_t ipv4_addr, uint32_t netmask)
     p->ipv4_addr->netmask = netmask;
 }
 
-void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN], uint8_t netmask[IPV6_LEN])
+void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN],
+                     uint8_t netmask[IPV6_LEN])
 {
     p->ipv6_addr = xmalloc(sizeof(struct ipv6_info));
     memcpy(p->ipv6_addr, ipv6_addr, IPV6_LEN);
