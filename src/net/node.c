@@ -30,7 +30,8 @@ node_destroy_ports(struct node *n)
 }
 
 void 
-node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
+node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
+              uint32_t speed, uint32_t curr_speed)
 {
     struct port *p = port_new(port_id, eth_addr, speed, curr_speed);
     /* TODO, allow to give a name to the interface in the python binding */
@@ -113,7 +114,8 @@ node_update_port_capacity(struct node *n, int bits, uint32_t out_port)
     }
 }
 
-int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port)
+int node_calculate_port_loss(struct node *n, struct netflow *nf,
+                             uint32_t out_port)
 {
     struct port *p = node_port(n, out_port);
     if (p) {

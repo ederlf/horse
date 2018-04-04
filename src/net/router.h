@@ -2,6 +2,7 @@
 #define ROUTER_H 1
 
 #include "node.h"
+#include "routing/routing.h"
 
 struct router; 
 
@@ -10,6 +11,7 @@ void router_destroy(struct router *h);
 void router_add_port(struct router *h, uint32_t port_id, 
                  uint8_t eth_addr[ETH_LEN], uint32_t speed, 
                  uint32_t curr_speed);
+void router_add_protocol(struct router *rt, uint16_t type, char *config_file);
 void router_add_port(struct router *r, uint32_t port_id,
                      uint8_t eth_addr[ETH_LEN], uint32_t speed, 
                      uint32_t curr_speed);

@@ -6,7 +6,7 @@
 struct router
 {
 	struct legacy_node rt;
-    
+    struct routing *protocols; /* Hash map of routing protocols */
 	/* Specific fields may follow */
 };
 
@@ -15,6 +15,7 @@ router_new(void)
 {
     struct router *r = xmalloc(sizeof(struct router));
     legacy_node_init(&r->rt, ROUTER);
+    r->protocols = NULL;
     r->rt.base.recv_netflow = router_recv_netflow;
     r->rt.base.send_netflow = router_send_netflow;
     return r;
@@ -31,6 +32,7 @@ router_stop(struct router *r){
         netns_run(NULL, "ip link del %s-%s",
                     rname, p->name);
     }
+    netns_run(NULL, "pkill exabgp");
     netns_delete(rname);
 }
 
@@ -47,6 +49,13 @@ router_add_port(struct router *r, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
                 uint32_t speed, uint32_t curr_speed)
 {   
     node_add_port( (struct node*) r, port_id, eth_addr, speed, curr_speed);
+}
+
+void 
+router_add_protocol(struct router *rt, uint16_t type, char *config_file)
+{
+    struct routing *r = routing_factory(type, config_file);
+    HASH_ADD(hh, rt->protocols, type, sizeof(uint16_t), r);
 }
 
 void
@@ -94,7 +103,7 @@ router_start(struct router *r)
 {
     char rname[16];
     struct port *p, *tmp, *ports;
-    
+    struct routing *rp, *rptmp;
     memcpy(rname, r->rt.base.name, 16);
     if (netns_add(rname)) {
             return -1;
@@ -117,18 +126,24 @@ router_start(struct router *r)
             char addr[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &(p->ipv4_addr->addr), addr, INET_ADDRSTRLEN);
             inet_ntop(AF_INET, &(p->ipv4_addr->netmask), mask, INET_ADDRSTRLEN);
-            netns_run(rname, "ip addr add %s/%s dev %s",
-                addr, mask, p->name);
+            netns_run(rname, "ip addr add %s/%s dev %s", 
+                      addr, mask, p->name);
         }
         else if (p->ipv6_addr) {
             char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
             inet_ntop(AF_INET6, &(p->ipv6_addr->addr), addr, INET6_ADDRSTRLEN);
-            inet_ntop(AF_INET6, &(p->ipv6_addr->netmask), mask, INET6_ADDRSTRLEN);
-            netns_run(rname, "ip addr add %s/%s dev %s",
-                addr, mask, p->name);
+            inet_ntop(AF_INET6, &(p->ipv6_addr->netmask), mask,
+                      INET6_ADDRSTRLEN);
+            netns_run(rname, "ip addr add %s/%s dev %s", 
+                      addr, mask, p->name);
         }
     }
     netns_run(rname, "ip link set dev lo up");
+
+    /* Start protocols */
+    HASH_ITER(hh, r->protocols, rp, rptmp) {
+        rp->start(rp, rname);
+    }
     return 0;
 }
 

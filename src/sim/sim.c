@@ -57,6 +57,9 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
+    // netns_run("r1", "env exabgp.daemon.daemonize=true exabgp.log.destination=syslog exabgp \"%s\"",
+    //           "/home/vagrant/horse/experimental/bgptest/config/conf.ini1");
+    sleep(10);
 }
 
 struct timespec last = {0};

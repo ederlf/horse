@@ -2,6 +2,7 @@ cimport horse
 from libc.stdint cimport uint64_t
 from libc.stdint cimport UINT64_MAX
 import random
+import os.path
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -89,6 +90,12 @@ cdef class Router:
             nm_parts = netmask.split('.')
             int_nm = (int(nm_parts[0]) << 24) + (int(nm_parts[1]) << 16) + (int(nm_parts[2]) << 8) + int(nm_parts[3])
             router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
+
+    def add_protocol(self, type = 179, config_file = None):
+        if config_file and os.path.isfile(config_file):
+            router_add_protocol(self._router_ptr, type, config_file)
+        else:
+            print "No config file provided for router"
 
     property name:
         def __get__(self):

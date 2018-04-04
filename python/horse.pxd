@@ -31,7 +31,8 @@ cdef extern from "sim/sim.h":
     # Datapath .h
     datapath* dp_new(uint64_t, char*, int)
     void dp_destroy(datapath* dp)
-    void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
+    void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr,
+                     uint32_t speed, uint32_t cur_speed)
     void dp_set_name(datapath *dp, char* name)
     char* dp_name(const datapath *dp)
     uint64_t dp_id(const datapath* dp)
@@ -42,8 +43,9 @@ cdef extern from "sim/sim.h":
     void router_destroy(router *r)
     void router_add_port(router *r, uint32_t port_id, uint8_t *eth_addr,
                          uint32_t speed, uint32_t cur_speed)
-    void router_set_intf_ipv4(router *h, uint32_t port_id, 
-                            uint32_t addr, uint32_t netmask) 
+    void router_add_protocol(router *r, uint16_t type, char *config_file)
+    void router_set_intf_ipv4(router *h, uint32_t port_id,
+                              uint32_t addr, uint32_t netmask) 
     uint64_t router_uuid(const router* h)
     void router_set_name(router *h, char* name)
     char* router_name(const router *h)
@@ -59,8 +61,9 @@ cdef extern from "sim/sim.h":
     void host_set_name(host *h, char* name)
     char* host_name(const host *h)
     void host_add_app(host *h, uint16_t type)
-    void host_add_app_exec(host *h, uint64_t id, uint32_t type, uint32_t execs_num, uint64_t 
-                        start_time, void* args, size_t arg_len)
+    void host_add_app_exec(host *h, uint64_t id, uint32_t type,
+                           uint32_t execs_num, uint64_t start_time, void* args, 
+                           size_t arg_len)
     void host_start_app(host *h, uint64_t id)
 
     # Topology.h
@@ -71,7 +74,8 @@ cdef extern from "sim/sim.h":
     void topology_add_router(topology *topo, router *r)
     uint32_t topology_dps_num(const topology *topo)
     uint32_t topology_links_num(const topology *topo)
-    void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)
+    void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB,
+                           uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)
     
     # Sim.h
     # TODO: Create an object for the simulator to ease adding config?

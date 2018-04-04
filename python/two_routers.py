@@ -4,9 +4,11 @@ topo = Topology()
 #Create OpenFlow switch
 r1 = Router("r1")
 r1.add_port(port = 1,  eth_addr = "00:00:00:00:01:00")
+r1.add_protocol(type = 179, config_file = "/home/vagrant/horse/experimental/bgptest/config/conf.ini1")
 
 r2 = Router("r2")
 r2.add_port(port = 1,  eth_addr = "00:00:00:00:02:00")
+r2.add_protocol(type = 179, config_file = "/home/vagrant/horse/experimental/bgptest/config/conf.ini2")
 
 topo.add_node(r1)
 topo.add_node(r2)
