@@ -124,8 +124,11 @@ router_start(struct router *r)
         /* Configure IP */
         if (p->ipv4_addr){
             char addr[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(p->ipv4_addr->addr), addr, INET_ADDRSTRLEN);
-            inet_ntop(AF_INET, &(p->ipv4_addr->netmask), mask, INET_ADDRSTRLEN);
+            uint32_t net_ipv4 = htonl(p->ipv4_addr->addr);
+            uint32_t net_ipv4_mask =  htonl(p->ipv4_addr->netmask);
+            inet_ntop(AF_INET, &(net_ipv4), addr, INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, &(net_ipv4_mask), mask, INET_ADDRSTRLEN);
+            printf("Ip address %s\n", addr);
             netns_run(rname, "ip addr add %s/%s dev %s", 
                       addr, mask, p->name);
         }
