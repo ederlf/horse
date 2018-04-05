@@ -118,6 +118,7 @@ router_start(struct router *r)
                 p->name, rname);
         netns_run(NULL, "ip link set dev %s-%s up",
                 rname, p->name);
+        netns_run(NULL, "ip link set dev %s-%s master br0", rname, p->name);
         netns_run(rname, "ip link set node-%s name %s",
             p->name, p->name);
         netns_run(rname, "ip link set dev %s up", p->name);
@@ -128,7 +129,6 @@ router_start(struct router *r)
             uint32_t net_ipv4_mask =  htonl(p->ipv4_addr->netmask);
             inet_ntop(AF_INET, &(net_ipv4), addr, INET_ADDRSTRLEN);
             inet_ntop(AF_INET, &(net_ipv4_mask), mask, INET_ADDRSTRLEN);
-            printf("Ip address %s\n", addr);
             netns_run(rname, "ip addr add %s/%s dev %s", 
                       addr, mask, p->name);
         }

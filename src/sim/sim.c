@@ -11,6 +11,7 @@
 #include "sim.h"
 #include <unistd.h>
 #include <time.h>
+#include <netemu/netns.h>
 #include <uthash/utlist.h>
 #include "lib/openflow.h"
 #include <log/log.h>
@@ -34,7 +35,11 @@ setup(struct sim *s)
     struct scheduler *sch = s->evh.sch;
     struct topology *topo = s->evh.topo;
     struct node *node, *tmp;
-    /* Not very efficient now... */
+
+    /* TODO: Move it somewhere else? */
+    netns_run(NULL, "ip link add name br0 type bridge");
+    netns_run(NULL, "ip link set dev br0 up");
+
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
         if (node->type == HOST) {
             struct exec *exec, *exec_tmp;
@@ -124,6 +129,8 @@ sim_close(struct sim *s)
     scheduler_destroy(s->evh.sch);
     topology_destroy(s->evh.topo);
     of_manager_destroy(s->evh.om);
+    /* TODO: move somewhere else */
+    netns_run(NULL, "ip link delete dev br0");
 }
 
 
