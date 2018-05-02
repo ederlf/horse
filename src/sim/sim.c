@@ -40,6 +40,14 @@ setup(struct sim *s)
     netns_run(NULL, "ip link add name br0 type bridge");
     netns_run(NULL, "ip link set dev br0 up");
 
+    /* Add veth pair to connect global namespace */
+    netns_run(NULL, "ip link add conn1 type veth peer name conn2");
+    netns_run(NULL, "ip link set dev conn1 up");
+    netns_run(NULL, "ip link set dev conn2 up");
+    netns_run(NULL, "ip link set dev conn2 master br0");
+    netns_run(NULL, "ip addr add 172.20.254.254/16 dev conn1");
+    netns_run(NULL, "ip route add 172.20.0.0/16 dev conn1");
+
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
         if (node->type == HOST) {
             struct exec *exec, *exec_tmp;
@@ -64,7 +72,7 @@ setup(struct sim *s)
     scheduler_insert(sch, end_ev);
     // netns_run("r1", "env exabgp.daemon.daemonize=true exabgp.log.destination=syslog exabgp \"%s\"",
     //           "/home/vagrant/horse/experimental/bgptest/config/conf.ini1");
-    sleep(10);
+    sleep(15);
 }
 
 struct timespec last = {0};
@@ -130,6 +138,7 @@ sim_close(struct sim *s)
     topology_destroy(s->evh.topo);
     of_manager_destroy(s->evh.om);
     /* TODO: move somewhere else */
+    netns_run(NULL, "ip link delete conn1");
     netns_run(NULL, "ip link delete dev br0");
 }
 

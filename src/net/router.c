@@ -1,7 +1,8 @@
 #include "router.h"
 #include "legacy_node.h"
-#include <netemu/netns.h>
+#include "lib/net_utils.h"
 #include <arpa/inet.h>
+#include <netemu/netns.h>
 
 struct router
 {
@@ -9,6 +10,17 @@ struct router
     struct routing *protocols; /* Hash map of routing protocols */
 	/* Specific fields may follow */
 };
+
+/* The internal network is 172.20.0.0/16, enabling 16384 possible namespaces 
+   and the only two last bytes are variable.    
+*/
+struct internal_net_bytes 
+{
+    uint8_t third;
+    uint8_t fourth;
+} internal_last_bytes = {0, 0};
+
+static void set_internal_ip(char* rname, char* iface_name);
 
 struct router *
 router_new(void)
@@ -23,14 +35,16 @@ router_new(void)
 
 static void
 router_stop(struct router *r){
-    char rname[16];
+    char rname[MAX_NODE_NAME], internal_intf[MAX_NODE_NAME+10];
+
     struct port *p, *tmp, *ports;
-    
-    memcpy(rname, r->rt.base.name, 16);
+    memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
+    sprintf(internal_intf, "%s-inet-ext", rname);
     ports = r->rt.base.ports;
+    delete_intf(internal_intf);
     HASH_ITER(hh, ports, p, tmp) {
-        netns_run(NULL, "ip link del %s-%s",
-                    rname, p->name);
+        netns_run(NULL, "ip link del %s-ext",
+                    rname);
     }
     netns_run(NULL, "pkill exabgp");
     netns_delete(rname);
@@ -101,26 +115,41 @@ router_recv_netflow(struct node *n, struct netflow *flow)
 int 
 router_start(struct router *r)
 {
-    char rname[16];
+    char rname[MAX_NODE_NAME];
+    char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
     struct port *p, *tmp, *ports;
     struct routing *rp, *rptmp;
-    memcpy(rname, r->rt.base.name, 16);
+    memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     if (netns_add(rname)) {
             return -1;
     }
+    sprintf(intf2, "%s-inet", rname);
+    sprintf(intf,"%s-ext", intf2);
+
+    /* Add internal port */
+    setup_veth(rname, intf, intf2, "br0");
+    set_internal_ip(rname, intf2);
+
     ports = r->rt.base.ports;
     HASH_ITER(hh, ports, p, tmp) {
         /* Create interfaces and add to namespace*/
-        netns_run(NULL, "ip link add %s-%s type veth "
+
+
+        netns_run(NULL, "ip link add %s-ext type veth "
                 "peer name node-%s",
-                rname, p->name, p->name);
+                rname, p->name);
+        /* Add to namespace */
         netns_run(NULL, "ip link set node-%s netns %s",
                 p->name, rname);
-        netns_run(NULL, "ip link set dev %s-%s up",
-                rname, p->name);
-        netns_run(NULL, "ip link set dev %s-%s master br0", rname, p->name);
+        /* Turn up */
+        netns_run(NULL, "ip link set dev %s-ext up",
+                rname);
+        /* Add to bridge */
+        netns_run(NULL, "ip link set dev %s-ext master br0", rname);
+        /* Set interface name */
         netns_run(rname, "ip link set node-%s name %s",
             p->name, p->name);
+        /* Turn up in the namespace */
         netns_run(rname, "ip link set dev %s up", p->name);
         /* Configure IP */
         if (p->ipv4_addr){
@@ -141,6 +170,7 @@ router_start(struct router *r)
                       addr, mask, p->name);
         }
     }
+
     netns_run(rname, "ip link set dev lo up");
 
     /* Start protocols */
@@ -155,6 +185,30 @@ router_send_netflow(struct node *n, struct netflow *flow,
                          uint32_t out_port)
 {
     node_update_port_stats(n, flow, out_port);
+}
+
+static void 
+set_internal_ip(char* rname, char* iface_name)
+{
+    /* Increase internal ip */
+    if (internal_last_bytes.fourth < 254) {
+        internal_last_bytes.fourth++;
+    }
+    else {
+        /* Reached max */
+        if(internal_last_bytes.third == 254) {
+            return;
+        }
+        else {
+            internal_last_bytes.fourth = 1;
+            internal_last_bytes.third++; 
+        }
+    }
+    char addr[INET_ADDRSTRLEN];
+    sprintf(addr, "172.20.%d.%d", internal_last_bytes.third, internal_last_bytes.fourth);
+    set_intf_ip(rname, iface_name, addr, "16");
+    // netns_run(rname, "ip addr add %s/16 dev %s", 
+                      // addr, iface_name);
 }
 
 void 

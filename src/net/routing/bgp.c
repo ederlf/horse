@@ -20,10 +20,18 @@ bgp_init(struct bgp *p, char *config_file)
 static void 
 bgp_start(struct routing *rt, char * rname)
 {
+    char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
     struct bgp *p = (struct bgp*) rt;
+    sprintf(intf2, "%s-bgp", rname);
+    sprintf(intf,"%s-ext", intf2);
     char *router_id = find_router_id(p);
+    setup_veth(rname, intf, intf2, "br0");
+
     printf("Router id %s\n", router_id);
     if (router_id != NULL) {
+
+
+        /* Start exabgp */
         netns_run(rname, "env exabgp.daemon.daemonize=true "
               "exabgp.tcp.bind=%s " 
               "exabgp.log.destination=syslog exabgp %s",
