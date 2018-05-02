@@ -36,17 +36,18 @@ router_new(void)
 static void
 router_stop(struct router *r){
     char rname[MAX_NODE_NAME], internal_intf[MAX_NODE_NAME+10];
-
-    struct port *p, *tmp, *ports;
+    struct routing *rp, *rptmp;
+    
     memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     sprintf(internal_intf, "%s-inet-ext", rname);
-    ports = r->rt.base.ports;
     delete_intf(internal_intf);
-    HASH_ITER(hh, ports, p, tmp) {
-        netns_run(NULL, "ip link del %s-ext",
-                    rname);
+    
+    HASH_ITER(hh, r->protocols, rp, rptmp) {
+        rp->clean(rp, rname);
+        HASH_DEL(r->protocols, rp);
+        free(rp);
     }
-    netns_run(NULL, "pkill exabgp");
+
     netns_delete(rname);
 }
 
@@ -117,7 +118,7 @@ router_start(struct router *r)
 {
     char rname[MAX_NODE_NAME];
     char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
-    struct port *p, *tmp, *ports;
+    // struct port *p, *tmp, *ports;
     struct routing *rp, *rptmp;
     memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     if (netns_add(rname)) {
@@ -130,48 +131,49 @@ router_start(struct router *r)
     setup_veth(rname, intf, intf2, "br0");
     set_internal_ip(rname, intf2);
 
-    ports = r->rt.base.ports;
-    HASH_ITER(hh, ports, p, tmp) {
-        /* Create interfaces and add to namespace*/
+    // ports = r->rt.base.ports;
+    // HASH_ITER(hh, ports, p, tmp) {
+    //     /* Create interfaces and add to namespace*/
 
 
-        netns_run(NULL, "ip link add %s-ext type veth "
-                "peer name node-%s",
-                rname, p->name);
-        /* Add to namespace */
-        netns_run(NULL, "ip link set node-%s netns %s",
-                p->name, rname);
-        /* Turn up */
-        netns_run(NULL, "ip link set dev %s-ext up",
-                rname);
-        /* Add to bridge */
-        netns_run(NULL, "ip link set dev %s-ext master br0", rname);
-        /* Set interface name */
-        netns_run(rname, "ip link set node-%s name %s",
-            p->name, p->name);
-        /* Turn up in the namespace */
-        netns_run(rname, "ip link set dev %s up", p->name);
-        /* Configure IP */
-        if (p->ipv4_addr){
-            char addr[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN];
-            uint32_t net_ipv4 = htonl(p->ipv4_addr->addr);
-            uint32_t net_ipv4_mask =  htonl(p->ipv4_addr->netmask);
-            inet_ntop(AF_INET, &(net_ipv4), addr, INET_ADDRSTRLEN);
-            inet_ntop(AF_INET, &(net_ipv4_mask), mask, INET_ADDRSTRLEN);
-            netns_run(rname, "ip addr add %s/%s dev %s", 
-                      addr, mask, p->name);
-        }
-        else if (p->ipv6_addr) {
-            char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
-            inet_ntop(AF_INET6, &(p->ipv6_addr->addr), addr, INET6_ADDRSTRLEN);
-            inet_ntop(AF_INET6, &(p->ipv6_addr->netmask), mask,
-                      INET6_ADDRSTRLEN);
-            netns_run(rname, "ip addr add %s/%s dev %s", 
-                      addr, mask, p->name);
-        }
-    }
+    //     netns_run(NULL, "ip link add %s-ext type veth "
+    //             "peer name node-%s",
+    //             rname, p->name);
+    //     /* Add to namespace */
+    //     netns_run(NULL, "ip link set node-%s netns %s",
+    //             p->name, rname);
+    //     /* Turn up */
+    //     netns_run(NULL, "ip link set dev %s-ext up",
+    //             rname);
+    //     /* Add to bridge */
+    //     netns_run(NULL, "ip link set dev %s-ext master br0", rname);
+    //     /* Set interface name */
+    //     netns_run(rname, "ip link set node-%s name %s",
+    //         p->name, p->name);
+    //     /* Turn up in the namespace */
+    //     netns_run(rname, "ip link set dev %s up", p->name);
+    //     /* Configure IP */
+    //     if (p->ipv4_addr){
+    //         char addr[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN];
+    //         uint32_t net_ipv4 = htonl(p->ipv4_addr->addr);
+    //         uint32_t net_ipv4_mask =  htonl(p->ipv4_addr->netmask);
+    //         inet_ntop(AF_INET, &(net_ipv4), addr, INET_ADDRSTRLEN);
+    //         inet_ntop(AF_INET, &(net_ipv4_mask), mask, INET_ADDRSTRLEN);
+    //         netns_run(rname, "ip addr add %s/%s dev %s", 
+    //                   addr, mask, p->name);
+    //     }
+    //     else if (p->ipv6_addr) {
+    //         char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
+    //         inet_ntop(AF_INET6, &(p->ipv6_addr->addr), addr, INET6_ADDRSTRLEN);
+    //         inet_ntop(AF_INET6, &(p->ipv6_addr->netmask), mask,
+    //                   INET6_ADDRSTRLEN);
+    //         netns_run(rname, "ip addr add %s/%s dev %s", 
+    //                   addr, mask, p->name);
+    //     }
+    // }
 
-    netns_run(rname, "ip link set dev lo up");
+    set_intf_up(rname, "lo");
+    // netns_run(rname, "ip link set dev lo up");
 
     /* Start protocols */
     HASH_ITER(hh, r->protocols, rp, rptmp) {

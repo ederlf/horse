@@ -18,6 +18,7 @@ struct routing {
                    may not apply to every protocol but does not harm */
     void (*start) (struct routing *, char *);                      
     void (*advertise)(struct routing *);
+    void (*clean)(struct routing *, char *);
     UT_hash_handle hh; /* Make it hashable */
 };
 
