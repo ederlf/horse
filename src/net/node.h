@@ -6,7 +6,7 @@
 #include <uthash/uthash.h>
 
 #define BUFFER_MAX 3
-#define MAX_NODE_NAME 16
+#define MAX_NODE_NAME 32
 
 /* Define the possible types of nodes */
 enum node_type {
@@ -25,9 +25,9 @@ struct buffer {
 };
 
 struct node {
-    uint64_t uuid;      /* Sequential identification value 
-                           in the simulator  */
-    char name[16];      /* Identification for the python binding */
+    uint64_t uuid;              /* Sequential identification value 
+                                   in the simulator  */
+    char name[MAX_NODE_NAME];   /* Identification for the python binding */
     struct port *ports; /* Hash table of ports */
     uint16_t ports_num; /* Total number of ports */
     uint16_t type;
