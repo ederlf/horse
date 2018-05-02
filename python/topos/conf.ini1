@@ -1,0 +1,15 @@
+neighbor 10.0.0.2 {
+	router-id 10.0.0.1;
+	local-address 10.0.0.1;
+	local-as 1;
+	peer-as 2;
+    group-updates false;
+    manual-eor true;
+    process parsed-route-backend {
+        run /usr/bin/python /home/vagrant/horse/experimental/bgptest/test_bgp.py;
+        encoder json;
+        receive-routes;
+        neighbor-changes;
+    }
+
+ }
