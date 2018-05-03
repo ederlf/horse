@@ -71,8 +71,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/routing/routing.c \
                 src/net/topology.h \
                 src/net/topology.c \
-                src/sim/of_manager.h \
-                src/sim/of_manager.c \
+                src/sim/conn_manager.h \
+                src/sim/conn_manager.c \
                 src/sim/event_handler.h \
                 src/sim/event_handler.c \
                 src/sim/scheduler.h \

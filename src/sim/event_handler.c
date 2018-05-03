@@ -289,9 +289,9 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
 static void 
 handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    struct of_manager *om = ev_hdl->om;
+    struct conn_manager *om = ev_hdl->om;
     struct sim_event_of *ev_of = (struct sim_event_of*) ev;
-    of_manager_send(om, ev_of->dp_id, ev_of->data, ev_of->len);
+    conn_manager_send_of(om, ev_of->dp_id, ev_of->data, ev_of->len);
 }
 
 static void

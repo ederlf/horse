@@ -70,9 +70,7 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
-    // netns_run("r1", "env exabgp.daemon.daemonize=true exabgp.log.destination=syslog exabgp \"%s\"",
-    //           "/home/vagrant/horse/experimental/bgptest/config/conf.ini1");
-    sleep(15);
+    sleep(10);
 }
 
 struct timespec last = {0};
@@ -80,7 +78,7 @@ struct timespec now = {0};
 FILE *pFile;
 
 static void 
-wait_all_switches_connect(struct topology *topo, struct of_manager *om)
+wait_all_switches_connect(struct topology *topo, struct conn_manager *om)
 {
     uint32_t switches;
     uint32_t time = 0;
@@ -110,7 +108,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     if (sim_config_get_mode(s->config) == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;
-        s->evh.om = of_manager_new(s->evh.sch);
+        s->evh.om = conn_manager_new(s->evh.sch);
         /* Add of_settings to client */
         nodes = topology_nodes(topo);
         HASH_ITER(hh, nodes, cur_node, tmp) {
@@ -136,7 +134,7 @@ sim_close(struct sim *s)
     fclose (pFile);
     scheduler_destroy(s->evh.sch);
     topology_destroy(s->evh.topo);
-    of_manager_destroy(s->evh.om);
+    conn_manager_destroy(s->evh.om);
     /* TODO: move somewhere else */
     netns_run(NULL, "ip link delete conn1");
     netns_run(NULL, "ip link delete dev br0");
