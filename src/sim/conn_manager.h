@@ -4,17 +4,18 @@
 #include <cfluid/of_client.h>
 #include "lib/sim_event.h"
 #include "scheduler.h"
+#include "server.h"
 
 
 struct conn_manager {
     struct of_client *of;
     struct scheduler *sch;
+    struct server *srv;
 };
 
-
 struct conn_manager *conn_manager_new(struct scheduler *sch);
-void conn_manager_destroy(struct conn_manager *om);
-void conn_manager_send_of(struct conn_manager *om, uint64_t dpid, 
+void conn_manager_destroy(struct conn_manager *cm);
+void conn_manager_send_of(struct conn_manager *cm, uint64_t dpid, 
                      uint8_t *buf, size_t len);
 
 #endif

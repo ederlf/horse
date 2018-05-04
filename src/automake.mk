@@ -77,6 +77,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/sim/event_handler.c \
                 src/sim/scheduler.h \
                 src/sim/scheduler.c \
+                src/sim/server.h \
+                src/sim/server.c \
                 src/sim/sim.h \
                 src/sim/sim.c \
                 src/sim/sim_config.h \

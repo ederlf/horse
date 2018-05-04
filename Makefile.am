@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign -Wno-syntax subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I./src -I./vendor -L./vendor/loci -Wstrict-prototypes -Wall -D_GNU_SOURCE -Wextra -Werror  -fPIC -pthread -lcfluid_base -loci 
+AM_CFLAGS = -I./src -I./vendor -L./vendor/loci -Wstrict-prototypes -Wall -D_GNU_SOURCE -Wextra -Werror  -fPIC -pthread -levent -lcfluid_base -loci 
 
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
@@ -14,7 +14,7 @@ include src/automake.mk
 
 bin_PROGRAMS = horse
 horse_SOURCES = src/horse.c
-horse_LDADD = .libs/libhorse.a -lcfluid_base -loci 
+horse_LDADD = .libs/libhorse.a -lcfluid_base -loci -levent
 
 
 # Unit tests

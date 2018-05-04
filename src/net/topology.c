@@ -49,6 +49,8 @@ topology_init(struct topology* topo)
     topo->nodes = NULL;
     topo->dps = NULL;
     topo->n_dps = 0;
+    topo->n_routers = 0;
+    topo->n_hosts = 0;
     topo->n_links = 0;
     topo->links = NULL;
 }
@@ -230,6 +232,12 @@ uint32_t
 topology_dps_num(const struct topology *topo)
 {
     return topo->n_dps;
+}
+
+uint32_t 
+topology_routers_num(const struct topology *topo)
+{
+    return topo->n_routers;
 }
 
 uint32_t topology_links_num(const struct topology *topo)

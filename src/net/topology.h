@@ -47,6 +47,8 @@ struct topology* from_json(char *json_file);
 /* Get struct members */
 uint32_t topology_dps_num(const struct topology *topo);
 
+uint32_t topology_routers_num(const struct topology *topo);
+
 uint32_t topology_links_num(const struct topology *topo);
 
 struct node* topology_nodes(const struct topology *topo);

@@ -28,14 +28,9 @@ int last_wrt = 0;
 uint64_t last_ctrl = 0;
 uint64_t last_stats = 0;
 
-static void 
-setup(struct sim *s)
+static void
+create_internal_devices(void)
 {
-
-    struct scheduler *sch = s->evh.sch;
-    struct topology *topo = s->evh.topo;
-    struct node *node, *tmp;
-
     /* TODO: Move it somewhere else? */
     netns_run(NULL, "ip link add name br0 type bridge");
     netns_run(NULL, "ip link set dev br0 up");
@@ -48,6 +43,17 @@ setup(struct sim *s)
     netns_run(NULL, "ip addr add 172.20.254.254/16 dev conn1");
     netns_run(NULL, "ip route add 172.20.0.0/16 dev conn1");
 
+}
+
+static void 
+setup(struct sim *s)
+{
+
+    struct scheduler *sch = s->evh.sch;
+    struct topology *topo = s->evh.topo;
+    struct node *node, *tmp;
+
+    
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
         if (node->type == HOST) {
             struct exec *exec, *exec_tmp;
@@ -78,14 +84,14 @@ struct timespec now = {0};
 FILE *pFile;
 
 static void 
-wait_all_switches_connect(struct topology *topo, struct conn_manager *om)
+wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
 {
     uint32_t switches;
     uint32_t time = 0;
-    switches = HASH_COUNT(om->of->active_conns);
+    switches = HASH_COUNT(cm->of->active_conns);
     while (switches < topology_dps_num(topo))  {
         sleep(1);
-        switches = HASH_COUNT(om->of->active_conns);
+        switches = HASH_COUNT(cm->of->active_conns);
         time++;
         /* Exit if it takes too long to connect */ 
         if (time > 60) {
@@ -103,24 +109,36 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->evh.topo = topo;
     s->evh.sch = scheduler_new();
     s->evh.live_flows = NULL;
-    s->cont.exec = cont_mode;
-    setup(s); 
+    s->cont.exec = cont_mode; 
+
+    create_internal_devices();
+
     if (sim_config_get_mode(s->config) == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;
-        s->evh.om = conn_manager_new(s->evh.sch);
+        s->evh.cm = conn_manager_new(s->evh.sch);
+        printf("I Enter here\n");
+        /* Start server if routers included */
+        if (topology_routers_num(topo)) {
+            struct server *srv = s->evh.cm->srv;
+
+            server_start(srv);
+        }
+
         /* Add of_settings to client */
         nodes = topology_nodes(topo);
         HASH_ITER(hh, nodes, cur_node, tmp) {
             if (cur_node->type == DATAPATH){
                 dp = (struct datapath*) cur_node;
-                of_client_add_ofsc(s->evh.om->of, dp_settings(dp));
+                of_client_add_ofsc(s->evh.cm->of, dp_settings(dp));
             }
         }
-        of_client_start(s->evh.om->of, false);
+        of_client_start(s->evh.cm->of, false);
     }
+
+    setup(s);
+    wait_all_switches_connect(topo, s->evh.cm);
     pFile = fopen ("bwm.txt","w");
-    wait_all_switches_connect(topo, s->evh.om);
     init_timer(&s->cont, (void*)s);
     set_periodic_timer(/* 1 */1000);
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
@@ -134,7 +152,7 @@ sim_close(struct sim *s)
     fclose (pFile);
     scheduler_destroy(s->evh.sch);
     topology_destroy(s->evh.topo);
-    conn_manager_destroy(s->evh.om);
+    conn_manager_destroy(s->evh.cm);
     /* TODO: move somewhere else */
     netns_run(NULL, "ip link delete conn1");
     netns_run(NULL, "ip link delete dev br0");
@@ -151,7 +169,6 @@ static void update_stats(struct topology *topo, uint64_t time){
         }
     }
 }
-
 
 static struct sim_event* 
 make_time_msg(uint64_t time){

@@ -12,7 +12,7 @@ struct ev_handler {
     struct scheduler *sch;
     struct live_flow *live_flows; /* Hash table of running flows */
     union {
-        struct conn_manager *om; /* Real controllers */
+        struct conn_manager *cm; /* Real controllers */
         //struct controller *ctrl; /* Simulated control */
     };
 };
