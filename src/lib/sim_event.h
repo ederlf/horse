@@ -26,8 +26,11 @@ enum events {
     EVENT_OF_MSG_IN = 4,       /* OF message from controller to simulator */
     EVENT_OF_MSG_OUT = 5,      /* Send OF message to controller */
     EVENT_APP_START = 6,       /* Event to mark the start of an app */
+    EVENT_ROUTING_IN = 7,      /* Routing message from emulated part. */
+    EVENT_ROUTING_OUT = 8,     /* Routing message to emulated part */
     EVENT_END = UINT8_MAX,     /* Final event for the simulation */
 };
+
 
 /*  The initial field of event heap node so 
 *   it can be stored into the simulator's
@@ -81,28 +84,6 @@ struct sim_event_app_start {
     struct sim_event hdr;
     uint64_t node_id;
     struct exec *exec;
-};
-
-/* Flow event when a packet/flow is sent to the controller 
-   It does not have a node_id because it is not handled by a node */
-struct sim_event_pkt_in {
-    struct sim_event hdr;       
-    uint64_t dp_id;         /* The switch that generated the event.     */
-    uint32_t buffer_id;     /* ID assigned by datapath. */
-    uint16_t total_len;     /* Full length of frame. */
-    uint8_t reason;         /* Reason packet is being sent (one of OFPR_*) */
-    uint8_t table_id;       /* ID of the table that was looked up */
-    uint64_t cookie;        /* Cookie of the flow entry that was looked up. */
-    struct netflow flow;
-};
-
-struct sim_event_pkt_out {
-    struct sim_event hdr; 
-    uint64_t dp_id;
-    uint32_t buffer_id;           /* ID assigned by datapath (OFP_NO_BUFFER
-                                     if none). */
-    uint32_t in_port;             /* Packet's input port  */
-    struct netflow flow;
 };
 
 /* Change to port configuration and/or status */
