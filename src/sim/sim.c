@@ -222,7 +222,7 @@ des_mode(void *args){
                 /* Wake up timer */
                 pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
-                sch->mode = CONTINUOUS;
+                sch->mode = FTI;
                 last_wrt = sch->clock;
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
@@ -233,7 +233,7 @@ des_mode(void *args){
                 /* Wake up timer */
                 pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
-                sch->mode = CONTINUOUS;
+                sch->mode = FTI;
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
             

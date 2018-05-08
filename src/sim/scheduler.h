@@ -17,8 +17,8 @@
 #include <uthash/utlist.h>
 
 enum scheduler_mode {
-    DES = 0,
-    CONTINUOUS = 1
+    DES = 0, /* Traditional Discrete Event Operation */
+    FTI = 1  /* Fixed Time increment, time advances in equal intervals */
 };
 
 struct scheduler {

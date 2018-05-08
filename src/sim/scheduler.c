@@ -25,7 +25,7 @@ scheduler_new()
 {
     struct scheduler *sch = xmalloc(sizeof(struct scheduler));
     sch->clock = 0; /* Use time == now()? */
-    sch->mode = CONTINUOUS; /* Scheduler always starts like CONTINUOUS */
+    sch->mode = FTI; /* Scheduler always starts with Fixed Time Increment */
     // sch->ev_queue = xmalloc(sizeof(struct heap));
     // heap_init(sch->ev_queue);
     sch->ev_queue = NULL;
