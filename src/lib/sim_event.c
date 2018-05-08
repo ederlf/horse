@@ -101,8 +101,8 @@ struct sim_event_flow_recv *sim_event_flow_recv_new(uint64_t time,
     return flow;   
 }
 
-struct sim_event_flow_send *sim_event_flow_send_new(uint64_t time, 
-                                          uint64_t node_id, uint32_t out_port)
+struct sim_event_flow_send* 
+sim_event_flow_send_new(uint64_t time, uint64_t node_id, uint32_t out_port)
 {
     struct sim_event_flow_send *flow = xmalloc(sizeof(struct sim_event_flow_send));
     init_event_hdr(&flow->hdr, time, EVENT_FLOW_SEND);

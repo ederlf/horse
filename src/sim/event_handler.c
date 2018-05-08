@@ -16,12 +16,18 @@ static void handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node,
 
 static void handle_recv_netflow(struct ev_handler *ev_hdl, struct sim_event *ev);
 
+static void 
+handle_send_netflow(struct ev_handler *ev_hdl, struct sim_event *ev); 
+
 static void
 handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node, 
                        uint32_t out_port, struct netflow *nf, uint64_t flow_id);
 
 static void 
 handle_packet(struct ev_handler *ev_hdl, struct sim_event *ev);
+
+static void 
+handle_port(struct ev_handler *ev_hdl, struct sim_event *ev);
 
 static void
 handle_of_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
@@ -32,8 +38,7 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
 static void
 handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev);
 
-static void handle_event_fti(struct ev_handler *ev_hdl,
-                             struct sim_event_fti *ev);
+static void handle_fti(struct ev_handler *ev_hdl, struct sim_event *ev);
 
 static void
 add_live_flow(struct ev_handler *evh, struct live_flow *lf);
@@ -44,6 +49,23 @@ del_live_flow(struct ev_handler *evh, struct live_flow *lf);
 static struct live_flow*
 find_live_flow(struct ev_handler *evh, uint64_t flow_id);
 
+/* Handler for the events that cause FTI */
+static void (*event_handler_fti[2]) (struct ev_handler *ev_hdl,
+                                    struct sim_event_fti *ev) = {
+    [EVENT_OF_MSG_IN] = handle_of_in,
+    [EVENT_OF_MSG_OUT] = handle_of_out
+};
+
+/* General handler for events */
+static void (*event_handler[EVENTS_NUM]) (struct ev_handler *ev_hdl, 
+                                          struct sim_event *ev) = {
+    [EVENT_FLOW_RECV] = handle_recv_netflow,
+    [EVENT_FLOW_SEND] = handle_send_netflow,
+    [EVENT_PACKET] = handle_packet,
+    [EVENT_PORT] = handle_port,
+    [EVENT_FTI] = handle_fti,
+    [EVENT_APP_START] = handle_start_app
+};
 /* Implementation */
 
 static void
@@ -228,7 +250,8 @@ handle_port(struct ev_handler *ev_hdl, struct sim_event *ev)
 static void
 handle_fti(struct ev_handler *ev_hdl, struct sim_event *ev)
 {
-    handle_event_fti(ev_hdl, (struct sim_event_fti*) ev);
+    struct sim_event_fti *ev_fti = (struct sim_event_fti*) ev;
+    (*event_handler_fti[ev_fti->subtype]) (ev_hdl, ev_fti);
 }
 
 static void
@@ -367,28 +390,6 @@ find_live_flow(struct ev_handler *evh, uint64_t flow_id)
     struct live_flow *f = NULL;
     HASH_FIND(hh, evh->live_flows, &flow_id, sizeof(uint64_t), f);
     return f;
-}
-
-static void (*event_handler[EVENTS_NUM]) (struct ev_handler *ev_hdl, 
-                                          struct sim_event *ev) = {
-    [EVENT_FLOW_RECV] = handle_recv_netflow,
-    [EVENT_FLOW_SEND] = handle_send_netflow,
-    [EVENT_PACKET] = handle_packet,
-    [EVENT_PORT] = handle_port,
-    [EVENT_FTI] = handle_fti,
-    [EVENT_APP_START] = handle_start_app
-};
-
-static void (*event_handler_fti[2]) (struct ev_handler *ev_hdl,
-                                    struct sim_event_fti *ev) = {
-    [EVENT_OF_MSG_IN] = handle_of_in,
-    [EVENT_OF_MSG_OUT] = handle_of_out
-};
-
-static void handle_event_fti(struct ev_handler *ev_hdl,
-                             struct sim_event_fti *ev)
-{
-    (*event_handler_fti[ev->subtype]) (ev_hdl, ev);
 }
 
 void handle_event(struct ev_handler *ev_hdl,

@@ -226,8 +226,7 @@ des_mode(void *args){
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
             }
-            if (ev->type == EVENT_OF_MSG_OUT ||
-                ev->type == EVENT_OF_MSG_IN ) {
+            if (ev->type == EVENT_FTI) {
                 
                 /* Wake up timer */
                 pthread_mutex_lock( &mtx_mode );
@@ -281,8 +280,7 @@ cont_mode(void* args)
             last_stats = cur_ev->time ;
         }
 
-        if (cur_ev->type == EVENT_OF_MSG_OUT || 
-             cur_ev->type == EVENT_OF_MSG_IN ) {
+        if (cur_ev->type == EVENT_FTI) {
             last_ctrl = cur_ev->time;
         }
         else if(cur_ev->type == EVENT_END){
