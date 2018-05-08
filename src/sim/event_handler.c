@@ -10,6 +10,7 @@
 
 /* Static functions */
 
+
 static void handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node, 
                        struct netflow *nf, uint64_t flow_id);
 
@@ -23,13 +24,16 @@ static void
 handle_packet(struct ev_handler *ev_hdl, struct sim_event *ev);
 
 static void
-handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev);
+handle_of_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
 
 static void
-handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev);
+handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
 
 static void
 handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev);
+
+static void handle_event_fti(struct ev_handler *ev_hdl,
+                             struct sim_event_fti *ev);
 
 static void
 add_live_flow(struct ev_handler *evh, struct live_flow *lf);
@@ -61,10 +65,9 @@ handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node,
             of_object_t *msg = pack_packet_in(nf, &len);
             of_object_wire_buffer_steal(msg, &data);
             /* Create an of out event */
-            struct sim_event_of *ev_of;
-            ev_of = sim_event_of_msg_out_new(nf->start_time, 
-                                             dp_id(dp), data, 
-                                             len);
+            struct sim_event_fti *ev_of;
+            ev_of = sim_event_of_msg_out_new(nf->start_time,
+                                             dp_id(dp), data, len);
             scheduler_insert(ev_hdl->sch, (struct sim_event*) ev_of);
             of_object_delete(msg);
         }
@@ -92,10 +95,10 @@ handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node,
             node_update_port_capacity(node, rate, op->port);
             /* Calculate the time to transmit. The flow send event will happen then */
             node_add_tx_time(node, op->port, nf);
-            log_debug("Scheduling to send %x %ld %d %ld\n", nf->match.eth_type, nf->start_time, op->port, sch->clock);
-            send = sim_event_flow_send_new(nf->start_time, 
-                                            node->uuid, op->port);
-           
+            log_debug("Scheduling to send %x %ld %d %ld\n", nf->match.eth_type,
+                      nf->start_time, op->port, sch->clock);
+            send = sim_event_flow_send_new(nf->start_time, node->uuid,
+                                           op->port);
             send->flow = nf;
             send->flow_id = flow_id;
             scheduler_insert(sch, (struct sim_event*) send);
@@ -140,15 +143,17 @@ handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node,
     struct exec *exec;
     /* Does the host has more to send? */
     if (node->type == HOST) {
-        HASH_FIND(hh, host_execs((struct host*) node), &exec_id, sizeof(uint64_t), exec); 
+        HASH_FIND(hh, host_execs((struct host*) node), &exec_id,
+                  sizeof(uint64_t), exec); 
         if ( exec && exec->exec_cnt ){
-            /* Schedule 1 microsecond after the time the next flow will start on the next hop
-               Otherwise the app risks to start before sending the flow, which may cause a non
-               existent congestion. 
+            /* Schedule 1 microsecond after the time the next flow will 
+               start on the next hop .Otherwise the app risks to start before 
+               sending the flow, which may cause a non existent congestion. 
             */
             exec->start_time = nf->start_time + 1000000;
             log_debug("Scheduling next app exec %ld\n", nf->start_time );
-            struct sim_event_app_start *ev = sim_event_app_start_new(exec->start_time, node->uuid, exec);
+            struct sim_event_app_start *ev = 
+                    sim_event_app_start_new(exec->start_time, node->uuid, exec);
             scheduler_insert(sch, (struct sim_event*) ev);
         } 
     }
@@ -169,7 +174,8 @@ handle_after_flow_send(struct ev_handler *ev_hdl, struct node *node,
         new_flow = sim_event_flow_recv_new(nf->start_time, dst_uuid, rate);
         new_flow->flow = nf;
         new_flow->flow_id = flow_id;
-        log_debug("Scheduling to receive %x %ld %d\n", nf->match.eth_type, nf->start_time, dst_port);
+        log_debug("Scheduling to receive %x %ld %d\n", nf->match.eth_type,
+                  nf->start_time, dst_port);
         scheduler_insert(sch, (struct sim_event*) new_flow);
     }
     else {
@@ -199,7 +205,8 @@ handle_send_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
             node_update_port_capacity(node, -rate, ev_flow->out_port);
             /* Calculate loss here */
             node->send_netflow(node, nf, ev_flow->out_port);
-            handle_after_flow_send(ev_hdl, node, ev_flow->out_port, nf, ev_flow->flow_id);
+            handle_after_flow_send(ev_hdl, node, ev_flow->out_port, nf,
+                                   ev_flow->flow_id);
         }
     }
 }
@@ -219,7 +226,13 @@ handle_port(struct ev_handler *ev_hdl, struct sim_event *ev)
 }
 
 static void
-handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
+handle_fti(struct ev_handler *ev_hdl, struct sim_event *ev)
+{
+    handle_event_fti(ev_hdl, (struct sim_event_fti*) ev);
+}
+
+static void
+handle_of_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
     /* Finds the datapath of the event
     *  handle_control_msg(dp, msg); 
@@ -228,12 +241,12 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
     struct netflow *nf = netflow_new();
     struct scheduler *sch = ev_hdl->sch;
     struct out_port *op,  *tmp;
-    struct sim_event_of *ev_of = (struct sim_event_of*) ev;
+    struct fti_event_of *ev_of = (struct fti_event_of *) ev;
     struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
                                                     ev_of->dp_id);
     
-    ret = dp_control_handle_control_msg(dp, ev_of->data, 
-                                        nf, ev_of->len, ev->time);
+    ret = dp_control_handle_control_msg(dp, ev_of->base.data, 
+                                        nf, ev_of->base.len, ev->hdr.time);
 
     
     /* A packet out may have added ports to send the flow */
@@ -255,7 +268,8 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
         lf = live_flow_new(dp_uuid(dp), new);
         add_live_flow(ev_hdl, lf);
 
-        log_debug("Scheduling new send from packet out %ld %x %d\n", nf->start_time, nf->match.eth_type, op->port);
+        log_debug("Scheduling new send from packet out %ld %x %d\n",
+                  nf->start_time, nf->match.eth_type, op->port);
         send = sim_event_flow_send_new(nf->start_time, 
                                        dp_uuid(dp), op->port);
         /* Need to copy because of broadcasting 
@@ -272,11 +286,11 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
 
     /* In case there is a reply */
     if (ret != NULL){
-        struct sim_event_of *of_out;
+        struct sim_event_fti *of_out;
         uint8_t *msg = NULL;
         size_t len = ret->length;
         of_object_wire_buffer_steal(ret, &msg);
-        of_out = sim_event_of_msg_out_new(ev->time, 
+        of_out = sim_event_of_msg_out_new(ev->hdr.time, 
                                         dp_id(dp), msg, 
                                         len);
         scheduler_insert(ev_hdl->sch, (struct sim_event*) of_out);
@@ -287,11 +301,11 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event *ev)
 }
 
 static void 
-handle_of_out(struct ev_handler *ev_hdl, struct sim_event *ev)
+handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
     struct conn_manager *cm = ev_hdl->cm;
-    struct sim_event_of *ev_of = (struct sim_event_of*) ev;
-    conn_manager_send_of(cm, ev_of->dp_id, ev_of->data, ev_of->len);
+    struct fti_event_of *ev_of = (struct fti_event_of *) ev;
+    conn_manager_send_of(cm, ev_of->dp_id, ev_of->base.data, ev_of->base.len);
 }
 
 static void
@@ -317,7 +331,8 @@ handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev)
                 add_live_flow(ev_hdl, lf);
 
                 node_add_tx_time(node, op->port, new);
-                log_debug("Scheduling send from app start %ld %x\n", nf->start_time, nf->match.eth_type );
+                log_debug("Scheduling send from app start %ld %x\n",
+                          nf->start_time, nf->match.eth_type );
                 send = sim_event_flow_send_new(new->start_time, 
                                                node->uuid, op->port);
                 /* Need to copy because of multicast 
@@ -360,13 +375,26 @@ static void (*event_handler[EVENTS_NUM]) (struct ev_handler *ev_hdl,
     [EVENT_FLOW_SEND] = handle_send_netflow,
     [EVENT_PACKET] = handle_packet,
     [EVENT_PORT] = handle_port,
-    [EVENT_OF_MSG_IN] = handle_of_in,
-    [EVENT_OF_MSG_OUT] = handle_of_out,
+    [EVENT_FTI] = handle_fti,
     [EVENT_APP_START] = handle_start_app
 };
+
+static void (*event_handler_fti[2]) (struct ev_handler *ev_hdl,
+                                    struct sim_event_fti *ev) = {
+    [EVENT_OF_MSG_IN] = handle_of_in,
+    [EVENT_OF_MSG_OUT] = handle_of_out
+};
+
+static void handle_event_fti(struct ev_handler *ev_hdl,
+                             struct sim_event_fti *ev)
+{
+    (*event_handler_fti[ev->subtype]) (ev_hdl, ev);
+}
 
 void handle_event(struct ev_handler *ev_hdl,
                   struct sim_event *ev)
 {
     (*event_handler[ev->type]) (ev_hdl, ev);
 }
+
+

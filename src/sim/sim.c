@@ -76,7 +76,7 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
-    sleep(10);
+    // sleep(10);
 }
 
 struct timespec last = {0};
@@ -111,17 +111,15 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->evh.live_flows = NULL;
     s->cont.exec = cont_mode; 
 
-    create_internal_devices();
-
     if (sim_config_get_mode(s->config) == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;
         s->evh.cm = conn_manager_new(s->evh.sch);
-        printf("I Enter here\n");
+        
         /* Start server if routers included */
         if (topology_routers_num(topo)) {
             struct server *srv = s->evh.cm->srv;
-
+            create_internal_devices();
             server_start(srv);
         }
 
@@ -183,8 +181,9 @@ make_time_msg(uint64_t time){
     uint64_t *t = (uint64_t*) &buf[16];
     *t = hton64(time);   
     /* TODO: Create a dedicated control channel for the simulator messages */
-    struct sim_event_of *ev = sim_event_of_msg_out_new(time, 
-                                                      0x00000000000000001, buf, 24);
+    struct sim_event_fti *ev = sim_event_of_msg_out_new(time,
+                                                        0x00000000000000001, 
+                                                        buf, 24);
     // scheduler_insert(sch, (struct sim_event*) ev); 
     return (struct sim_event*) ev;
 }

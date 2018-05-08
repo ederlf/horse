@@ -53,7 +53,7 @@ conn_manager_of_message_cb(struct of_conn* conn, uint8_t type,
         frees it after the callback returns */
     uint8_t *copy_data = xmalloc(len);
     memcpy(copy_data, data, len);
-    struct sim_event_of *msg = sim_event_of_msg_in_new(time, dp_id, 
+    struct sim_event_fti *msg = sim_event_of_msg_in_new(time, dp_id, 
                                                        copy_data, len);
     scheduler_insert(cm->sch, (struct sim_event*) msg);
     /* We do not need the type but it is here 

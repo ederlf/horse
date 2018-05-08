@@ -76,15 +76,16 @@ accept_conn_cb(struct evconnlistener *listener,
     evutil_socket_t fd, struct sockaddr *address, int socklen,
     void *ctx)
 {
-        UNUSED(ctx);
         UNUSED(address);
         UNUSED(socklen);
+        struct server *s = (struct server*) ctx;
         /* We got a new connection! Set up a bufferevent for it. */
         struct event_base *base = evconnlistener_get_base(listener);
         struct bufferevent *bev = bufferevent_socket_new(
                 base, fd, BEV_OPT_CLOSE_ON_FREE);
         bufferevent_setcb(bev, read_cb, NULL, event_cb, NULL);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
+        s->bev = bev;
 }
 
 static void
@@ -124,7 +125,7 @@ server_listen(void *arg){
     /* Listen on the given port. */
     sin.sin_port = htons(s->port);
 
-    listener = evconnlistener_new_bind(base, accept_conn_cb, NULL,
+    listener = evconnlistener_new_bind(base, accept_conn_cb, (void*)s,
         LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE, -1,
         (struct sockaddr*)&sin, sizeof(sin));
     if (!listener) {
