@@ -6,7 +6,7 @@ neighbor 10.0.0.2 {
     group-updates false;
     manual-eor true;
     process parsed-route-backend {
-        run /usr/bin/python /home/vagrant/horse/python/test_bgp.py;
+        run /usr/bin/python /home/vagrant/horse/python/router_client.py;
         encoder json;
         receive-routes;
         neighbor-changes;
