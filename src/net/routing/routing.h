@@ -4,6 +4,8 @@
 #include <inttypes.h>
 #include <uthash/uthash.h>
 
+#define PROTOCOL_MAX_RID 40
+
 enum protocols {
     IGP = 9,
     EIGPR = 88,
@@ -16,6 +18,7 @@ struct routing {
     uint16_t type; /* Hash key */
     uint64_t asn; /*Autonomous system number, 
                    may not apply to every protocol but does not harm */
+    char router_id[PROTOCOL_MAX_RID];
     void (*start) (struct routing *, char *);                      
     void (*advertise)(struct routing *);
     void (*clean)(struct routing *, char *);

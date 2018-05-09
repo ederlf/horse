@@ -10,9 +10,8 @@
 
 /* Static functions */
 
-
-static void handle_after_flow_recv(struct ev_handler *ev_hdl, struct node* node, 
-                       struct netflow *nf, uint64_t flow_id);
+static void handle_after_flow_recv(struct ev_handler *ev_hdl,
+                                   struct node* node, struct netflow *nf, uint64_t flow_id);
 
 static void handle_recv_netflow(struct ev_handler *ev_hdl, struct sim_event *ev);
 
@@ -30,15 +29,16 @@ static void
 handle_port(struct ev_handler *ev_hdl, struct sim_event *ev);
 
 static void
+handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev);
+
+static void 
+handle_fti(struct ev_handler *ev_hdl, struct sim_event *ev);
+
+static void
 handle_of_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
 
 static void
 handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
-
-static void
-handle_start_app(struct ev_handler *ev_hdl, struct sim_event *ev);
-
-static void handle_fti(struct ev_handler *ev_hdl, struct sim_event *ev);
 
 static void
 add_live_flow(struct ev_handler *evh, struct live_flow *lf);

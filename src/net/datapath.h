@@ -27,13 +27,6 @@
 
 struct datapath;
 
-/* Access datapaths by the dpid */
-struct dp_node {
-    uint64_t dp_id;
-    struct datapath *dp;
-    UT_hash_handle hh;
-};
-
 struct datapath* dp_new(uint64_t dp_id, char *ip, int port);
 
 void dp_destroy(struct datapath *dp);

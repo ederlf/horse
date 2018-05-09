@@ -27,6 +27,7 @@ uint32_t random_at_most(uint32_t max);
 char* file_to_string(const char * file_name, size_t *size);
 int nlz(uint32_t x);
 int ntz(uint32_t x);
+int ip_addr_compare(char *ip1, char *ip2);
 
 static inline uint64_t
 hton64(uint64_t n) {

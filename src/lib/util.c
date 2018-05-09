@@ -107,3 +107,24 @@ char* file_to_string(const char * file_name, size_t *size){
     }
     return str_file;
 }
+
+int
+ip_addr_compare(char *ip1, char *ip2)
+{
+    char *v4 = strchr(ip1,'.');
+    if (v4 != NULL) {
+        struct sockaddr_in sa1, sa2;
+        inet_pton(AF_INET, ip1, &(sa1.sin_addr));
+        inet_pton(AF_INET, ip2, &(sa2.sin_addr));
+        return memcmp(&sa1.sin_addr.s_addr, &sa2.sin_addr.s_addr,
+                      sizeof(uint32_t));
+    }
+    else {
+        struct sockaddr_in6 sa1, sa2;
+        inet_pton(AF_INET6, ip1, &(sa1.sin6_addr));
+        inet_pton(AF_INET6, ip2, &(sa2.sin6_addr));
+        return memcmp(sa1.sin6_addr.s6_addr, sa2.sin6_addr.s6_addr,
+                      INET6_ADDRSTRLEN);
+    }
+    return 0;
+}

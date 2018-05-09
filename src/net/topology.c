@@ -12,6 +12,20 @@
 #include "topology.h"
 #include "lib/json_topology.h"
 
+/* Access datapaths by the dpid */
+struct dp_node {
+    uint64_t dp_id;
+    struct datapath *dp;
+    UT_hash_handle hh;
+};
+
+/* Access routers by the router_id */
+struct router_node {
+    char router_id[40];
+    struct router *rt;
+    UT_hash_handle hh;
+};
+
 /* 
 *   Pair of node uuid and port. 
 *   Key of the hash table of links.
@@ -36,6 +50,7 @@ struct topology {
     struct node *nodes;             /* Hash table of network nodes. */
     struct link *links;             /* Hash table of links */
     struct dp_node *dps;            /* Access datapath nodes by dpid */
+    struct router_node *routers;    /* Access routers by the router_id */
     uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
     uint32_t n_dps;                 /* Number of datapaths. */
     uint32_t n_routers;             /* Number of routers. */
@@ -66,6 +81,11 @@ struct topology* topology_new(void)
 void 
 topology_add_router(struct topology *topo, struct router *r)
 {
+
+    struct router_node *rn = xmalloc(sizeof (struct router_node));
+    router_id(r, rn->router_id);
+    rn->rt = r;
+    HASH_ADD(hh, topo->routers, router_id, ROUTER_ID_MAX_LEN, rn);
     HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) r);
     topo->n_routers++;  
 }
@@ -89,7 +109,9 @@ topology_add_host(struct topology *topo, struct host *h)
 }
 
 void 
-topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bool directed)
+topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB,
+                  uint32_t portA, uint32_t portB, uint32_t bw, 
+                  uint32_t latency, bool directed)
 {
     struct node *dpA, *dpB;
     struct link *l;
@@ -126,7 +148,9 @@ topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t p
 }
 
 bool
-topology_next_hop(const struct topology *topo, const uint64_t orig_uuid, const uint32_t orig_port, uint64_t *dst_uuid, uint32_t *dst_port, uint32_t *latency)
+topology_next_hop(const struct topology *topo, const uint64_t orig_uuid,
+                  const uint32_t orig_port, uint64_t *dst_uuid, 
+                  uint32_t *dst_port, uint32_t *latency)
 {
     struct link *l;
     struct node_port_pair np;
@@ -154,6 +178,7 @@ topology_destroy(struct topology *topo)
     struct node *cur_node, *tmp;
     struct link *ltmp, *lcurr;
     struct dp_node *dncur, *dntmp;
+    struct router_node *rncur, *rntmp;
     /* Clean links */
     HASH_ITER(hh, topo->links, lcurr, ltmp) {
         HASH_DEL(topo->links, lcurr);  
@@ -176,6 +201,10 @@ topology_destroy(struct topology *topo)
     HASH_ITER(hh, topo->dps, dncur, dntmp) {
         HASH_DEL(topo->dps, dncur);  
         free(dncur);
+    }
+    HASH_ITER(hh, topo->routers, rncur, rntmp) {
+        HASH_DEL(topo->routers, rncur);  
+        free(rncur);
     }
     free(topo);
 }
@@ -210,7 +239,10 @@ void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
     }
     /* Create links */
     for (i = 0; i < ptopo->nlinks; ++i){
-        topology_add_link(topo, ptopo->links[i].switchX, ptopo->links[i].switchY, ptopo->links[i].portX, ptopo->links[i].portY, ptopo->links[i].delay, ptopo->links[i].bw, false);
+        topology_add_link(topo, ptopo->links[i].switchX,
+                          ptopo->links[i].switchY, ptopo->links[i].portX, 
+                          ptopo->links[i].portY, ptopo->links[i].delay, 
+                          ptopo->links[i].bw, false);
     }
 }
 

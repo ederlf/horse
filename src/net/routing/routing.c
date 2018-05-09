@@ -7,6 +7,7 @@ routing_init(struct routing *r, uint16_t type)
 {
     r->type = type;
     r->asn = 0;
+    memset(r->router_id, 0x0, PROTOCOL_MAX_RID);
 }
 
 struct routing* 

@@ -93,6 +93,7 @@ cdef class Router:
 
     def add_protocol(self, type = 179, config_file = None):
         if config_file and os.path.isfile(config_file):
+            
             router_add_protocol(self._router_ptr, type, config_file)
         else:
             print "No config file provided for router"

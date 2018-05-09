@@ -76,7 +76,7 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
-    // sleep(10);
+    sleep(5);
 }
 
 struct timespec last = {0};

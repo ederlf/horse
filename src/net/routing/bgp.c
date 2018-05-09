@@ -6,8 +6,7 @@
 static void bgp_start(struct routing *rt, char *rname);
 static void bgp_advertise(struct routing *rt);
 static void bgp_clean(struct routing *rt, char *rname);
-static char* find_router_id(struct bgp* p);
-
+static void set_router_id(struct bgp* p);
 
 void 
 bgp_init(struct bgp *p, char *config_file)
@@ -18,6 +17,7 @@ bgp_init(struct bgp *p, char *config_file)
     p->base.clean = bgp_clean;
     if (strlen(config_file) < MAX_FILE_NAME_SIZE) {
         memcpy(p->config_file, config_file, MAX_FILE_NAME_SIZE);
+        set_router_id(p);
     }
 }   
 
@@ -28,19 +28,14 @@ bgp_start(struct routing *rt, char * rname)
     struct bgp *p = (struct bgp*) rt;
     sprintf(intf2, "%s-bgp", rname);
     sprintf(intf,"%s-ext", intf2);
-    char *router_id = find_router_id(p);
     setup_veth(rname, intf, intf2, "br0");
-    printf("Router id %s\n", router_id);
-    if (router_id != NULL) {
-        /* Set ip. Consider only ipv4 now and a single id and mask /16 */
-        set_intf_ip(rname, intf2, router_id, "16");
-        /* Start exabgp */
-        netns_run(rname, "env exabgp.daemon.daemonize=true "
-              "exabgp.tcp.bind=%s " 
-              "exabgp.log.destination=syslog exabgp %s",
-              router_id, p->config_file); 
-    }
-    free(router_id);
+    /* Set ip. Consider only ipv4 now and a single id and mask /16 */
+    set_intf_ip(rname, intf2, rt->router_id, "16");
+    /* Start exabgp */
+    netns_run(rname, "env exabgp.daemon.daemonize=true "
+          "exabgp.tcp.bind=%s " 
+          "exabgp.log.destination=syslog exabgp %s",
+          rt->router_id, p->config_file); 
 }
 
 static void 
@@ -60,8 +55,9 @@ bgp_clean(struct routing *rt, char *rname)
     delete_intf(intf);
 }
 
-static char* 
-find_router_id(struct bgp* p)
+/* It consider the exabgp configuration file format only */
+static void
+set_router_id(struct bgp* p)
 {
     FILE *cfile;
     char *tmp, *ip;
@@ -83,5 +79,8 @@ find_router_id(struct bgp* p)
         }   
     }
     fclose(cfile);
-    return ip;
+    if (ip != NULL) {
+        memcpy(p->base.router_id, ip, PROTOCOL_MAX_RID);
+        free(ip);
+    }
 }

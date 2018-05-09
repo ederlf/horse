@@ -1,14 +1,15 @@
 #include "router.h"
 #include "legacy_node.h"
 #include "lib/net_utils.h"
+#include "routing/routing.h"
 #include <arpa/inet.h>
 #include <netemu/netns.h>
 
 struct router
 {
 	struct legacy_node rt;
-    struct routing *protocols; /* Hash map of routing protocols */
-	/* Specific fields may follow */
+    char router_id[ROUTER_ID_MAX_LEN]; /* The router id must be unique */
+    struct routing *protocols;         /* Hash map of routing protocols */
 };
 
 /* The internal network is 172.20.0.0/16, enabling 16384 possible namespaces 
@@ -30,6 +31,7 @@ router_new(void)
     r->protocols = NULL;
     r->rt.base.recv_netflow = router_recv_netflow;
     r->rt.base.send_netflow = router_send_netflow;
+    memset(r->router_id, 0x0, ROUTER_ID_MAX_LEN);
     return r;
 }
 
@@ -41,7 +43,6 @@ router_stop(struct router *r){
     memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     sprintf(internal_intf, "%s-inet-ext", rname);
     delete_intf(internal_intf);
-    
     HASH_ITER(hh, r->protocols, rp, rptmp) {
         rp->clean(rp, rname);
         HASH_DEL(r->protocols, rp);
@@ -131,54 +132,18 @@ router_start(struct router *r)
     setup_veth(rname, intf, intf2, "br0");
     set_internal_ip(rname, intf2);
 
-    // ports = r->rt.base.ports;
-    // HASH_ITER(hh, ports, p, tmp) {
-    //     /* Create interfaces and add to namespace*/
-
-
-    //     netns_run(NULL, "ip link add %s-ext type veth "
-    //             "peer name node-%s",
-    //             rname, p->name);
-    //     /* Add to namespace */
-    //     netns_run(NULL, "ip link set node-%s netns %s",
-    //             p->name, rname);
-    //     /* Turn up */
-    //     netns_run(NULL, "ip link set dev %s-ext up",
-    //             rname);
-    //     /* Add to bridge */
-    //     netns_run(NULL, "ip link set dev %s-ext master br0", rname);
-    //     /* Set interface name */
-    //     netns_run(rname, "ip link set node-%s name %s",
-    //         p->name, p->name);
-    //     /* Turn up in the namespace */
-    //     netns_run(rname, "ip link set dev %s up", p->name);
-    //     /* Configure IP */
-    //     if (p->ipv4_addr){
-    //         char addr[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN];
-    //         uint32_t net_ipv4 = htonl(p->ipv4_addr->addr);
-    //         uint32_t net_ipv4_mask =  htonl(p->ipv4_addr->netmask);
-    //         inet_ntop(AF_INET, &(net_ipv4), addr, INET_ADDRSTRLEN);
-    //         inet_ntop(AF_INET, &(net_ipv4_mask), mask, INET_ADDRSTRLEN);
-    //         netns_run(rname, "ip addr add %s/%s dev %s", 
-    //                   addr, mask, p->name);
-    //     }
-    //     else if (p->ipv6_addr) {
-    //         char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
-    //         inet_ntop(AF_INET6, &(p->ipv6_addr->addr), addr, INET6_ADDRSTRLEN);
-    //         inet_ntop(AF_INET6, &(p->ipv6_addr->netmask), mask,
-    //                   INET6_ADDRSTRLEN);
-    //         netns_run(rname, "ip addr add %s/%s dev %s", 
-    //                   addr, mask, p->name);
-    //     }
-    // }
-
     set_intf_up(rname, "lo");
     // netns_run(rname, "ip link set dev lo up");
 
     /* Start protocols */
     HASH_ITER(hh, r->protocols, rp, rptmp) {
+        /* Decide the router id here */
+        if( ip_addr_compare(r->router_id, rp->router_id) < 0 ){
+            router_set_id(r, rp->router_id);
+        }
         rp->start(rp, rname);
     }
+    printf("Router id %s\n", r->router_id);
     return 0;
 }
 
@@ -187,6 +152,14 @@ router_send_netflow(struct node *n, struct netflow *flow,
                          uint32_t out_port)
 {
     node_update_port_stats(n, flow, out_port);
+}
+
+void 
+router_handle_control_message(struct router *r, uint8_t *data, size_t len)
+{
+    UNUSED(r);
+    UNUSED(data);
+    UNUSED(len);
 }
 
 static void 
@@ -209,8 +182,6 @@ set_internal_ip(char* rname, char* iface_name)
     char addr[INET_ADDRSTRLEN];
     sprintf(addr, "172.20.%d.%d", internal_last_bytes.third, internal_last_bytes.fourth);
     set_intf_ip(rname, iface_name, addr, "16");
-    // netns_run(rname, "ip addr add %s/16 dev %s", 
-                      // addr, iface_name);
 }
 
 void 
@@ -238,4 +209,16 @@ uint64_t
 router_uuid(const struct router* r)
 {
     return r->rt.base.uuid;
+}
+
+void 
+router_set_id(struct router *rt, char *router_id)
+{
+    strncpy(rt->router_id, router_id, ROUTER_ID_MAX_LEN);
+}
+
+void 
+router_id(const struct router *r, char *router_id)
+{
+    strncpy(router_id, r->router_id, ROUTER_ID_MAX_LEN);
 }
