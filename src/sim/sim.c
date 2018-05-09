@@ -69,6 +69,7 @@ setup(struct sim *s)
             struct router *r = (struct router*) node;
             printf("Starting router\n");
             router_start(r);
+            topology_add_router_to_map(topo, r);
         }
     }
     /* Event to stop the simulator */

@@ -12,8 +12,8 @@ struct router
     struct routing *protocols;         /* Hash map of routing protocols */
 };
 
-/* The internal network is 172.20.0.0/16, enabling 16384 possible namespaces 
-   and the only two last bytes are variable.    
+/* The internal network is 172.20.0.0/16, enabling 16384 possible namespaces. 
+   The value of the two last bytes increases by one in each namespace.    
 */
 struct internal_net_bytes 
 {
@@ -119,7 +119,6 @@ router_start(struct router *r)
 {
     char rname[MAX_NODE_NAME];
     char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
-    // struct port *p, *tmp, *ports;
     struct routing *rp, *rptmp;
     memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     if (netns_add(rname)) {
@@ -133,17 +132,15 @@ router_start(struct router *r)
     set_internal_ip(rname, intf2);
 
     set_intf_up(rname, "lo");
-    // netns_run(rname, "ip link set dev lo up");
 
     /* Start protocols */
     HASH_ITER(hh, r->protocols, rp, rptmp) {
-        /* Decide the router id here */
+        /* Picks the protocol with highest router id */
         if( ip_addr_compare(r->router_id, rp->router_id) < 0 ){
             router_set_id(r, rp->router_id);
         }
         rp->start(rp, rname);
     }
-    printf("Router id %s\n", r->router_id);
     return 0;
 }
 

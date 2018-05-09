@@ -25,6 +25,7 @@ struct topology;
 
 struct topology* topology_new(void);
 
+void topology_add_router_to_map(struct topology *topo, struct router *r);
 void topology_add_router(struct topology *topo, struct router *r);
 void topology_add_datapath(struct topology *topo, struct datapath *dp);
 void topology_add_host(struct topology *topo, struct host *h);
@@ -33,14 +34,19 @@ void topology_add_link(struct topology *t, uint64_t uuidA,
                        uint64_t uuidB, uint32_t portA, uint32_t portB,
                        uint32_t bw, uint32_t latency, bool directed);
 
-bool topology_next_hop(const struct topology *topo, const uint64_t orig_uuid, const uint32_t orig_port, uint64_t *dst_uuid, uint32_t *dst_port, uint32_t *latency);
+bool topology_next_hop(const struct topology *topo, const uint64_t orig_uuid,
+                       const uint32_t orig_port, uint64_t *dst_uuid, 
+                       uint32_t *dst_port, uint32_t *latency);
 
 void topology_destroy(struct topology *topo);
 
 struct node* topology_node(const struct topology *topo, uint64_t uuid);
 
 struct datapath* topology_datapath_by_dpid(const struct topology *topo,
-                                             uint64_t dp_id);
+                                           uint64_t dp_id);
+
+struct router* topology_router_by_id(const struct topology *topo,
+                                       char* router_id);
 
 struct topology* from_json(char *json_file);
 

@@ -77,15 +77,20 @@ struct topology* topology_new(void)
     return topo;
 }
 
+void 
+topology_add_router_to_map(struct topology *topo, struct router *r)
+{
+    struct router_node *rn = xmalloc(sizeof (struct router_node));
+    router_id(r, rn->router_id);
+    printf("Router id %s\n", rn->router_id);
+    rn->rt = r;
+    HASH_ADD(hh, topo->routers, router_id, ROUTER_ID_MAX_LEN, rn);  
+}
+
 /* One function for each type is necessary because of the Python binding */
 void 
 topology_add_router(struct topology *topo, struct router *r)
 {
-
-    struct router_node *rn = xmalloc(sizeof (struct router_node));
-    router_id(r, rn->router_id);
-    rn->rt = r;
-    HASH_ADD(hh, topo->routers, router_id, ROUTER_ID_MAX_LEN, rn);
     HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) r);
     topo->n_routers++;  
 }
@@ -223,6 +228,14 @@ topology_datapath_by_dpid(const struct topology *topo, uint64_t dp_id)
     struct dp_node *dn;
     HASH_FIND(hh, topo->dps, &dp_id, sizeof(uint64_t), dn);
     return dn->dp;
+}
+
+struct router*
+topology_router_by_id(const struct topology *topo, char* router_id)
+{
+    struct router_node *rn;
+    HASH_FIND(hh, topo->routers, router_id, ROUTER_ID_MAX_LEN, rn);
+    return rn->rt;
 }
 
 static
