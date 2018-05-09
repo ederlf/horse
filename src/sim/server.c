@@ -3,6 +3,7 @@
 #include <event2/listener.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
+#include <event2/thread.h>
 #include <pthread.h>
 
 #include <arpa/inet.h>
@@ -11,6 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
 
 static void event_cb(struct bufferevent *bev, short events, void *ctx);
 
@@ -18,15 +20,21 @@ static void accept_conn_cb(struct evconnlistener *listener, evutil_socket_t fd,
                            struct sockaddr *address, int socklen, void *ctx);
 static void accept_error_cb(struct evconnlistener *listener, void *ctx);
 
+// static int evpthread_on = 0;
+
 struct server *
 server_new(char* address, uint16_t port)
 {
     struct server *s = xmalloc(sizeof(struct server));
     size_t addr_size = strlen(address) + 1;
     s->address = xmalloc(addr_size);
-    strncpy(s->address, address, addr_size);
+    strcpy(s->address, address);
     s->port = port;
     s->event_cb = event_cb;
+    // if (!evpthread_on) { 
+    //     evthread_use_pthreads();
+    //     evpthread_on = 1;
+    // }
     return s;
 }
 
@@ -41,23 +49,20 @@ server_destroy(struct server *s)
 static void
 read_cb(struct bufferevent *bev, void *ctx)
 {
-        char data[8192];
-        UNUSED(ctx);
-        printf("Calling read cb\n");
-        size_t n;
-        /* This callback is invoked when there is data to read on bev. */
-        for (;;) {
-            n = bufferevent_read(bev, data, sizeof(data));
-            if (n <= 0) {
-                /* Done. */
-                break;
-            }
-        } 
-        printf("%s\n", data);
-        // struct evbuffer *input = bufferevent_get_input(bev);
-        // struct evbuffer *output = bufferevent_get_output(bev);
-        /* Copy all the data from the input buffer to the output buffer. */
-        // evbuffer_add_buffer(output, input);
+    char data[8192];
+    UNUSED(ctx);
+    // struct server *s = (struct server *) ctx;
+    printf("Calling read cb, will send\n");
+    size_t n;
+    /* This callback is invoked when there is data to read on bev. */
+    for (;;) {
+        n = bufferevent_read(bev, data, sizeof(data));
+        if (n <= 0) {
+            /* Done. */
+            break;
+        }
+    } 
+    printf("%s\n", data);
 }
 
 static void
@@ -83,7 +88,7 @@ accept_conn_cb(struct evconnlistener *listener,
         struct event_base *base = evconnlistener_get_base(listener);
         struct bufferevent *bev = bufferevent_socket_new(
                 base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, read_cb, NULL, event_cb, NULL);
+        bufferevent_setcb(bev, read_cb, NULL, event_cb, ctx);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
         s->bev = bev;
 }
@@ -119,7 +124,7 @@ server_listen(void *arg){
     memset(&sin, 0, sizeof(sin));
     /* This is an INET address */
     sin.sin_family = AF_INET;
-    /* Listen on 172.20.254.254 */
+    /* Listen to 172.20.254.254 */
     sin.sin_addr.s_addr = htonl(2887057150);
     // sin.sin_addr.s_addr = htonl(0);
     /* Listen on the given port. */
@@ -136,6 +141,11 @@ server_listen(void *arg){
 
     event_base_dispatch(base); 
     return NULL;
+}
+
+void server_send(struct server* s, uint8_t *data, size_t len)
+{
+    bufferevent_write(s->bev, data, len);
 }
 
 void server_start(struct server *s)

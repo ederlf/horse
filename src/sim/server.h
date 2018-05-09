@@ -15,6 +15,6 @@ struct server {
 struct server *server_new(char* address, uint16_t port);
 void server_destroy(struct server *s);
 void server_start(struct server *s);
-void server_send(struct server *s);
+void server_send(struct server* s, uint8_t *data, size_t len);
 
 #endif
