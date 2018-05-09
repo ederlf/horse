@@ -31,7 +31,7 @@ router_new(void)
     r->protocols = NULL;
     r->rt.base.recv_netflow = router_recv_netflow;
     r->rt.base.send_netflow = router_send_netflow;
-    memset(r->router_id, 0x0, ROUTER_ID_MAX_LEN);
+    strcpy(r->router_id, "0.0.0.0");
     return r;
 }
 
@@ -136,7 +136,7 @@ router_start(struct router *r)
     /* Start protocols */
     HASH_ITER(hh, r->protocols, rp, rptmp) {
         /* Picks the protocol with highest router id */
-        if( ip_addr_compare(r->router_id, rp->router_id) < 0 ){
+        if( ip_addr_compare(rp->router_id, r->router_id) > 0 ){
             router_set_id(r, rp->router_id);
         }
         rp->start(rp, rname);
@@ -211,11 +211,11 @@ router_uuid(const struct router* r)
 void 
 router_set_id(struct router *rt, char *router_id)
 {
-    strncpy(rt->router_id, router_id, ROUTER_ID_MAX_LEN);
+    strcpy(rt->router_id, router_id);
 }
 
 void 
 router_id(const struct router *r, char *router_id)
 {
-    strncpy(router_id, r->router_id, ROUTER_ID_MAX_LEN);
+    strcpy(router_id, r->router_id);
 }
