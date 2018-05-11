@@ -17,10 +17,10 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/instruction_set.c \
                 src/lib/json_topology.h \
                 src/lib/json_topology.c \
-				src/lib/netflow.h \
-				src/lib/netflow.c \
-				src/lib/net_utils.h \
-				src/lib/net_utils.c \
+		src/lib/netflow.h \
+		src/lib/netflow.c \
+		src/lib/net_utils.h \
+		src/lib/net_utils.c \
                 src/lib/of_pack.h \
                 src/lib/of_pack.c \
                 src/lib/packets.h \
@@ -69,6 +69,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/routing/bgp.c \
                 src/net/routing/routing.h \
                 src/net/routing/routing.c \
+                src/net/routing/routing_msg.h \
+                src/net/routing/routing_msg.c \
                 src/net/topology.h \
                 src/net/topology.c \
                 src/sim/conn_manager.h \

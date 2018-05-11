@@ -8,6 +8,7 @@ struct server {
     char *address; 
     pthread_t server_thr;
     struct bufferevent *bev;
+    void *owner; 
     void (*read_cb) (struct bufferevent *bev, void *ctx);
     void (*event_cb) (struct bufferevent *bev, short events, void *ctx);
 };

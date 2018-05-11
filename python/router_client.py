@@ -2,8 +2,9 @@
 import json
 import os
 import datetime
-from sys import stdin, stdout
+import sys
 from threading import Thread
+import msg as bgp
 import syslog
 import socket
 import struct
@@ -11,6 +12,10 @@ import errno
 
 # neighbor 127.0.0.1 announce route 1.0.0.0/24 next-hop 101.1.101.1
 
+path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+syslog.syslog(path)
+if path not in sys.path:
+    sys.path.append(path)
 
 announcements = [
     'neighbor 10.0.0.2 announce route 100.10.0.0/24 next-hop self',
@@ -29,14 +34,23 @@ def message_parser(line):
     # syslog.syslog(test)
     # Convert Unix timestamp to python datetime
     if temp_message['type'] == 'state':
-        message = {
-            'origin': temp_message['neighbor']['address']['local'],
-            'type': 'state',
-            'peer': temp_message['neighbor']['ip'],
-            'state': temp_message['neighbor']['state'],
-        }
-
-        return message
+        state = temp_message['neighbor']['state']
+        syslog.syslog("SENDING STATE %s" % state)
+        s = 0
+        if state == "down":
+            s = bgp.BGPStateMsg.BGP_STATE_DOWN
+        elif state == "connected":
+            s = bgp.BGPStateMsg.BGP_STATE_CONNECTED
+        else:
+            s = bgp.BGPStateMsg.BGP_STATE_UP
+        # return message
+        peer_id = struct.unpack("!L", socket.inet_aton(temp_message['neighbor']['ip']))[0] 
+        router_id =  struct.unpack("!L", socket.inet_aton(temp_message['neighbor']['address']['local']))[0]
+        
+        msg = bgp.BGPStateMsg(local_id = router_id, peer_id = peer_id,
+                              state = s)
+        
+        return msg.pack()
 
     if temp_message['type'] == 'keepalive':
         message = {
@@ -131,12 +145,13 @@ def _send(conn, stdin):
                 # conn.send(message)
                 # m = json.dumps(message)
                 conn.send(str(message))
-                if message['state'] == 'up' and message['origin'] == '10.0.0.1':
-                    for announce in announcements:
-                        syslog.syslog("announce")
-                        stdout.write(announce + '\n')
-                        stdout.flush()
-                        sleep(1)
+
+                # if message['state'] == 'up' and message['origin'] == '10.0.0.1':
+                #     for announce in announcements:
+                #         syslog.syslog("announce")
+                #         stdout.write(announce + '\n')
+                #         stdout.flush()
+                #         sleep(1)
                 #parsed = json.dumps(message)
                 # syslog.syslog(parsed)
 
@@ -156,8 +171,8 @@ if __name__ == '__main__':
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(address)
         # s.setblocking(0)
-        sender = Thread(target=_send, args=(s, stdin))
-        receiver = Thread(target=_recv, args=(s, stdout))
+        sender = Thread(target=_send, args=(s, sys.stdin))
+        receiver = Thread(target=_recv, args=(s, sys.stdout))
         sender.start()
         receiver.start()
         #Iterate through messages

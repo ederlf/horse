@@ -1,9 +1,11 @@
 #include "conn_manager.h"
 #include "lib/util.h"
 #include "lib/openflow.h"
+#include "net/routing/routing_msg.h"
 
 static void conn_manager_of_message_cb(struct of_conn* conn, uint8_t type,
                                        void *data, size_t len);
+static void conn_manager_router_message_cb(struct bufferevent *bev, void *ctx);
 
 struct conn_manager *conn_manager_new(struct scheduler *sch)
 {
@@ -14,6 +16,8 @@ struct conn_manager *conn_manager_new(struct scheduler *sch)
     cm->sch = sch;
     /* Create for now, decide later if creation will move */
     cm->srv = server_new("172.20.254.254", 6000);
+    cm->srv->owner = cm;
+    cm->srv->read_cb = conn_manager_router_message_cb;
     return cm;
 }
 
@@ -59,4 +63,32 @@ conn_manager_of_message_cb(struct of_conn* conn, uint8_t type,
     /* We do not need the type but it is here 
      * because libfluid callback needs it */
     UNUSED(type);
+}
+
+static void
+conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
+{
+    uint8_t data[8192];
+    // UNUSED(ctx);
+    struct server *s = (struct server *) ctx;
+    struct conn_manager *cm = (struct conn_manager *) s->owner;
+    size_t n;
+    /* This callback is invoked when there is data to read on bev. */
+    for (;;) {
+        n = bufferevent_read(bev, data, sizeof(data));
+        if (n <= 0) {
+            /* Done. */
+            break;
+        }
+    } 
+    uint64_t time = cm->sch->clock;
+    struct routing_msg *msg;
+    routing_msg_unpack(data, &msg);
+    uint32_t router_id = msg->router_id;
+    /* PERF: As I control the server, there is no need to free data here */
+    struct sim_event_fti *ev = sim_event_router_in_new(time, router_id, 
+                                                       data, msg->size);
+    printf("%d %d %d\n", msg->type, msg->size, router_id);
+    scheduler_insert(cm->sch, (struct sim_event*) ev);
+    
 }

@@ -47,25 +47,6 @@ server_destroy(struct server *s)
 }
 
 static void
-read_cb(struct bufferevent *bev, void *ctx)
-{
-    char data[8192];
-    UNUSED(ctx);
-    // struct server *s = (struct server *) ctx;
-    printf("Calling read cb, will send\n");
-    size_t n;
-    /* This callback is invoked when there is data to read on bev. */
-    for (;;) {
-        n = bufferevent_read(bev, data, sizeof(data));
-        if (n <= 0) {
-            /* Done. */
-            break;
-        }
-    } 
-    printf("%s\n", data);
-}
-
-static void
 event_cb(struct bufferevent *bev, short events, void *ctx)
 {
     UNUSED(ctx);
@@ -88,7 +69,7 @@ accept_conn_cb(struct evconnlistener *listener,
         struct event_base *base = evconnlistener_get_base(listener);
         struct bufferevent *bev = bufferevent_socket_new(
                 base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, read_cb, NULL, event_cb, ctx);
+        bufferevent_setcb(bev, s->read_cb, NULL, s->event_cb, ctx);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
         s->bev = bev;
 }
@@ -149,6 +130,7 @@ void server_send(struct server* s, uint8_t *data, size_t len)
 }
 
 void server_start(struct server *s)
-{
+{   
+    s->event_cb = event_cb;
     pthread_create(&s->server_thr, (pthread_attr_t*)0, server_listen, (void*)s);
 }

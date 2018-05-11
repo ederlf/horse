@@ -41,6 +41,12 @@ static void
 handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
 
 static void
+handle_router_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
+
+static void
+handle_router_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
+
+static void
 add_live_flow(struct ev_handler *evh, struct live_flow *lf);
 
 static void
@@ -50,10 +56,12 @@ static struct live_flow*
 find_live_flow(struct ev_handler *evh, uint64_t flow_id);
 
 /* Handler for the events that cause FTI */
-static void (*event_handler_fti[2]) (struct ev_handler *ev_hdl,
+static void (*event_handler_fti[FTI_EVENTS_NUM]) (struct ev_handler *ev_hdl,
                                     struct sim_event_fti *ev) = {
     [EVENT_OF_MSG_IN] = handle_of_in,
-    [EVENT_OF_MSG_OUT] = handle_of_out
+    [EVENT_OF_MSG_OUT] = handle_of_out,
+    [EVENT_ROUTER_IN] = handle_router_in,
+    [EVENT_ROUTER_OUT] = handle_router_out
 };
 
 /* General handler for events */
@@ -329,6 +337,21 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
     struct conn_manager *cm = ev_hdl->cm;
     struct fti_event_of *ev_of = (struct fti_event_of *) ev;
     conn_manager_send_of(cm, ev_of->dp_id, ev_of->base.data, ev_of->base.len);
+}
+
+static void
+handle_router_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
+{
+    printf("Executing an event from the router :-)\n");
+    UNUSED(ev_hdl);
+    UNUSED(ev);
+}
+
+static void
+handle_router_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
+{
+    UNUSED(ev_hdl);
+    UNUSED(ev);
 }
 
 static void
