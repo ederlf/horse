@@ -107,7 +107,7 @@ struct fti_event_of {
 /* For events between emulated/simulated routers */
 struct fti_event_router {
     struct sim_event_fti base;       
-    char router_id[40]; 
+    uint32_t router_id; 
 };
 
 struct sim_event* sim_event_new(uint64_t time);

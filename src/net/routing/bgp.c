@@ -15,7 +15,6 @@ bgp_init(struct bgp *p, char *config_file)
     p->base.start = bgp_start;
     p->base.advertise = bgp_advertise;
     p->base.clean = bgp_clean;
-    memset(p->base.router_id, 0x0, PROTOCOL_MAX_RID);
     if (strlen(config_file) < MAX_FILE_NAME_SIZE) {
         memcpy(p->config_file, config_file, MAX_FILE_NAME_SIZE);
         set_router_id(p);
@@ -26,17 +25,20 @@ static void
 bgp_start(struct routing *rt, char * rname)
 {
     char intf[42], intf2[42];
+    char str_ip[INET_ADDRSTRLEN];
+    struct in_addr net_ip = {rt->router_id};
     struct bgp *p = (struct bgp*) rt;
     sprintf(intf2, "%s-bgp", rname);
     sprintf(intf,"%s-ext", intf2);
     setup_veth(rname, intf, intf2, "br0");
     /* Set ip. Consider only ipv4 now and a single id and mask /16 */
-    set_intf_ip(rname, intf2, rt->router_id, "16");
+    get_ip_str(net_ip, str_ip, AF_INET);
+    set_intf_ip(rname, intf2, str_ip, "16");
     /* Start exabgp */
     netns_run(rname, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s " 
           "exabgp.log.destination=syslog exabgp %s",
-          rt->router_id, p->config_file); 
+          str_ip, p->config_file); 
 }
 
 static void 
@@ -81,7 +83,7 @@ set_router_id(struct bgp* p)
     }
     fclose(cfile);
     if (ip != NULL) {
-        memcpy(p->base.router_id, ip, PROTOCOL_MAX_RID);
+        get_ip_net(ip, &p->base.router_id, AF_INET);
         free(ip);
     }
 }

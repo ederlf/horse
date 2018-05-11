@@ -1,10 +1,10 @@
 #ifndef ROUTING_H
 #define ROUTING_H 1
 
+#include <arpa/inet.h>
 #include <inttypes.h>
 #include <uthash/uthash.h>
-
-#define PROTOCOL_MAX_RID 40
+#include "lib/packets.h"
 
 enum protocols {
     IGP = 9,
@@ -18,7 +18,7 @@ struct routing {
     uint16_t type; /* Hash key */
     uint64_t asn; /*Autonomous system number, 
                    may not apply to every protocol but does not harm */
-    char router_id[PROTOCOL_MAX_RID];
+    uint32_t router_id;
     void (*start) (struct routing *, char *);                      
     void (*advertise)(struct routing *);
     void (*clean)(struct routing *, char *);

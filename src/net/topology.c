@@ -21,7 +21,7 @@ struct dp_node {
 
 /* Access routers by the router_id */
 struct router_node {
-    char router_id[40];
+    uint32_t router_id;
     struct router *rt;
     UT_hash_handle hh;
 };
@@ -81,10 +81,9 @@ void
 topology_add_router_to_map(struct topology *topo, struct router *r)
 {
     struct router_node *rn = xmalloc(sizeof (struct router_node));
-    router_id(r, rn->router_id);
-    printf("Router id %s\n", rn->router_id);
+    rn->router_id = router_id(r);
     rn->rt = r;
-    HASH_ADD(hh, topo->routers, router_id, ROUTER_ID_MAX_LEN, rn);  
+    HASH_ADD(hh, topo->routers, router_id, sizeof(uint32_t), rn);  
 }
 
 /* One function for each type is necessary because of the Python binding */
@@ -231,10 +230,10 @@ topology_datapath_by_dpid(const struct topology *topo, uint64_t dp_id)
 }
 
 struct router*
-topology_router_by_id(const struct topology *topo, char* router_id)
+topology_router_by_id(const struct topology *topo, uint32_t router_id)
 {
     struct router_node *rn;
-    HASH_FIND(hh, topo->routers, router_id, ROUTER_ID_MAX_LEN, rn);
+    HASH_FIND(hh, topo->routers, &router_id, sizeof(uint32_t), rn);
     return rn->rt;
 }
 

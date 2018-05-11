@@ -9,6 +9,14 @@ import socket
 import struct
 import errno
 
+# neighbor 127.0.0.1 announce route 1.0.0.0/24 next-hop 101.1.101.1
+
+
+announcements = [
+    'neighbor 10.0.0.2 announce route 100.10.0.0/24 next-hop self',
+    'neighbor 10.0.0.3 announce route 200.20.0.0/24 next-hop self',
+]
+
 def message_parser(line):
     # Parse JSON string  to dictionary
     temp_message = json.loads(line)
@@ -20,7 +28,6 @@ def message_parser(line):
     # state = test['state']
     # syslog.syslog(test)
     # Convert Unix timestamp to python datetime
-    # syslog.syslog(line)
     if temp_message['type'] == 'state':
         message = {
             'origin': temp_message['neighbor']['address']['local'],
@@ -28,6 +35,7 @@ def message_parser(line):
             'peer': temp_message['neighbor']['ip'],
             'state': temp_message['neighbor']['state'],
         }
+
         return message
 
     if temp_message['type'] == 'keepalive':
@@ -37,6 +45,14 @@ def message_parser(line):
             'peer': temp_message['neighbor']['ip'],
         }
 
+        return message
+
+    if temp_message['type'] == 'update':
+        message = {
+            'type': 'update',
+            'origin': temp_message['neighbor']['address']['local'],
+            'peer': temp_message['neighbor']['ip'],
+        }
         return message
 
     # If message is a different type, ignore
@@ -74,8 +90,6 @@ def _recv(conn, stdout):
                 if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
                     syslog.syslog( 'No data available' )
                     continue
-            # syslog.syslog(msg_type)
-            # syslog.syslog(size)
         # Message started to be received
         else:
             try:
@@ -110,13 +124,19 @@ def _send(conn, stdin):
                     break
                 continue
             counter = 0
-
+            syslog.syslog(line)
             # Parse message, and if it's the correct type, store in the database
             message = message_parser(line)
             if message:
                 # conn.send(message)
                 # m = json.dumps(message)
                 conn.send(str(message))
+                if message['state'] == 'up' and message['origin'] == '10.0.0.1':
+                    for announce in announcements:
+                        syslog.syslog("announce")
+                        stdout.write(announce + '\n')
+                        stdout.flush()
+                        sleep(1)
                 #parsed = json.dumps(message)
                 # syslog.syslog(parsed)
 
@@ -125,6 +145,7 @@ def _send(conn, stdin):
         except IOError:
             # most likely a signal during readline
             pass
+
 
 ''' main '''
 if __name__ == '__main__':
@@ -139,6 +160,7 @@ if __name__ == '__main__':
         receiver = Thread(target=_recv, args=(s, stdout))
         sender.start()
         receiver.start()
+        #Iterate through messages
         sender.join()
         receiver.join()
         s.close()

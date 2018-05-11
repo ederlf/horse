@@ -27,7 +27,10 @@ uint32_t random_at_most(uint32_t max);
 char* file_to_string(const char * file_name, size_t *size);
 int nlz(uint32_t x);
 int ntz(uint32_t x);
-int ip_addr_compare(char *ip1, char *ip2);
+uint8_t get_ip_family(char *ip);
+int ip_str_addr_compare(char *ip1, char *ip2, uint8_t addr_family);
+void get_ip_str(const struct in_addr ip, char *str, uint8_t addr_family);
+void get_ip_net(char *ip, uint32_t *net_ip, uint8_t addr_family);
 
 static inline uint64_t
 hton64(uint64_t n) {

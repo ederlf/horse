@@ -46,7 +46,7 @@ struct datapath* topology_datapath_by_dpid(const struct topology *topo,
                                            uint64_t dp_id);
 
 struct router* topology_router_by_id(const struct topology *topo,
-                                       char* router_id);
+                                       uint32_t router_id);
 
 struct topology* from_json(char *json_file);
 

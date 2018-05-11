@@ -8,7 +8,7 @@
 struct router
 {
 	struct legacy_node rt;
-    char router_id[ROUTER_ID_MAX_LEN]; /* The router id must be unique */
+    uint32_t router_id;                /* Highest router_id from protocols */
     struct routing *protocols;         /* Hash map of routing protocols */
 };
 
@@ -31,7 +31,7 @@ router_new(void)
     r->protocols = NULL;
     r->rt.base.recv_netflow = router_recv_netflow;
     r->rt.base.send_netflow = router_send_netflow;
-    strcpy(r->router_id, "0.0.0.0");
+    r->router_id = 0;
     return r;
 }
 
@@ -136,8 +136,8 @@ router_start(struct router *r)
     /* Start protocols */
     HASH_ITER(hh, r->protocols, rp, rptmp) {
         /* Picks the protocol with highest router id */
-        if( ip_addr_compare(rp->router_id, r->router_id) > 0 ){
-            router_set_id(r, rp->router_id);
+        if( memcmp(&rp->router_id, &r->router_id, sizeof(uint32_t)) > 0 ){
+            r->router_id = rp->router_id;
         }
         rp->start(rp, rname);
     }
@@ -208,14 +208,8 @@ router_uuid(const struct router* r)
     return r->rt.base.uuid;
 }
 
-void 
-router_set_id(struct router *rt, char *router_id)
+uint32_t 
+router_id(const struct router *r)
 {
-    strcpy(rt->router_id, router_id);
-}
-
-void 
-router_id(const struct router *r, char *router_id)
-{
-    strcpy(router_id, r->router_id);
+    return r->router_id;
 }

@@ -1,10 +1,5 @@
 neighbor 10.0.0.1 {
-	router-id 10.0.0.2;
-	local-address 10.0.0.2;
-	local-as 2;
-	peer-as 1;
-    group-updates false;
-    manual-eor true;
+    
     process parsed-route-backend {
         run /usr/bin/python /home/vagrant/horse/python/router_client.py;
         encoder json;
@@ -12,4 +7,10 @@ neighbor 10.0.0.1 {
         neighbor-changes;
     }
 
+	router-id 10.0.0.2;
+	local-address 10.0.0.2;
+	local-as 2;
+	peer-as 1;
+    
+    manual-eor true;
  }
