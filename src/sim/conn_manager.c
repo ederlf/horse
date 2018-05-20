@@ -80,15 +80,15 @@ conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
             /* Done. */
             break;
         }
-    } 
+    }
+    struct routing_msg *msg = (struct routing_msg*) data; 
     uint64_t time = cm->sch->clock;
-    struct routing_msg *msg;
-    routing_msg_unpack(data, &msg);
-    uint32_t router_id = msg->router_id;
-    /* PERF: As I control the server, there is no need to free data here */
+    uint16_t msg_len = ntohs(msg->size);    
+    uint8_t *ev_data = xmalloc(msg_len);
+    memcpy(ev_data, data, msg_len);
+    uint32_t router_id = ntohl(msg->router_id);
     struct sim_event_fti *ev = sim_event_router_in_new(time, router_id, 
-                                                       data, msg->size);
-    printf("%d %d %d\n", msg->type, msg->size, router_id);
+                                                       ev_data, msg->size);
     scheduler_insert(cm->sch, (struct sim_event*) ev);
     
 }

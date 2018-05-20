@@ -273,8 +273,7 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
     struct scheduler *sch = ev_hdl->sch;
     struct out_port *op,  *tmp;
     struct fti_event_of *ev_of = (struct fti_event_of *) ev;
-    struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo,
-                                                    ev_of->dp_id);
+    struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo, ev_of->dp_id);
     
     ret = dp_control_handle_control_msg(dp, ev_of->base.data, 
                                         nf, ev_of->base.len, ev->hdr.time);
@@ -342,9 +341,9 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 static void
 handle_router_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
-    printf("Executing an event from the router :-)\n");
-    UNUSED(ev_hdl);
-    UNUSED(ev);
+    struct fti_event_router *ev_rt = (struct fti_event_router *) ev;
+    struct router *r = topology_router_by_id(ev_hdl->topo, ev_rt->router_id);
+    router_handle_control_message(r, ev->data);
 }
 
 static void

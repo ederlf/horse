@@ -26,7 +26,7 @@ bgp_start(struct routing *rt, char * rname)
 {
     char intf[42], intf2[42];
     char str_ip[INET_ADDRSTRLEN];
-    struct in_addr net_ip = {rt->router_id};
+    struct in_addr net_ip = {htonl(rt->router_id)};
     struct bgp *p = (struct bgp*) rt;
     sprintf(intf2, "%s-bgp", rname);
     sprintf(intf,"%s-ext", intf2);
@@ -36,7 +36,7 @@ bgp_start(struct routing *rt, char * rname)
     set_intf_ip(rname, intf2, str_ip, "16");
     /* Start exabgp */
     netns_run(rname, "env exabgp.daemon.daemonize=true "
-          "exabgp.tcp.bind=%s " 
+          "exabgp.tcp.bind=%s "
           "exabgp.log.destination=syslog exabgp %s",
           str_ip, p->config_file); 
 }
@@ -84,6 +84,7 @@ set_router_id(struct bgp* p)
     fclose(cfile);
     if (ip != NULL) {
         get_ip_net(ip, &p->base.router_id, AF_INET);
+        p->base.router_id = ntohl(p->base.router_id);
         free(ip);
     }
 }

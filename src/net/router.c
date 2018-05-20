@@ -2,6 +2,7 @@
 #include "legacy_node.h"
 #include "lib/net_utils.h"
 #include "routing/routing.h"
+#include "routing/routing_msg.h"
 #include <arpa/inet.h>
 #include <netemu/netns.h>
 
@@ -72,6 +73,9 @@ router_add_protocol(struct router *rt, uint16_t type, char *config_file)
 {
     struct routing *r = routing_factory(type, config_file);
     HASH_ADD(hh, rt->protocols, type, sizeof(uint16_t), r);
+    if (r->router_id > rt->router_id){
+        rt->router_id = r->router_id;
+    }
 }
 
 void
@@ -119,29 +123,28 @@ router_start(struct router *r)
 {
     char rname[MAX_NODE_NAME];
     char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
-    struct routing *rp, *rptmp;
     memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     if (netns_add(rname)) {
             return -1;
     }
     sprintf(intf2, "%s-inet", rname);
     sprintf(intf,"%s-ext", intf2);
-
     /* Add internal port */
     setup_veth(rname, intf, intf2, "br0");
     set_internal_ip(rname, intf2);
-
     set_intf_up(rname, "lo");
+    return 0;
+}
 
-    /* Start protocols */
+void 
+router_start_protocols(struct router *r)
+{
+    char rname[MAX_NODE_NAME];
+    struct routing *rp, *rptmp;
+    memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
     HASH_ITER(hh, r->protocols, rp, rptmp) {
-        /* Picks the protocol with highest router id */
-        if( memcmp(&rp->router_id, &r->router_id, sizeof(uint32_t)) > 0 ){
-            r->router_id = rp->router_id;
-        }
         rp->start(rp, rname);
     }
-    return 0;
 }
 
 void 
@@ -152,11 +155,26 @@ router_send_netflow(struct node *n, struct netflow *flow,
 }
 
 void 
-router_handle_control_message(struct router *r, uint8_t *data, size_t len)
+router_handle_control_message(struct router *r, uint8_t *data)
 {
+
+    struct routing_msg *msg;
+    routing_msg_unpack(data, &msg);
+    switch(msg->type) {
+        case BGP_STATE:{
+            break;
+        }
+        case BGP_ANNOUNCE:{
+            /* Should never happen ?*/
+            break;
+        }
+        default:{
+            fprintf(stderr, "Cannot process unknown message %d\n", msg->type);
+        }
+    }
     UNUSED(r);
-    UNUSED(data);
-    UNUSED(len);
+    free(data);
+    free(msg);
 }
 
 static void 
