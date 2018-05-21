@@ -52,9 +52,9 @@ class BGPPeer(object):
 
             self.rib["input"].delete_all()
 
-        if ('update' in route['neighbor']):
-            if ('attribute' in route['neighbor']['update']):
-                attribute = route['neighbor']['update']['attribute']
+        if ('update' in route['neighbor']['message']):
+            if ('attribute' in route['neighbor']['message']['update']):
+                attribute = route['neighbor']['message']['update']['attribute']
 
                 origin = attribute['origin'] if 'origin' in attribute else ''
 
@@ -70,30 +70,31 @@ class BGPPeer(object):
                 atomic_aggregate = attribute['atomic-aggregate'] if 'atomic-aggregate' in attribute else ''
 
 
-            if ('announce' in route['neighbor']['update']):
-                announce = route['neighbor']['update']['announce']
+            if ('announce' in route['neighbor']['message']['update']):
+                announce = route['neighbor']['message']['update']['announce']
+                print announce
                 if ('ipv4 unicast' in announce):
-                    for prefix in announce['ipv4 unicast']:
-                        next_hop = announce['ipv4 unicast'][prefix]['next-hop']
-                        #self.logger.debug("::::PREFIX::::: "+str(prefix)+" "+str(type(prefix)))
-                        # TODO: Check if this appending the announced route to the input rib?
-                        print prefix
-                        attributes = RibTuple(prefix, neighbor, next_hop, origin, as_path,
-                                     communities, med, atomic_aggregate)
-                        self.add_route("input", attributes)
-                        # TODO: Avoid multiple interactions with the DB
-                        announce_route = self.get_route_with_neighbor("input", prefix, neighbor)
-                        # if announce_route is None:
-                        #     self.logger.debug('-------------- announce_route is None')
-                        #     self.rib['input'].dump(logger)
-                        #     self.logger.debug('--------------')
-                        #     self.logger.debug(str(prefix)+' '+str(neighbor))
-                        #     assert(announce_route is not None)
-                        if announce_route:
-                            route_list.append({'announce': announce_route})
+                    for next_hop in announce['ipv4 unicast'].keys():
+                        for prefix in announce['ipv4 unicast'][next_hop].keys():
+                            #self.logger.debug("::::PREFIX::::: "+str(prefix)+" "+str(type(prefix)))
+                            # TODO: Check if this appending the announced route to the input rib?
+                            print prefix
+                            attributes = RibTuple(prefix, neighbor, next_hop, origin, as_path,
+                                         communities, med, atomic_aggregate)
+                            self.add_route("input", attributes)
+                            # TODO: Avoid multiple interactions with the DB
+                            announce_route = self.get_route_with_neighbor("input", prefix, neighbor)
+                            # if announce_route is None:
+                            #     self.logger.debug('-------------- announce_route is None')
+                            #     self.rib['input'].dump(logger)
+                            #     self.logger.debug('--------------')
+                            #     self.logger.debug(str(prefix)+' '+str(neighbor))
+                            #     assert(announce_route is not None)
+                            if announce_route:
+                                route_list.append({'announce': announce_route})
 
-            elif ('withdraw' in route['neighbor']['update']):
-                withdraw = route['neighbor']['update']['withdraw']
+            elif ('withdraw' in route['neighbor']['message']['update']):
+                withdraw = route['neighbor']['message']['update']['withdraw']
                 if ('ipv4 unicast' in withdraw):
                     for prefix in withdraw['ipv4 unicast'].keys():
                         deleted_route = self.get_route_with_neighbor("input", prefix, neighbor)
@@ -334,7 +335,6 @@ class BGPPeer(object):
 
 def get_prefixes_from_announcements(route):
     prefixes = []
-    # print route
     if ('update' in route['neighbor']):
         if ('announce' in route['neighbor']['update']):
             announce = route['neighbor']['update']['announce']
@@ -386,13 +386,12 @@ if __name__ == '__main__':
     h = hpy()
     mypeer = BGPPeer(2, 10)
     # route =  RibTuple('10.0.0.1', '172.0.0.2','172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
-    route = '''{ "exabgp": "2.0", "time": 1387421714, "neighbor": { "ip": "172.0.0.21", "update": { "attribute": { "origin": "igp", "as-path": [ [ 300 ], [ ] ], "med": 0, "atomic-aggregate": false }, "announce": { "ipv4 unicast": { "140.0.0.0/16": { "next-hop": "172.0.0.22" }, "150.0.0.0/16": { "next-hop": "172.0.0.22" } } } } } }'''
-    route2 = '''{ "exabgp": "2.0", "time": 1387421714, "neighbor": { "ip": "172.0.0.11", "update": { "attribute": { "origin": "igp", "as-path": [ [ 300 , 120], [ ] ], "med": 0, "atomic-aggregate": false }, "announce": { "ipv4 unicast": { "140.0.0.0/16": { "next-hop": "172.0.0.22" }, "150.0.0.0/16": { "next-hop": "172.0.0.22" } } } } } }'''
-    route3 = '''{ "exabgp": "2.0", "time": 1387421714, "neighbor": { "ip": "172.0.0.1", "update": { "attribute": { "origin": "igp", "as-path": [ [ 300 , 120, 90], [ ] ], "med": 0, "atomic-aggregate": false }, "announce": { "ipv4 unicast": { "140.0.0.0/16": { "next-hop": "172.0.0.22" }, "150.0.0.0/16": { "next-hop": "172.0.0.22" } } } } } }'''
+    route = '''{ "exabgp": "3.4.8", "time": 1526892856, "host" : "horse", "pid" : "21445", "ppid" : "1", "counter": 6, "type": "update", "neighbor": { "ip": "10.0.0.2", "address": { "local": "10.0.0.1", "peer": "10.0.0.2"}, "asn": { "local": "1", "peer": "2"}, "message": { "update": { "attribute": { "origin": "igp", "as-path": [ 2 ], "confederation-path": [] }, "announce": { "ipv4 unicast": { "10.0.0.2": { "100.20.0.0/24": {  } } } } } }} }'''
+    
 
     mypeer.process_bgp_route(json.loads(route))
-    mypeer.process_bgp_route(json.loads(route2))
-    mypeer.process_bgp_route(json.loads(route3))
+    # mypeer.process_bgp_route(json.loads(route2))
+    # mypeer.process_bgp_route(json.loads(route3))
     # print mypeer.rib['input'].table
     print mypeer.rib['local'].table
     # print mypeer.rib['output'].table
