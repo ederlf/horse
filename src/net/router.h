@@ -2,6 +2,7 @@
 #define ROUTER_H 1
 
 #include "node.h"
+#include "routing/bgp.h"
 #include <uthash/uthash.h>
 
 #define ROUTER_ID_MAX_LEN 61
@@ -14,7 +15,7 @@ void router_destroy(struct router *h);
 void router_add_port(struct router *h, uint32_t port_id, 
                  uint8_t eth_addr[ETH_LEN], uint32_t speed, 
                  uint32_t curr_speed);
-void router_add_protocol(struct router *rt, uint16_t type, char *config_file);
+void router_add_bgp(struct router *rt, struct bgp *p);
 void router_add_port(struct router *r, uint32_t port_id,
                      uint8_t eth_addr[ETH_LEN], uint32_t speed, 
                      uint32_t curr_speed);

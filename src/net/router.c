@@ -69,12 +69,12 @@ router_add_port(struct router *r, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
 }
 
 void 
-router_add_protocol(struct router *rt, uint16_t type, char *config_file)
+router_add_bgp(struct router *rt, struct bgp *p)
 {
-    struct routing *r = routing_factory(type, config_file);
-    HASH_ADD(hh, rt->protocols, type, sizeof(uint16_t), r);
-    if (r->router_id > rt->router_id){
-        rt->router_id = r->router_id;
+    HASH_ADD(hh, rt->protocols, type, sizeof(uint16_t), (struct routing*) p);
+    uint32_t bgp_rid = bgp_router_id(p);
+    if (bgp_rid > rt->router_id){
+        rt->router_id = bgp_rid;
     }
 }
 
@@ -169,7 +169,7 @@ router_handle_control_message(struct router *r, uint8_t *data)
             break;
         }
         default:{
-            fprintf(stderr, "Cannot process unknown message %d\n", msg->type);
+            fprintf(stderr, "Cannot process unknown message %d\n", msg->type);  
         }
     }
     UNUSED(r);

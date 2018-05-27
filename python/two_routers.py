@@ -5,22 +5,26 @@ topo = Topology()
 r1 = Router("r1")
 r1.add_port(port = 1,  eth_addr = "00:00:00:00:01:00", ip = "10.0.0.1", netmask = "255.255.0.0")
 r1.add_port(port = 2,  eth_addr = "00:00:00:00:11:00", ip = "10.0.1.1", netmask = "255.255.0.0")
-r1.add_protocol(type = 179, config_file = "/home/vagrant/horse/python/topos/conf.ini1")
+
+bgp1 = BGP(config_file = "/home/vagrant/horse/python/topos/conf.ini1")
+r1.add_protocol(bgp1)
 
 r2 = Router("r2")
 r2.add_port(port = 1,  eth_addr = "00:00:00:00:02:00", ip = "10.0.0.2", netmask = "255.255.0.0")
-r2.add_protocol(type = 179, config_file = "/home/vagrant/horse/python/topos/conf.ini2")
 
-r3 = Router("r3")
-r3.add_port(port = 1,  eth_addr = "00:00:00:00:03:00", ip = "10.0.0.3", netmask = "255.255.0.0")
-r3.add_protocol(type = 179, config_file = "/home/vagrant/horse/python/topos/conf.ini3")
+bgp2 = BGP(config_file = "/home/vagrant/horse/python/topos/conf.ini2")
+r2.add_protocol(bgp2)
+
+# r3 = Router("r3")
+# r3.add_port(port = 1,  eth_addr = "00:00:00:00:03:00", ip = "10.0.0.3", netmask = "255.255.0.0")
+# r3.add_protocol(type = 179, config_file = "/home/vagrant/horse/python/topos/conf.ini3")
 
 
 topo.add_node(r1)
 topo.add_node(r2)
-topo.add_node(r3)
+# topo.add_node(r3)
 topo.add_link(r1, r2, 1, 1)
-topo.add_link(r1, r3, 2, 1)
+# topo.add_link(r1, r3, 2, 1)
 
 # Create hosts
 # h1 = Host()

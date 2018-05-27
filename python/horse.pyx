@@ -69,6 +69,13 @@ cdef class SDNSwitch:
     def uuid(self):
         return dp_uuid(self._dp_ptr)     
 
+cdef class BGP:
+    cdef bgp *_bgp_ptr
+    def __cinit__(self, config_file=None):
+        if config_file and os.path.isfile(config_file):
+            self._bgp_ptr = bgp_new(config_file)
+        else:
+            print "No config file provided for bgp router"
 
 cdef class Router:
     cdef router* _router_ptr 
@@ -91,12 +98,10 @@ cdef class Router:
             int_nm = (int(nm_parts[0]) << 24) + (int(nm_parts[1]) << 16) + (int(nm_parts[2]) << 8) + int(nm_parts[3])
             router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
 
-    def add_protocol(self, type = 179, config_file = None):
-        if config_file and os.path.isfile(config_file):
-            
-            router_add_protocol(self._router_ptr, type, config_file)
-        else:
-            print "No config file provided for router"
+    def add_protocol(self, Proto):
+        if isinstance(Proto, BGP):
+            proto = <BGP> Proto
+            router_add_bgp(self._router_ptr, proto._bgp_ptr)
 
     property name:
         def __get__(self):

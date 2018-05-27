@@ -20,6 +20,9 @@ cdef extern from "sim/sim.h":
     cdef struct sim_config:
         pass
 
+    cdef struct bgp:
+        pass
+
     cdef struct raw_udp_args:
         uint64_t duration  
         uint64_t rate      
@@ -38,12 +41,17 @@ cdef extern from "sim/sim.h":
     uint64_t dp_id(const datapath* dp)
     uint64_t dp_uuid(const datapath* dp)
 
+    # BGP.h
+    bgp* bgp_new(char *config_file)
+    void bgp_add_neighbor(bgp *p, uint32_t neighbor_ip, uint32_t neighbor_as);
+    void bgp_add_adv_prefix(bgp *p, uint32_t prefix, uint8_t cidr);
+
     # Router.h
     router* router_new()
     void router_destroy(router *r)
     void router_add_port(router *r, uint32_t port_id, uint8_t *eth_addr,
                          uint32_t speed, uint32_t cur_speed)
-    void router_add_protocol(router *r, uint16_t type, char *config_file)
+    void router_add_bgp(router *r, bgp *p)
     void router_set_intf_ipv4(router *h, uint32_t port_id,
                               uint32_t addr, uint32_t netmask) 
     uint64_t router_uuid(const router* h)
@@ -53,7 +61,7 @@ cdef extern from "sim/sim.h":
 
     # Host.h
     host* host_new()
-    void host_destroy(host* h)
+    void host_destroy(host *h)
     void host_add_port(host *h, uint32_t port_id, uint8_t *eth_addr,
                        uint32_t speed, uint32_t cur_speed)
     void host_set_intf_ipv4(host *h, uint32_t port_id, 
@@ -76,7 +84,8 @@ cdef extern from "sim/sim.h":
     uint32_t topology_dps_num(const topology *topo)
     uint32_t topology_links_num(const topology *topo)
     void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB,
-                           uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)
+                           uint32_t portA, uint32_t portB, uint32_t bw, 
+                           uint32_t latency, bint directed)
     
     # Sim.h
     # TODO: Create an object for the simulator to ease adding config?

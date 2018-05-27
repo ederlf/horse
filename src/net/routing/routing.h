@@ -26,6 +26,5 @@ struct routing {
 };
 
 void routing_init(struct routing *r, uint16_t type);
-struct routing* routing_factory(uint16_t type, char *config_file);
 
 #endif

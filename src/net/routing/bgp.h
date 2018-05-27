@@ -5,11 +5,13 @@
 
 #define MAX_FILE_NAME_SIZE 256
 
-struct bgp {
-    struct routing base;
-    char config_file[MAX_FILE_NAME_SIZE]; /* Will be removed when config is done in Python */
-};
+struct neighbor;
+struct adv;
+struct bgp;
 
-void bgp_init(struct bgp *p, char *config_file);
-
+struct bgp* bgp_new(char * config_file);
+void bgp_add_neighbor(struct bgp *p, uint32_t neighbor_ip,
+                      uint32_t neighbor_as);
+void bgp_add_adv_prefix(struct bgp *p, uint32_t prefix, uint8_t cidr);
+uint32_t bgp_router_id(struct bgp* p);
 #endif
