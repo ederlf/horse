@@ -3,6 +3,8 @@ from libc.stdint cimport uint64_t
 from libc.stdint cimport UINT64_MAX
 import random
 import os.path
+import json
+import re
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -74,8 +76,32 @@ cdef class BGP:
     def __cinit__(self, config_file=None):
         if config_file and os.path.isfile(config_file):
             self._bgp_ptr = bgp_new(config_file)
+            with file(config_file, "r") as f:
+                conf = f.readlines()
+                neighbor = []
+                for line in conf:
+                    ip = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', line )
+                    asys = re.findall( r'peer-as [0-9]*', line)
+                    if len(ip):
+                        neighbor.append(ip[0])
+                    elif len(asys):
+                        neighbor.append(asys[0])
+                    if len(neighbor) == 2:
+                        self.add_neighbor(neighbor[0][9:], int(neighbor[1][8:])) 
+                        neighbor = []
         else:
             print "No config file provided for bgp router"
+
+    def add_advertised_prefix(self, prefix):
+        ip, cidr = prefix.split('/')
+        ip_parts = ip.split('.')
+        int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+        bgp_add_adv_prefix(self._bgp_ptr, int_ip, int(cidr))
+
+    def add_neighbor(self, neighbor_ip, neighbor_as):
+        ip_parts = neighbor_ip.split('.')
+        int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+        bgp_add_neighbor(self._bgp_ptr, int_ip, neighbor_as)
 
 cdef class Router:
     cdef router* _router_ptr 
