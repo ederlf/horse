@@ -19,8 +19,7 @@ struct routing {
     uint64_t asn; /*Autonomous system number, 
                    may not apply to every protocol but does not harm */
     uint32_t router_id;
-    void (*start) (struct routing *, char *);                      
-    void (*advertise)(struct routing *);
+    void (*start) (struct routing *, char *);
     void (*clean)(struct routing *, char *);
     UT_hash_handle hh; /* Make it hashable */
 };

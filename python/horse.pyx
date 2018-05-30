@@ -73,30 +73,59 @@ cdef class SDNSwitch:
 
 cdef class BGP:
     cdef bgp *_bgp_ptr
+    cdef neighbors
+    cdef prefixes
+    cdef asn
+    cdef router_id
+
     def __cinit__(self, config_file=None):
+        self.neighbors = {}
+        self.prefixes = {}
         if config_file and os.path.isfile(config_file):
             self._bgp_ptr = bgp_new(config_file)
             with file(config_file, "r") as f:
-                conf = f.readlines()
-                neighbor = []
-                for line in conf:
-                    ip = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', line )
-                    asys = re.findall( r'peer-as [0-9]*', line)
-                    if len(ip):
-                        neighbor.append(ip[0])
-                    elif len(asys):
-                        neighbor.append(asys[0])
-                    if len(neighbor) == 2:
-                        self.add_neighbor(neighbor[0][9:], int(neighbor[1][8:])) 
-                        neighbor = []
+                conf = f.read()
+                # neighbor = []
+                router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
+                asn =  re.findall( r'local-as [0-9]*', conf)
+                ip = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
+                asys = re.findall( r'peer-as [0-9]*', conf)
+                if router_id:
+                    self.router_id = router_id[0][10:]
+                if asn:
+                    self.asn = asn[0][9]
+                for neighbor, asn in zip(ip, asys):
+                    n = neighbor[9:]
+                    asn = int(asn[8:])
+                    self.neighbors[n] = {}
+                    self.neighbors[n]["MED"] = None
+                    self.neighbors[n]["ASN"] = asn
         else:
             print "No config file provided for bgp router"
 
-    def add_advertised_prefix(self, prefix):
-        ip, cidr = prefix.split('/')
-        ip_parts = ip.split('.')
-        int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-        bgp_add_adv_prefix(self._bgp_ptr, int_ip, int(cidr))
+    def add_advertised_prefix(self, prefix, next_hop = None, as_path = None, communities = None):
+        self.prefixes[prefix] = {}
+        if communities:
+            self.prefix[prefix]["COMM"] = communities
+        if as_path:
+            self.prefixes[prefix]["AS-PATH"] = as_path
+        if next_hop:
+            self.prefixes[prefix]["NH"] = next_hop
+        else:
+            self.prefixes[prefix]["NH"] = self.router_id
+    
+    def write_config_file(self):
+        conf = {}
+        conf["prefixes"] = self.prefixes
+        conf["neighbors"] = self.neighbors
+        conf["asn"] = self.asn
+        conf["router_id"] = self.router_id
+        with file("/tmp/conf-%s" % self.router_id, "w") as f:
+            json.dump(conf, f)
+
+    def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
+        for prefix in prefixes:
+            self.add_advertised_prefix(prefix, next_hop, as_path, communities)
 
     def add_neighbor(self, neighbor_ip, neighbor_as):
         ip_parts = neighbor_ip.split('.')
@@ -127,6 +156,7 @@ cdef class Router:
     def add_protocol(self, Proto):
         if isinstance(Proto, BGP):
             proto = <BGP> Proto
+            proto.write_config_file()
             router_add_bgp(self._router_ptr, proto._bgp_ptr)
 
     property name:
