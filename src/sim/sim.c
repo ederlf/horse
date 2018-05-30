@@ -70,6 +70,7 @@ setup(struct sim *s)
             printf("Starting router\n");
             router_start(r);
             topology_add_router_to_map(topo, r);
+            router_start_protocols(r);
         }
     }
     /* Event to stop the simulator */
@@ -77,7 +78,7 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
-    sleep(5);
+    // sleep(8);
 }
 
 struct timespec last = {0};
@@ -134,7 +135,6 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
         }
         of_client_start(s->evh.cm->of, false);
     }
-
     setup(s);
     wait_all_switches_connect(topo, s->evh.cm);
     pFile = fopen ("bwm.txt","w");
@@ -156,7 +156,6 @@ sim_close(struct sim *s)
     netns_run(NULL, "ip link delete conn1");
     netns_run(NULL, "ip link delete dev br0");
 }
-
 
 static void update_stats(struct topology *topo, uint64_t time){
 

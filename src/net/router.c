@@ -22,7 +22,7 @@ struct internal_net_bytes
     uint8_t fourth;
 } internal_last_bytes = {0, 0};
 
-static void set_internal_ip(char* rname, char* iface_name);
+static void gen_internal_ip(char *addr);
 
 struct router *
 router_new(void)
@@ -123,15 +123,17 @@ router_start(struct router *r)
 {
     char rname[MAX_NODE_NAME];
     char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
+    char addr[INET_ADDRSTRLEN];
     memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
+
     if (netns_add(rname)) {
             return -1;
     }
     sprintf(intf2, "%s-inet", rname);
     sprintf(intf,"%s-ext", intf2);
     /* Add internal port */
-    setup_veth(rname, intf, intf2, "br0");
-    set_internal_ip(rname, intf2);
+    gen_internal_ip(addr);
+    setup_veth(rname, intf, intf2, addr, "16", "br0");
     set_intf_up(rname, "lo");
     return 0;
 }
@@ -154,14 +156,15 @@ router_send_netflow(struct node *n, struct netflow *flow,
     node_update_port_stats(n, flow, out_port);
 }
 
-void 
-router_handle_control_message(struct router *r, uint8_t *data)
+uint8_t*
+router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
 {
-
     struct routing_msg *msg;
+    uint8_t* ret = NULL;
     routing_msg_unpack(data, &msg);
     switch(msg->type) {
         case BGP_STATE:{
+            
             break;
         }
         case BGP_ANNOUNCE:{
@@ -173,12 +176,14 @@ router_handle_control_message(struct router *r, uint8_t *data)
         }
     }
     UNUSED(r);
+    UNUSED(ret_len)
     free(data);
     free(msg);
+    return ret;
 }
 
 static void 
-set_internal_ip(char* rname, char* iface_name)
+gen_internal_ip(char *addr)
 {
     /* Increase internal ip */
     if (internal_last_bytes.fourth < 254) {
@@ -194,9 +199,8 @@ set_internal_ip(char* rname, char* iface_name)
             internal_last_bytes.third++; 
         }
     }
-    char addr[INET_ADDRSTRLEN];
     sprintf(addr, "172.20.%d.%d", internal_last_bytes.third, internal_last_bytes.fourth);
-    set_intf_ip(rname, iface_name, addr, "16");
+    // set_intf_ip(rname, iface_name, addr, "16");
 }
 
 void 
