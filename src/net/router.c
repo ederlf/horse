@@ -134,7 +134,7 @@ router_start(struct router *r)
     /* Add internal port */
     gen_internal_ip(addr);
     setup_veth(rname, intf, intf2, addr, "16", "br0");
-    set_intf_up(rname, "lo");
+    // set_intf_up(rname, "lo");
     return 0;
 }
 

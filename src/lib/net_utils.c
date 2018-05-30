@@ -51,13 +51,13 @@ void
 set_intf_to_bridge(char *intf, char *bridge)
 {
     /* Add to bridge */
-    netns_run(NULL, "brctl addif %s %s", bridge, intf); 
+    netns_launch(NULL, "brctl addif %s %s", bridge, intf); 
 }
 
 void 
 delete_intf(char *iface)
 {
-    netns_run(NULL, "ip link del %s", iface);
+    netns_launch(NULL, "ip link del %s", iface);
 }
 
 void 

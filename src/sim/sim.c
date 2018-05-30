@@ -52,8 +52,7 @@ setup(struct sim *s)
     struct scheduler *sch = s->evh.sch;
     struct topology *topo = s->evh.topo;
     struct node *node, *tmp;
-
-    
+ 
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
         if (node->type == HOST) {
             struct exec *exec, *exec_tmp;
@@ -68,8 +67,8 @@ setup(struct sim *s)
         if (node->type == ROUTER) {
             struct router *r = (struct router*) node;
             printf("Starting router\n");
-            router_start(r);
             topology_add_router_to_map(topo, r);
+            router_start(r);
             router_start_protocols(r);
         }
     }
@@ -153,8 +152,8 @@ sim_close(struct sim *s)
     topology_destroy(s->evh.topo);
     conn_manager_destroy(s->evh.cm);
     /* TODO: move somewhere else */
-    netns_run(NULL, "ip link delete conn1");
-    netns_run(NULL, "ip link delete dev br0");
+    netns_launch(NULL, "ip link delete conn1");
+    netns_launch(NULL, "ip link delete dev br0");
 }
 
 static void update_stats(struct topology *topo, uint64_t time){
