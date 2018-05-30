@@ -43,6 +43,12 @@ conn_manager_send_of(struct conn_manager *cm, uint64_t dpid,
     free(buf);
 }
 
+void 
+conn_manager_send_routing(struct conn_manager *cm, uint8_t *data, size_t len)
+{
+    server_send(cm->srv, data, len);
+}
+    
 static void 
 conn_manager_of_message_cb(struct of_conn* conn, uint8_t type,
                       void *data, size_t len)

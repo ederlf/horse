@@ -341,9 +341,15 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 static void
 handle_router_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
+    uint8_t *ret_data = NULL;
+    size_t ret_len = 0;
     struct fti_event_router *ev_rt = (struct fti_event_router *) ev;
     struct router *r = topology_router_by_id(ev_hdl->topo, ev_rt->router_id);
-    router_handle_control_message(r, ev->data);
+    ret_data = router_handle_control_message(r, ev->data, &ret_len);
+    if (ret_data != NULL) {
+        struct conn_manager *cm = ev_hdl->cm;
+        conn_manager_send_routing(cm, ret_data, ret_len);
+    }
 }
 
 static void
