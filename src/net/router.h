@@ -21,14 +21,15 @@ void router_add_port(struct router *r, uint32_t port_id,
                      uint32_t curr_speed);
 void router_set_intf_ipv4(struct router *r, uint32_t port_id,
                           uint32_t addr, uint32_t netmask);
-struct netflow* router_recv_netflow(struct node *n, struct netflow *flow);
+struct netflow *router_recv_netflow(struct node *n, struct netflow *flow);
 void router_send_netflow(struct node *n, struct netflow *flow,
                          uint32_t out_port);
-void router_handle_control_message(struct router *r, uint8_t *data);
+uint8_t *router_handle_control_message(struct router *r, uint8_t *data,
+                                       size_t *ret_len);
 int router_start(struct router *rt);
 void router_set_name(struct router* r, char *name);
 char *router_name(struct router *r);
-struct port* router_port(const struct router *r, uint32_t port_id);
+struct port *router_port(const struct router *r, uint32_t port_id);
 uint64_t router_uuid(const struct router* r);
 uint32_t router_id(const struct router *r);
 #endif
