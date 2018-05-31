@@ -159,12 +159,17 @@ router_send_netflow(struct node *n, struct netflow *flow,
 uint8_t*
 router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
 {
-    struct routing_msg *msg;
+    struct routing_msg *msg, *msg_ret;
     uint8_t* ret = NULL;
+    msg_ret = NULL;
     routing_msg_unpack(data, &msg);
+    /* TODO: this is ugly right now, refactor later */
     switch(msg->type) {
         case BGP_STATE:{
-            
+            struct routing *p;
+            uint16_t proto = BGP;
+            HASH_FIND(hh, r->protocols, &proto, sizeof(uint16_t), p);
+            msg_ret = bgp_handle_state_msg((struct bgp*) p, (struct bgp_state*) msg);
             break;
         }
         case BGP_ANNOUNCE:{
@@ -175,8 +180,10 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
             fprintf(stderr, "Cannot process unknown message %d\n", msg->type);  
         }
     }
-    UNUSED(r);
-    UNUSED(ret_len)
+    if (msg_ret != NULL) {
+        *ret_len = msg_ret->size;
+        ret = routing_msg_pack(msg_ret);
+    }
     free(data);
     free(msg);
     return ret;

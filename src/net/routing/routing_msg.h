@@ -39,9 +39,10 @@ struct bgp_announce {
 
 void routing_msg_init(struct routing_msg *msg, uint16_t type,
                       uint16_t size, uint32_t router_id);
-struct bgp_state * routing_msg_bgp_state_new(uint32_t router_id,
+struct bgp_state *routing_msg_bgp_state_new(uint32_t router_id,
                                              uint32_t peer_rid, uint8_t state);
-uint8_t* routing_msg_pack(struct routing_msg *msg);
+struct bgp_announce *routing_msg_bgp_announce_new(uint32_t router_id, uint32_t peer_rid);
+uint8_t *routing_msg_pack(struct routing_msg *msg);
 void routing_msg_unpack(uint8_t *data, struct routing_msg **msg);
 
 #endif

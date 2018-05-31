@@ -7,7 +7,6 @@
 
 static void bgp_init(struct bgp *p, char *config_file);
 static void bgp_start(struct routing *rt, char *rname);
-static struct routing_msg* bgp_announce(struct bgp *p, uint32_t neighbor);
 static void bgp_clean(struct routing *rt, char *rname);
 static void set_router_id(struct bgp* p);
 
@@ -63,13 +62,12 @@ bgp_start(struct routing *rt, char * rname)
     char str_ip[INET_ADDRSTRLEN];
     struct in_addr net_ip = {htonl(rt->router_id)};
     struct bgp *p = (struct bgp*) rt;
-
     sprintf(intf2, "%s-bgp", rname);
     sprintf(intf,"%s-ext", intf2);
     get_ip_str(net_ip, str_ip, AF_INET);
     setup_veth(rname, intf, intf2, str_ip, "16", "br0");
     /* Start exabgp */
-    netns_run(rname, "env exabgp.daemon.daemonize=true "
+    netns_launch(rname, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
           "exabgp.log.destination=syslog exabgp %s",
           str_ip, p->config_file); 
@@ -99,30 +97,9 @@ bgp_add_adv_prefix(struct bgp *p, uint32_t prefix, uint8_t cidr)
 struct routing_msg*
 bgp_handle_state_msg(struct bgp *p, struct bgp_state *msg)
 {
-    uint32_t neighbor = msg->peer_rid;
     if (msg->state == BGP_STATE_UP) {
-        return bgp_announce(p, neighbor);
-    }
-    // else if(msg->state  == BGP_STATE_DOWN) {
-
-    // }
-    return NULL;
-}
-
-/*  TODO: In a first moment it announces all prefixes to every neighbor. 
-    It is enough for the IXP case.
-    Filtering options will be implemented later on with every prefix. 
-*/ 
-static struct routing_msg*
-bgp_announce(struct bgp *p, uint32_t neighbor)
-{
-    struct neighbor *n;
-    struct adv *cur_prefix, *ptmp;
-    HASH_FIND(hh, p->neighbors, &neighbor, sizeof(uint32_t), n);
-    if (n != NULL) {
-        HASH_ITER(hh, p->prefixes, cur_prefix, ptmp) {
-               
-        } 
+        return (struct routing_msg*) 
+        routing_msg_bgp_announce_new(p->base.router_id, msg->peer_rid);
     }
     return NULL;
 }
