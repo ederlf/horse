@@ -98,7 +98,7 @@ cdef class BGP:
                     n = neighbor[9:]
                     asn = int(asn[8:])
                     self.neighbors[n] = {}
-                    self.neighbors[n]["MED"] = None
+                    self.neighbors[n]["MED"] = 0
                     self.neighbors[n]["ASN"] = asn
         else:
             print "No config file provided for bgp router"
