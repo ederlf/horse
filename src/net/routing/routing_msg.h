@@ -30,32 +30,11 @@ struct bgp_state {
     uint8_t pad[3];
 }; 
 
-struct bgp_community {
-    uint32_t as;
-    uint32_t local_pref;
-};
-
-struct bgp_prefix {
-    uint32_t ip;
-    uint8_t cidr;
-};
-
-#define BGP_ANNOUNCE_LEN HEADER_LEN + 12
+#define BGP_ANNOUNCE_LEN HEADER_LEN + 8
 struct bgp_announce {
     struct routing_msg hdr;
-    uint8_t version;
-    uint32_t neighbor; 
-    uint8_t origin;
-    uint8_t atomic;
-    uint32_t med;
-/*  Here follows two lists with 
-    uint8_t as_path_count;
-    uint32_t as[MAX_AS_LEN] 
-    uint8_t prefix_count
-    struct bgp_prefix prefixes[MAX_PREFIXES]
-    Any necessary padding. 
-*/
-
+    uint32_t peer_rid;
+    uint8_t pad[4];  
 };
 
 void routing_msg_init(struct routing_msg *msg, uint16_t type,

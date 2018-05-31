@@ -28,7 +28,7 @@ routing_msg_bgp_announce_new(uint32_t router_id, uint32_t peer_rid)
     memset(msg, 0x0, sizeof(struct bgp_announce));
     routing_msg_init((struct routing_msg*) msg, BGP_ANNOUNCE, BGP_ANNOUNCE_LEN,
                      router_id);
-    UNUSED(peer_rid);
+    msg->peer_rid = peer_rid;
     return msg;
 }
 
@@ -56,15 +56,11 @@ pack_bgp_state(struct routing_msg *msg, uint8_t* data)
 static void
 pack_bgp_announce(struct routing_msg *msg, uint8_t* data)
 {
-    struct bgp_announce *a = (struct bgp_announce*) msg;
+    struct bgp_announce *s = (struct bgp_announce*) msg;
     struct bgp_announce *pack = (struct bgp_announce*) data;
-    pack->version = a->version;
-    pack->neighbor = htonl(a->neighbor);
-    pack->origin = a->origin;
-    pack->atomic = a->atomic;
-    pack->med = htonl(a->med);
+    pack->peer_rid = htonl(s->peer_rid);
+    memset(pack->pad, 0x0, 4);
 }
-
 
 uint8_t* 
 routing_msg_pack(struct routing_msg *msg)
