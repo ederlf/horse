@@ -21,13 +21,18 @@ TIMING = True
 
 class BGPPeer(object):
 
-    def __init__(self, id, asn):
-        self.id = id
+    def __init__(self, router_id = None, asn = None):
+        self.router_id = router_id
         self.asn = asn
-        self.rib = {"input": adj_rib_in(str(self.asn),"input"),
-                    "local": rib(str(self.asn),"local"),
-                    "output": rib(str(self.asn),"output")}
+        self.rib = {"input": adj_rib_in(),
+                    "local": rib(),
+                    "output": rib()}
+        self.neighbors_up = {} # neighbor ip is the key/ ASN is the value
+        self.conf = None
 
+    def __str__(self):
+        peer = "router-id:%s, asn:%s" % (self.router_id, self.asn)
+        return peer
 
     def update(self,route):
         updates = []
@@ -72,17 +77,12 @@ class BGPPeer(object):
 
             if ('announce' in route['neighbor']['message']['update']):
                 announce = route['neighbor']['message']['update']['announce']
-                print announce
                 if ('ipv4 unicast' in announce):
                     for next_hop in announce['ipv4 unicast'].keys():
                         for prefix in announce['ipv4 unicast'][next_hop].keys():
-                            #self.logger.debug("::::PREFIX::::: "+str(prefix)+" "+str(type(prefix)))
-                            # TODO: Check if this appending the announced route to the input rib?
-                            print prefix
                             attributes = RibTuple(prefix, neighbor, next_hop, origin, as_path,
                                          communities, med, atomic_aggregate)
                             self.add_route("input", attributes)
-                            # TODO: Avoid multiple interactions with the DB
                             announce_route = self.get_route_with_neighbor("input", prefix, neighbor)
                             # if announce_route is None:
                             #     self.logger.debug('-------------- announce_route is None')
@@ -190,21 +190,6 @@ class BGPPeer(object):
             prev_route = self.get_route("output", prefix)
             best_route = self.get_route("local", prefix)
     
-            # self.logger.debug(" Peer Object for: "+str(self.id)+" -- Previous Outbound route: "+str(prev_route)+" New Best Path: "+str(best_route))
-            # if best_route == None:
-            #     self.logger.debug('=============== best_route is None ====================')
-            #     self.logger.debug(str(prefix))
-            #     self.logger.debug('----')
-            #     self.rib['local'].dump(logger)
-            #     self.logger.debug('----')
-            #     self.logger.debug(str(updates))
-            #     self.logger.debug('----')
-            #     self.logger.debug(str(update))
-            #     self.logger.debug('----')
-            #     self.logger.debug(str(self.get_route("local", prefix)))
-            #     self.logger.debug('----')
-            #     assert(best_route is not None)
-            #self.logger.debug("**********best route for: "+str(prefix)+" route:: "+str(best_route))
             if best_route:
                 if ('announce' in update):
                     # Check if best path has changed for this prefix
@@ -212,15 +197,14 @@ class BGPPeer(object):
                         # store announcement in output rib
                         # self.logger.debug(str(best_route)+' '+str(prev_route))
                         self.update_route("output", best_route)
-
                         if best_route:
                             pass
                             # announce the route to each router of the participant
-                            # for port in ports:
-                            #     # TODO: Create a sender queue and import the announce_route function
-                            #     #self.logger.debug ("********** Failure: "+str(port["IP"])+' '+str(prefix)+" route::failure "+str(best_route))
-                            #     announcements.append(announce_route(port["IP"], prefix,
-                            #         prefix, best_route.as_path))
+                            # neighbors = neighbors_up - 
+                            for neighbor in self.neighbors_up:
+                                if neighbor != update[neighbor]:
+                                    announcements.append(neighbor, prefix,
+                                                         prefix, best_route.as_path)
                         else:
                             # self.logger.debug("Race condition problem for prefix: "+str(prefix))
                             continue
@@ -233,12 +217,10 @@ class BGPPeer(object):
                             "There is a new best path available now"
                             # store announcement in output rib
                             self.update_route("output", best_route)
-
-                            # for port in ports:
-                            #     announcements.append(announce_route(port["IP"],
-                            #                          prefix, prefix,
-                            #                          best_route.as_path))
-
+                            for neighbor in neighbors_up:
+                                if neighbor != update[neighbor]:
+                                    announcements.append(neighbor, prefix,
+                                                         prefix, best_route.as_path)
             # else:
             #     "Currently there is no best route to this prefix"
             #     if prev_route:
@@ -265,7 +247,6 @@ class BGPPeer(object):
         # TODO: This step should be parallelized
         # TODO: The decision process for these prefixes is going to be same, we
         # should think about getting rid of such redundant computations.
-        print updates
         for update in updates:
             self.decision_process_local(update)
 
@@ -277,7 +258,6 @@ class BGPPeer(object):
 
         # Propagate
         announcements = self.bgp_update_peers(updates)
-
         # Tell Route Server that it needs to announce these routes
         for announcement in announcements:
             # TODO: Complete the logic for this function
@@ -292,9 +272,11 @@ class BGPPeer(object):
 
     def send_announcement(self, announcement):
         "Send the announcements to XRS"
-        self.logger.debug("Sending announcements to XRS. "+str(type(announcement)))
+        announcement.as_path = [self.asn] + announcement.as_path
+        print announcement
+        # self.logger.debug("Sending announcements to XRS. "+str(type(announcement)))
 
-        self.xrs_client.send(json.dumps(announcement))
+        # self.xrs_client.send(json.dumps(announcement))
 
 
     def add_route(self, rib_name, attributes):
@@ -311,25 +293,25 @@ class BGPPeer(object):
         return self.rib[rib_name].get(prefix, neighbor)
 
     # Only used for rib-in
-    def get_routes(self,rib_name,prefix):
+    def get_routes(self, rib_name,prefix):
         assert(isinstance(self.rib[rib_name], adj_rib_in))
         return self.rib[rib_name].get_all(prefix)
 
     # Only for rib
-    def delete_route(self,rib_name,prefix):
+    def delete_route(self, rib_name,prefix):
         assert(isinstance(self.rib[rib_name], rib))
         self.rib[rib_name].delete(prefix=prefix)
 
     #Only for rib in
-    def delete_route_with_neighbor(self,rib_name,prefix, neighbor):
+    def delete_route_with_neighbor(self, rib_name, prefix, neighbor):
         assert(isinstance(self.rib[rib_name], adj_rib_in))
         self.rib[rib_name].delete(prefix=prefix, neighbor=neighbor)
 
-    def filter_route(self,rib_name,item,value):
+    def filter_route(self, rib_name, item,value):
         return self.rib[rib_name].get_all(**{item:value})
 
 
-    def update_route(self,rib_name,attributes):
+    def update_route(self, rib_name, attributes):
         self.rib[rib_name].update(attributes)
 
 
@@ -381,12 +363,12 @@ def withdraw_route(neighbor, prefix, next_hop):
 
 ''' main '''
 if __name__ == '__main__':
-
+    import time
     from guppy import hpy 
     h = hpy()
-    mypeer = BGPPeer(2, 10)
+    mypeer = BGPPeer()
     # route =  RibTuple('10.0.0.1', '172.0.0.2','172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
-    route = '''{ "exabgp": "3.4.8", "time": 1526892856, "host" : "horse", "pid" : "21445", "ppid" : "1", "counter": 6, "type": "update", "neighbor": { "ip": "10.0.0.2", "address": { "local": "10.0.0.1", "peer": "10.0.0.2"}, "asn": { "local": "1", "peer": "2"}, "message": { "update": { "attribute": { "origin": "igp", "as-path": [ 2 ], "confederation-path": [] }, "announce": { "ipv4 unicast": { "10.0.0.2": { "100.20.0.0/24": {  } } } } } }} }'''
+    route = '''{ "exabgp": "3.4.8", "time": 1526892856, "host" : "horse", "pid" : "21445", "ppid" : "1", "counter": 6, "type": "update", "neighbor": { "ip": "10.0.0.2", "address": { "local": "10.0.0.1", "peer": "10.0.0.2"}, "asn": { "local": "1", "peer": "2"}, "message": { "update": { "attribute": { "origin": "igp", "as-path": [ 2 ], "med": 100, "confederation-path": [] }, "announce": { "ipv4 unicast": { "10.0.0.2": { "100.20.0.0/24": {  }, "10.10.0.0/16": { } } } } } }} }'''
     
 
     mypeer.process_bgp_route(json.loads(route))
@@ -394,7 +376,7 @@ if __name__ == '__main__':
     # mypeer.process_bgp_route(json.loads(route3))
     # print mypeer.rib['input'].table
     print mypeer.rib['local'].table
-    # print mypeer.rib['output'].table
-    # print h.heap()
-
+    print mypeer.rib['output'].table
+    print h.heap()
+    time.sleep(5)
     # print mypeer.filter_route('input', 'as_path', '300')

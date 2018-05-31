@@ -4,52 +4,73 @@ import os
 import datetime
 import sys
 from threading import Thread
-import msg as bgp
+import msg as rmsg
 import syslog
 import socket
 import struct
 import errno
+import time
 
 # neighbor 127.0.0.1 announce route 1.0.0.0/24 next-hop 101.1.101.1
 
 path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-syslog.syslog(path)
 if path not in sys.path:
     sys.path.append(path)
 
+from bgp_peer.peer import BGPPeer
+
+# 'neighbor 10.0.0.3 announce route 200.20.0.0/24 next-hop self',
+    
+
 announcements = [
-    'neighbor 10.0.0.2 announce route 100.10.0.0/24 next-hop self',
-    'neighbor 10.0.0.3 announce route 200.20.0.0/24 next-hop self',
+    'neighbor 10.0.0.1 announce route 100.10.0.0/24 next-hop 10.0.0.2',
+    'neighbor 10.0.0.1 announce route 100.20.0.0/24 next-hop 10.0.0.2',
 ]
 
-def message_parser(line):
+def message_parser(line, peer):
     # Parse JSON string  to dictionary
     temp_message = json.loads(line)
-    # line =  "{ \"exabgp\": \"3.4.8\", \"time\": 1525168159, \"host\" : \"horse\", \"pid\" : \"8571\", \"ppid\" : \"1\", \"counter\": 1, \"type\": \"state\", \"neighbor\": { \"ip\": \"10.0.0.1\", \"address\": { \"local\": \"10.0.0.2\", \"peer\": \"10.0.0.1\"}, \"asn\": { \"local\": \"2\", \"peer\": \"1\"}, \"state\": \"connected\"} }"
-    # parsed = json.loads(line)
-
-
-    # test = {"time": 10000, "state" : "up"}
-    # state = test['state']
-    # syslog.syslog(test)
+    # syslog.syslog(line)
     # Convert Unix timestamp to python datetime
     if temp_message['type'] == 'state':
         state = temp_message['neighbor']['state']
-        syslog.syslog("SENDING STATE %s" % state)
         s = 0
         if state == "down":
-            s = bgp.BGPStateMsg.BGP_STATE_DOWN
+            s = rmsg.BGPStateMsg.BGP_STATE_DOWN
         elif state == "connected":
-            s = bgp.BGPStateMsg.BGP_STATE_CONNECTED
+            s = rmsg.BGPStateMsg.BGP_STATE_CONNECTED
         else:
-            s = bgp.BGPStateMsg.BGP_STATE_UP
+            s = rmsg.BGPStateMsg.BGP_STATE_UP
         # return message
         peer_id = struct.unpack("!L", socket.inet_aton(temp_message['neighbor']['ip']))[0] 
-        router_id =  struct.unpack("!L", socket.inet_aton(temp_message['neighbor']['address']['local']))[0]
+        router_id =  temp_message['neighbor']['address']['local']
         
-        msg = bgp.BGPStateMsg(local_id = router_id, peer_id = peer_id,
+        msg = rmsg.BGPStateMsg(local_id = rmsg.ip2int(router_id), peer_id = peer_id,
                               state = s)
         
+        if state == 'up':
+            # syslog.syslog("SENDING STATE %s %s" % (state, peer.router_id == None))
+            if peer.router_id == None:
+                peer.router_id = router_id
+                syslog.syslog(router_id)
+                with file("/tmp/conf-%s" % router_id) as f:
+                    peer.conf = json.load(f)
+                    # syslog.syslog(str(peer.conf))
+
+            if peer.asn == None:
+                peer.asn = temp_message['neighbor']['asn']['local']
+
+            peer.neighbors_up[temp_message['neighbor']['ip']] = temp_message['neighbor']['asn']['peer']
+            # syslog.syslog(str(peer.neighbors_up))
+
+            # if temp_message['neighbor']['address']['peer'] == "10.0.0.1":
+            #     for announce in announcements:
+            #         syslog.syslog("ANNOUNCE %s" % announce)
+            #         sys.stdout.write(announce + '\n')
+            #         sys.stdout.flush()
+            #         time.sleep(1)
+        elif state == 'down' and peer.router_id:
+            peer.neighbors_up.pop(temp_message['neighbor']['ip'], 'None')
         return msg.pack()
 
     if temp_message['type'] == 'keepalive':
@@ -59,7 +80,7 @@ def message_parser(line):
             'peer': temp_message['neighbor']['ip'],
         }
 
-        return message
+        return None
 
     if temp_message['type'] == 'update':
         message = {
@@ -67,7 +88,7 @@ def message_parser(line):
             'origin': temp_message['neighbor']['address']['local'],
             'peer': temp_message['neighbor']['ip'],
         }
-        return message
+        return None
 
     # If message is a different type, ignore
     return None
@@ -77,34 +98,29 @@ def process_message(msg, stdout):
     print "Received"
     print msg_type, size
 
-def _recv(conn, stdout):
+def _recv(conn, stdout, peer):
     readlen = 0
     pos = 0
     size = 0
     buf = None
-    syslog.syslog("I am starting")
     while True:
-        # It just started
-        syslog.syslog( "I am running" )
-        print pos
+        # It just started, read header
         if pos == 0:
             try:
-                syslog.syslog ("Will try the reader yo")
                 readlen = 8
                 msg = conn.recv(readlen)
                 pos += 8
-                syslog.syslog(str(len(msg)))
+                # syslog.syslog(str(len(msg)))
                 msg_type, size = struct.unpack("!BH",msg[:3])
-                syslog.syslog( str(msg_type) )
-                syslog.syslog(str(size))
+                # syslog.syslog( str(msg_type) )
+                # syslog.syslog(str(size))
                 buf = msg
-                syslog.syslog("Got the header yo") 
             except socket.error, e:
                 err = e.args[0]
                 if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
                     syslog.syslog( 'No data available' )
                     continue
-        # Message started to be received
+        # Message started, read the rest after the header
         else:
             try:
                 readlen = size - 8
@@ -123,7 +139,7 @@ def _recv(conn, stdout):
             buf = None
 
 
-def _send(conn, stdin):
+def _send(conn, stdin, peer):
     counter = 0
     message = None
     
@@ -138,22 +154,12 @@ def _send(conn, stdin):
                     break
                 continue
             counter = 0
-            syslog.syslog(line)
             # Parse message, and if it's the correct type, store in the database
-            message = message_parser(line)
+            message = message_parser(line, peer)
             if message:
                 # conn.send(message)
                 # m = json.dumps(message)
-                conn.send(str(message))
-
-                # if message['state'] == 'up' and message['origin'] == '10.0.0.1':
-                #     for announce in announcements:
-                #         syslog.syslog("announce")
-                #         stdout.write(announce + '\n')
-                #         stdout.flush()
-                #         sleep(1)
-                #parsed = json.dumps(message)
-                # syslog.syslog(parsed)
+                conn.send(message)
 
         except KeyboardInterrupt:
             pass
@@ -167,17 +173,21 @@ if __name__ == '__main__':
 
     # address = ('127.0.0.1', 6000)
     address = ('172.20.254.254', 6000)
+    # syslog.syslog("Creating peer")
+    peer = BGPPeer()
+    # peer = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(address)
         # s.setblocking(0)
-        sender = Thread(target=_send, args=(s, sys.stdin))
-        receiver = Thread(target=_recv, args=(s, sys.stdout))
+        s.connect(address)
+        sender = Thread(target=_send, args=(s, sys.stdin, peer))
+        receiver = Thread(target=_recv, args=(s, sys.stdout, peer))
         sender.start()
         receiver.start()
         #Iterate through messages
         sender.join()
-        receiver.join()
+        # receiver2.join()
         s.close()
     except OSError as msg:
         print msg
+
