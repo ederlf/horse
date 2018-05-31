@@ -44,9 +44,10 @@ conn_manager_send_of(struct conn_manager *cm, uint64_t dpid,
 }
 
 void 
-conn_manager_send_routing(struct conn_manager *cm, uint8_t *data, size_t len)
+conn_manager_send_routing(struct conn_manager *cm, int conn_id, uint8_t *data,
+                          size_t len)
 {
-    server_send(cm->srv, data, len);
+    server_send(cm->srv, conn_id, data, len);
 }
     
 static void 
@@ -75,8 +76,8 @@ static void
 conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
 {
     uint8_t data[8192];
-    // UNUSED(ctx);
-    struct server *s = (struct server *) ctx;
+    struct conn *c = (struct conn*) ctx;
+    struct server *s = (struct server *) c->owner;
     struct conn_manager *cm = (struct conn_manager *) s->owner;
     size_t n;
     /* This callback is invoked when there is data to read on bev. */
@@ -93,7 +94,7 @@ conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
     uint8_t *ev_data = xmalloc(msg_len);
     memcpy(ev_data, data, msg_len);
     uint32_t router_id = ntohl(msg->router_id);
-    struct sim_event_fti *ev = sim_event_router_in_new(time, router_id, 
+    struct sim_event_fti *ev = sim_event_router_in_new(time, router_id, c->id,
                                                        ev_data, msg->size);
     scheduler_insert(cm->sch, (struct sim_event*) ev);
     

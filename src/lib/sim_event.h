@@ -108,6 +108,7 @@ struct fti_event_of {
 struct fti_event_router {
     struct sim_event_fti base;       
     uint32_t router_id; 
+    int conn_id;   
 };
 
 struct sim_event* sim_event_new(uint64_t time);
@@ -128,12 +129,12 @@ struct sim_event_fti *sim_event_of_msg_out_new(uint64_t time,
                                               size_t len);
 
 struct sim_event_fti *sim_event_router_in_new(uint64_t time,
-                                              uint32_t router_id, void* data,
-                                              size_t len);
+                                              uint32_t router_id, int conn_id, 
+                                              void* data, size_t len);
 
 struct sim_event_fti *sim_event_router_out_new(uint64_t time,
-                                              uint32_t router_id, void* data,
-                                              size_t len);
+                                              uint32_t router_id, int conn_id, 
+                                              void* data, size_t len);
 
 struct sim_event_app_start *sim_event_app_start_new(uint64_t time, uint64_t 
                                               node_id, struct exec *exec);

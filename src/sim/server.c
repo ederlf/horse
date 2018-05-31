@@ -22,6 +22,8 @@ static void accept_error_cb(struct evconnlistener *listener, void *ctx);
 
 // static int evpthread_on = 0;
 
+static int conn_id = 0;
+
 struct server *
 server_new(char* address, uint16_t port)
 {
@@ -31,6 +33,7 @@ server_new(char* address, uint16_t port)
     strcpy(s->address, address);
     s->port = port;
     s->event_cb = event_cb;
+    s->connections = NULL;
     // if (!evpthread_on) { 
     //     evthread_use_pthreads();
     //     evpthread_on = 1;
@@ -41,7 +44,13 @@ server_new(char* address, uint16_t port)
 void 
 server_destroy(struct server *s)
 {
+    struct conn *c, *ctmp;
     pthread_cancel(s->server_thr);
+    HASH_ITER(hh, s->connections, c, ctmp) {
+        HASH_DEL(s->connections, c);
+        bufferevent_free(c->bev);
+        free(c);
+    }
     free(s->address);
     free(s);
 }
@@ -65,13 +74,18 @@ accept_conn_cb(struct evconnlistener *listener,
         UNUSED(address);
         UNUSED(socklen);
         struct server *s = (struct server*) ctx;
+        struct conn *c =  xmalloc(sizeof(struct conn));
         /* We got a new connection! Set up a bufferevent for it. */
         struct event_base *base = evconnlistener_get_base(listener);
         struct bufferevent *bev = bufferevent_socket_new(
                 base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, s->read_cb, NULL, s->event_cb, ctx);
-        bufferevent_enable(bev, EV_READ|EV_WRITE);
-        s->bev = bev;
+        c->id = conn_id;
+        c->bev = bev;
+        c->owner = s;
+        HASH_ADD(hh, s->connections, id, sizeof(int), c);
+        bufferevent_setcb(bev, s->read_cb, NULL, s->event_cb, (void*)c);
+        bufferevent_enable(bev, EV_READ|EV_WRITE);        
+        conn_id++;
 }
 
 static void
@@ -124,9 +138,13 @@ server_listen(void *arg){
     return NULL;
 }
 
-void server_send(struct server* s, uint8_t *data, size_t len)
-{
-    bufferevent_write(s->bev, data, len);
+void server_send(struct server *s, int conn_id, uint8_t *data, size_t len)
+{   
+    struct conn *c;
+    HASH_FIND(hh, s->connections, &conn_id, sizeof(int), c);
+    if (c != NULL){
+        bufferevent_write(c->bev, data, len);
+    }
 }
 
 void server_start(struct server *s)

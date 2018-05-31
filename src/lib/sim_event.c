@@ -122,13 +122,14 @@ of_msg_new(uint64_t time, uint64_t dp_id, void *data, size_t len, uint8_t type)
 } 
 
 static struct fti_event_router* 
-router_msg_new(uint64_t time, uint32_t router_id, void *data,
+router_msg_new(uint64_t time, uint32_t router_id, int conn_id, void *data,
            size_t len, uint8_t type)
 {
     struct fti_event_router *msg = xmalloc(sizeof(struct fti_event_router));
     init_event_hdr(&msg->base.hdr, time, EVENT_FTI);
     init_fti_base(&msg->base, type, data, len);
     msg->router_id = router_id;
+    msg->conn_id = conn_id;
     return msg;        
 } 
 
@@ -147,19 +148,19 @@ sim_event_of_msg_out_new(uint64_t time, uint64_t dp_id, void *data, size_t len)
 }
 
 struct sim_event_fti*
-sim_event_router_in_new(uint64_t time, uint32_t router_id,
+sim_event_router_in_new(uint64_t time, uint32_t router_id, int conn_id,
                         void* data, size_t len)
 {
-    return (struct sim_event_fti*) router_msg_new(time, router_id, data, len,
-                                                  EVENT_ROUTER_IN);
+    return (struct sim_event_fti*) router_msg_new(time, router_id, conn_id,
+                                                  data, len, EVENT_ROUTER_IN);
 }
 
 struct sim_event_fti*
-sim_event_router_out_new(uint64_t time, uint32_t router_id,
+sim_event_router_out_new(uint64_t time, uint32_t router_id, int conn_id,
                         void* data, size_t len)
 {
-    return (struct sim_event_fti*) router_msg_new(time, router_id, data, len,
-                                                  EVENT_ROUTER_OUT);
+    return (struct sim_event_fti*) router_msg_new(time, router_id, conn_id,
+                                                  data, len, EVENT_ROUTER_OUT);
 }
 
 struct sim_event_app_start*
