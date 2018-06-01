@@ -9,13 +9,16 @@
 import time
 import os
 import sys
+import json
+import socket
+import struct
 np = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if np not in sys.path:
     sys.path.append(np)
 
 from decision_process import best_path_selection
 from rib import adj_rib_in, rib, RibTuple
-import json
+import msg as rmsg
 
 TIMING = True
 
@@ -46,6 +49,7 @@ class BGPPeer(object):
 
         route_list = []
         # Extract out neighbor information in the given BGP update
+    
         neighbor = route["neighbor"]["ip"]
 
         if ('state' in route['neighbor'] and route['neighbor']['state']=='down'):
@@ -241,7 +245,7 @@ class BGPPeer(object):
         tstart = time.time()
 
         reply = ''
-        # Map to update for each prefix in the route advertisement.
+        # Map to update for each prefix in the route advertisement.  
         updates = self.update(route)
         #self.logger.debug("process_bgp_route:: "+str(updates))
         # TODO: This step should be parallelized
@@ -250,6 +254,8 @@ class BGPPeer(object):
         for update in updates:
             self.decision_process_local(update)
 
+        import syslog
+        syslog.syslog("Decided %s" % str(self.rib['local'].table))
         if TIMING:
             elapsed = time.time() - tstart
             print str(elapsed)
@@ -269,6 +275,58 @@ class BGPPeer(object):
             # self.logger.debug("Time taken to send garps/announcements: "+str(elapsed))
             tstart = time.time()
 
+    def message_parser(self, line):
+        temp_message = json.loads(line)
+        # Convert Unix timestamp to python datetime
+        bgp_msg_type = temp_message['type']
+
+        if bgp_msg_type == 'state':
+            state = temp_message['neighbor']['state']
+            s = 0
+            
+            if state == "down":
+                s = rmsg.BGPStateMsg.BGP_STATE_DOWN
+            elif state == "connected":
+                s = rmsg.BGPStateMsg.BGP_STATE_CONNECTED
+            else:
+                s = rmsg.BGPStateMsg.BGP_STATE_UP
+            # return message
+            peer_id = struct.unpack("!L", socket.inet_aton(temp_message['neighbor']['ip']))[0] 
+            router_id =  temp_message['neighbor']['address']['local']
+            
+            msg = rmsg.BGPStateMsg(local_id = rmsg.ip2int(router_id), peer_id = peer_id,
+                                  state = s)
+            if state == 'up':
+                if self.router_id == None:
+                    self.router_id = router_id
+                    with file("/tmp/conf-%s" % router_id) as f:
+                        self.conf = json.load(f)
+
+                if self.asn == None:
+                    self.asn = temp_message['neighbor']['asn']['local']
+
+                self.neighbors_up[temp_message['neighbor']['ip']] = temp_message['neighbor']['asn']['peer']
+            elif state == 'down' and self.router_id:
+                self.neighbors_up.pop(temp_message['neighbor']['ip'], 'None')
+            return msg.pack()
+
+        elif bgp_msg_type == 'update':
+            self.process_bgp_route(temp_message)
+        # No reply to be sent
+        return None
+
+    def process_message(self, msg_type, data):
+        if msg_type == rmsg.MsgType.BGP_ANNOUNCE:
+            msg = rmsg.BGPAnnounce(msg=data)
+            prefixes = self.conf["prefixes"]
+            announcements = []
+            for prefix in prefixes:
+                as_path = [self.asn]
+                neighbor = rmsg.int2ip(msg.peer_id)
+                a = announce_route(neighbor, prefix, prefixes[prefix]['NH'], as_path)
+                announcements.append(a)
+            return announcements
+        return None
 
     def send_announcement(self, announcement):
         "Send the announcements to XRS"

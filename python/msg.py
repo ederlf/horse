@@ -1,12 +1,40 @@
 import struct
 import ipaddress
+import os
+import sys
+import socket
 
 HEADER_LEN = 8
 BGP_STATE_LEN = HEADER_LEN + 8
+BGP_ANNOUNCE_LEN = HEADER_LEN + 8
+
+path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+if path not in sys.path:
+    sys.path.append(path)
+
+from bgp_peer.rib import RibTuple
+
+def ip2int(addr):                                                               
+    return struct.unpack("!I", socket.inet_aton(addr))[0]                       
+
+def int2ip(addr):                                                               
+    return socket.inet_ntoa(struct.pack("!I", addr)) 
+
+def netmask2cidr(netmask):
+    return sum([bin(int(x)).count("1") for x in netmask.split(".")])
+
+def cidr_to_netmask(cidr):
+    cidr = int(cidr)
+    mask = (0xffffffff >> (32 - cidr)) << (32 - cidr)
+    return (str( (0xff000000 & mask) >> 24)   + '.' +
+          str( (0x00ff0000 & mask) >> 16)   + '.' +
+          str( (0x0000ff00 & mask) >> 8)    + '.' +
+          str( (0x000000ff & mask)))
 
 class MsgType:
     BGP_STATE = 0
     BGP_ANNOUNCE = 1
+    BGP_UPDATE_FIB = 2
 
 class RouterMsg(object):
     
@@ -28,8 +56,7 @@ class RouterMsg(object):
     def unpack(self, msg):
         self.type, self.size, self.router_id = struct.unpack( 
                                         RouterMsg.HEADER_FMT, 
-                                        msg[0:HEADER_LEN])
-
+                                        msg[:HEADER_LEN])
 
 class BGPStateMsg(RouterMsg):
     
@@ -45,8 +72,8 @@ class BGPStateMsg(RouterMsg):
             super(BGPStateMsg, self).__init__(msg_type=MsgType.BGP_STATE,
                                               size = BGP_STATE_LEN, 
                                               router_id = local_id)
-            self.state = state
             self.peer_id = peer_id
+            self.state = state
 
     def pack(self):
         msg = super(BGPStateMsg, self).pack()
@@ -58,7 +85,37 @@ class BGPStateMsg(RouterMsg):
         self.peer_id, self.state = struct.unpack(BGPStateMsg.BGPSTATE_FMT,
                                                  msg[HEADER_LEN:])
 
+class BGPAnnounce(RouterMsg):
+    BGPANNOUNCE_FMT = "!I4x"
 
+    def __init__(self, local_id = 0, peer_id = 0, state = 0, msg = None):
+        if msg:
+            self.unpack(msg)
+        else:
+            super(BGPAnnounce, self).__init__(msg_type=MsgType.BGP_ANNOUNCE,
+                                              size = BGP_ANNOUNCE_LEN, 
+                                              router_id = local_id)
+            self.peer_id = peer_id
+
+    def pack(self):
+        msg = super(BGPAnnounce, self).pack()
+        msg += struct.pack(BGPAnnounce.BGPANNOUNCE_FMT, self.peer_id)
+        return msg
+
+    def unpack(self, msg):
+        super(BGPAnnounce, self).unpack(msg)
+        peer_id = struct.unpack(BGPAnnounce.BGPANNOUNCE_FMT,
+                                     msg[HEADER_LEN:])
+        self.peer_id = peer_id[0]
+                
+# class BGPUpdateFIBMsg(RouterMsg):
+#     def __init__(self, local_id = 0, peer_id = 0, state = 0, msg = None):
+#         if msg:
+#             self.unpack(msg)
+#         else:
+#             super(BGPStateMsg, self).__init__(msg_type=MsgType.BGP_STATE,
+#                                               size = BGP_STATE_LEN, 
+#                                               router_id = local_id)
 
 # msg = BGPStateMsg(local_id = 1000, peer_id = 2000,
 #                   state = BGPStateMsg.BGP_STATE_UP)

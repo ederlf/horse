@@ -26,7 +26,7 @@ for i in range(0, len(routers), 2):
     topo.add_link(routers[i], routers[i+1], 1, 1)
 
 # # Start the experiment
-sim = Sim(topo, ctrl_interval = 100000, end_time = 5000000,
+sim = Sim(topo, ctrl_interval = 3000000, end_time = 20000000,
         log_level = LogLevels.LOG_INFO)
 
 sim.start()

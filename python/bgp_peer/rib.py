@@ -5,23 +5,22 @@
 from collections import namedtuple
 
 # have all the rib implementations return a consistent interface
+# TODO: Add local pref
 labels = ('prefix', 'neighbor', 'next_hop', 'origin', 'as_path', 'communities', 'med', 'atomic_aggregate')
 RibTuple = namedtuple('RibTuple', labels)
 
 class rib(object):
 
-    def __init__(self,table_suffix,name):
-        self.name = name + "_" + str(table_suffix)
+    def __init__(self):
         self.table = {} # key is prefix, tuple is value 
-
 
     def __del__(self):
         #self.cluster.shutdown()
         pass
 
 class rib(rib):
-    def __init__(self,table_suffix,name):
-        super(rib, self).__init__(table_suffix, name)
+    def __init__(self):
+        super(rib, self).__init__()
 
     def update(self, item):
         assert(isinstance(item, RibTuple))
@@ -40,8 +39,8 @@ class rib(rib):
             self.table.pop(prefix, 'None')
 
 class adj_rib_in(rib):
-    def __init__(self,table_suffix,name):
-        super(adj_rib_in, self).__init__(table_suffix, name)
+    def __init__(self):
+        super(adj_rib_in, self).__init__()
 
     def update(self, item):
         assert(isinstance(item, RibTuple)) 
@@ -72,15 +71,15 @@ class adj_rib_in(rib):
 if __name__ == '__main__':
     #TODO Update test
 
-    local_rib = rib('10', 'local')
-    route =  RibTuple('10.0.0.1', '172.0.0.2','172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
+    local_rib = rib()
+    route =  RibTuple('10.0.0.1', '172.0.0.2','172.0.0.2', '10', 'igp', '100, 200, 300', '0', 0,'false')
     local_rib.update(route)
     print local_rib.get('10.0.0.1')
     local_rib.delete('10.0.0.1')
     print local_rib.get('10.0.0.1')
 
 
-    adj_rib = adj_rib_in('10', 'inp')
+    adj_rib = adj_rib_in()
     adj_rib.update(route)
     print adj_rib.get_all('10.0.0.1')
     print adj_rib.get('10.0.0.1', '172.0.0.2')

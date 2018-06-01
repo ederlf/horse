@@ -1,6 +1,6 @@
 !/bin/bash
 
-install deps if we are in travis
+#install deps if we are in travis
 if [ -n "$TRAVIS" ]; then
 	sudo apt-get install python-pip
 	sudo pip install cython

@@ -23,7 +23,6 @@ def best_path_selection(routes):
     ''' 1. Lowest AS Path Length '''
 
     best_routes = []
-
     for route in routes:
         #print route
 
