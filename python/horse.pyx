@@ -5,6 +5,7 @@ import random
 import os.path
 import json
 import re
+from msg import ip2int, int2ip
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -128,8 +129,7 @@ cdef class BGP:
             self.add_advertised_prefix(prefix, next_hop, as_path, communities)
 
     def add_neighbor(self, neighbor_ip, neighbor_as):
-        ip_parts = neighbor_ip.split('.')
-        int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+        int_ip = ip2int(neighbor_ip) 
         bgp_add_neighbor(self._bgp_ptr, int_ip, neighbor_as)
 
 cdef class Router:
@@ -147,10 +147,8 @@ cdef class Router:
         cdef uint8_t *c_eth_addr = mac
         router_add_port(self._router_ptr, port, c_eth_addr, max_speed, cur_speed)
         if ip != None and netmask != None:
-            ip_parts = ip.split('.')
-            int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-            nm_parts = netmask.split('.')
-            int_nm = (int(nm_parts[0]) << 24) + (int(nm_parts[1]) << 16) + (int(nm_parts[2]) << 8) + int(nm_parts[3])
+            int_ip = ip2int(ip)
+            int_nm = ip2int(netmask)
             router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
 
     def add_protocol(self, Proto):
@@ -189,25 +187,25 @@ cdef class Host:
         cdef uint8_t *c_eth_addr = mac
         host_add_port(self._host_ptr, port, c_eth_addr, max_speed, cur_speed)
         if ip != None and netmask != None:
-            ip_parts = ip.split('.')
-            int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-            nm_parts = netmask.split('.')
-            int_nm = (int(nm_parts[0]) << 24) + (int(nm_parts[1]) << 16) + (int(nm_parts[2]) << 8) + int(nm_parts[3])
+            int_ip = ip2int(ip)
+            int_nm = ip2int(netmask)
             host_set_intf_ipv4(self._host_ptr, port, int_ip, int_nm)
 
+    def set_default_gw(self, ip, port):
+        int_ip = ip2int(ip)
+        host_set_default_gw(self._host_ptr, int_ip, port)
+
     def ping(self, dst, start_time = 0):
-        cdef int ip
-        ip_parts = dst.split('.')
-        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+        cdef uint32_t ip
+        ip = ip2int(dst)
         host_add_app_exec(self._host_ptr, self.exec_id, 1, 1, start_time, <void*> &ip, sizeof(int))
         self.exec_id += 1
 
     # Rate in Mbps, duration and interval in seconds
     def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001, src_port = random.randint(5002, 65000)):
-        cdef int ip
+        cdef uint32_t ip
         cdef raw_udp_args args
-        ip_parts = dst.split('.')
-        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3]) 
+        ip = ip2int(dst)
         args.rate = rate * 1000000 #Mbits to bits
         args.ip_dst = ip
         args.dst_port = dst_port

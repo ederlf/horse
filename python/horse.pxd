@@ -66,6 +66,7 @@ cdef extern from "sim/sim.h":
                        uint32_t speed, uint32_t cur_speed)
     void host_set_intf_ipv4(host *h, uint32_t port_id, 
                             uint32_t addr, uint32_t netmask)
+    void host_set_default_gw(host *h, uint32_t ip, uint32_t port)
     uint64_t host_uuid(const host* h)
     void host_set_name(host *h, char* name)
     char* host_name(const host *h)

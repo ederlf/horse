@@ -24,13 +24,14 @@ TIMING = True
 
 class BGPPeer(object):
 
-    def __init__(self, router_id = None, asn = None):
+    def __init__(self, router_id = None, asn = None, conn = None):
         self.router_id = router_id
         self.asn = asn
         self.rib = {"input": adj_rib_in(),
                     "local": rib(),
                     "output": rib()}
         self.neighbors_up = {} # neighbor ip is the key/ ASN is the value
+        self.conn = conn # Speak to the simulator
         self.conf = None
 
     def __str__(self):
@@ -154,6 +155,7 @@ class BGPPeer(object):
                 updated_best_path = self.get_route('local', prefix)
                 # self.logger.debug(" Peer Object for: "+str(self.id)+" Pushed: "+str(new_best_route)+" Observing: "+str(updated_best_path))
                 # self.logger.debug(" Peer Object for: "+str(self.id)+" --- Best Path changed: "+str(prefix)+' '+str(new_best_route)+" Older best route: "+str(current_best_route))
+                return updated_best_path
 
         elif('withdraw' in update):
             deleted_route = update['withdraw']
@@ -174,6 +176,9 @@ class BGPPeer(object):
                             #self.logger.debug('decision_process_local: withdraw: best_route: '+str(type(best_route))+' '+str(best_route))
                             best_route = best_path_selection(routes)
                             self.update_route('local', best_route)
+                            return best_route
+
+        return None
                 #         else:
                 #             self.logger.debug(" Peer Object for: "+str(self.id)+" ---No best route available for prefix "+str(prefix)+" after receiving withdraw message.")
                 #     else:
@@ -251,11 +256,20 @@ class BGPPeer(object):
         # TODO: This step should be parallelized
         # TODO: The decision process for these prefixes is going to be same, we
         # should think about getting rid of such redundant computations.
-        for update in updates:
-            self.decision_process_local(update)
-
+        best_routes = []
         import syslog
-        syslog.syslog("Decided %s" % str(self.rib['local'].table))
+        for update in updates:
+            best_route = self.decision_process_local(update)
+            if best_route:
+                best_routes.append(best_route)
+
+        if len(best_routes):
+            msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
+                                   routes = best_routes)
+            self.conn.send(msg.pack())
+
+        syslog.syslog("Deciding %s" % str(self.rib['local'].table))
+
         if TIMING:
             elapsed = time.time() - tstart
             print str(elapsed)
@@ -275,7 +289,7 @@ class BGPPeer(object):
             # self.logger.debug("Time taken to send garps/announcements: "+str(elapsed))
             tstart = time.time()
 
-    def message_parser(self, line):
+    def process_bgp_message(self, line):
         temp_message = json.loads(line)
         # Convert Unix timestamp to python datetime
         bgp_msg_type = temp_message['type']
@@ -308,12 +322,12 @@ class BGPPeer(object):
                 self.neighbors_up[temp_message['neighbor']['ip']] = temp_message['neighbor']['asn']['peer']
             elif state == 'down' and self.router_id:
                 self.neighbors_up.pop(temp_message['neighbor']['ip'], 'None')
-            return msg.pack()
+            
+            self.conn.send(msg.pack())
 
         elif bgp_msg_type == 'update':
             self.process_bgp_route(temp_message)
         # No reply to be sent
-        return None
 
     def process_message(self, msg_type, data):
         if msg_type == rmsg.MsgType.BGP_ANNOUNCE:

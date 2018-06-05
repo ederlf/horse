@@ -26,15 +26,16 @@ def netmask2cidr(netmask):
 def cidr_to_netmask(cidr):
     cidr = int(cidr)
     mask = (0xffffffff >> (32 - cidr)) << (32 - cidr)
-    return (str( (0xff000000 & mask) >> 24)   + '.' +
-          str( (0x00ff0000 & mask) >> 16)   + '.' +
-          str( (0x0000ff00 & mask) >> 8)    + '.' +
-          str( (0x000000ff & mask)))
+    return mask
+    # return (str( (0xff000000 & mask) >> 24)   + '.' +
+    #       str( (0x00ff0000 & mask) >> 16)   + '.' +
+    #       str( (0x0000ff00 & mask) >> 8)    + '.' +
+    #       str( (0x000000ff & mask)))
 
 class MsgType:
     BGP_STATE = 0
     BGP_ANNOUNCE = 1
-    BGP_UPDATE_FIB = 2
+    BGP_FIB = 2
 
 class RouterMsg(object):
     
@@ -108,14 +109,42 @@ class BGPAnnounce(RouterMsg):
                                      msg[HEADER_LEN:])
         self.peer_id = peer_id[0]
                 
-# class BGPUpdateFIBMsg(RouterMsg):
-#     def __init__(self, local_id = 0, peer_id = 0, state = 0, msg = None):
-#         if msg:
-#             self.unpack(msg)
-#         else:
-#             super(BGPStateMsg, self).__init__(msg_type=MsgType.BGP_STATE,
-#                                               size = BGP_STATE_LEN, 
-#                                               router_id = local_id)
+class BGPFIBMsg(RouterMsg):
+    FIB_ENTRY = "!III"
+    FIB_ENTRY_LEN = 12
+
+    def __init__(self, local_id = 0, routes = None, msg = None):
+        if msg:
+            self.unpack(msg)
+        else:
+            super(BGPFIBMsg, self).__init__(msg_type=MsgType.BGP_FIB,
+                                              size = HEADER_LEN, 
+                                              router_id = local_id)
+            self.routes = routes
+            self.size += len(routes) * 12
+
+    def pack(self):
+        msg = super(BGPFIBMsg, self).pack()
+        for route in self.routes:
+            self.size += BGPFIBMsg.FIB_ENTRY_LEN
+            print self.size
+            ip, mask = route.prefix.split('/')
+            next_hop = route.next_hop
+            msg += struct.pack(BGPFIBMsg.FIB_ENTRY, ip2int(ip),
+                               cidr_to_netmask(mask), ip2int(next_hop))
+        rest = self.size % 8
+        if rest:
+            msg+= struct.pack("!%sx" % rest)
+        return msg
+
+# routes = []
+
+# for i in range(0, 1):
+#     route =  RibTuple('10.0.0.1/24', '172.0.0.2','172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
+#     routes.append(route)
+
+# msg = BGPFIBMsg(local_id=1000, routes = routes)
+# data = msg.pack()
 
 # msg = BGPStateMsg(local_id = 1000, peer_id = 2000,
 #                   state = BGPStateMsg.BGP_STATE_UP)

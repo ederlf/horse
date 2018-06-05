@@ -95,6 +95,13 @@ unpack_bgp_state(uint8_t* data, struct routing_msg **msg)
     *msg = (struct routing_msg*) s;
 }
 
+static void
+unpack_fib(uint8_t* data, struct routing_msg **msg) {
+    struct routing_msg *r = xmalloc(sizeof(struct routing_msg));
+    *msg = (struct routing_msg*) r;
+    UNUSED(data);
+}
+
 void 
 routing_msg_unpack(uint8_t *data, struct routing_msg **msg)
 {
@@ -104,7 +111,11 @@ routing_msg_unpack(uint8_t *data, struct routing_msg **msg)
             unpack_bgp_state(data, msg);
             break;
         }
-        case  BGP_ANNOUNCE: {
+        case BGP_ANNOUNCE: {
+            break;
+        }
+        case BGP_FIB: {
+            unpack_fib(data, msg);
             break;
         }
         default: {

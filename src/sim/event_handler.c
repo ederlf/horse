@@ -148,7 +148,6 @@ handle_recv_netflow(struct ev_handler *ev_hdl, struct sim_event *ev) {
     if (node != NULL && lf != NULL) {
         struct netflow *nf = node->recv_netflow(node, lf->flow);
         if (nf) {
-            log_debug("NF eth_type %x %p", nf->match.eth_type, nf);
             handle_after_flow_recv(ev_hdl, node, nf, ev_flow->flow_id);
             lf->flow = nf;
         }

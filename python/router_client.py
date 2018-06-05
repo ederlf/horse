@@ -76,11 +76,7 @@ def _send(conn, stdin, peer):
                 continue
             counter = 0
             # Parse message, and if it's the correct type, store in the database
-            message = peer.message_parser(line)
-            if message:
-                # conn.send(message)
-                # m = json.dumps(message)
-                conn.send(message)
+            message = peer.process_bgp_message(line)
 
         except KeyboardInterrupt:
             pass
@@ -95,12 +91,12 @@ if __name__ == '__main__':
     # address = ('127.0.0.1', 6000)
     address = ('172.20.254.254', 6000)
     # syslog.syslog("Creating peer")
-    peer = BGPPeer()
     # peer = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # s.setblocking(0)
         s.connect(address)
+        peer = BGPPeer(conn=s)
         sender = Thread(target=_send, args=(s, sys.stdin, peer))
         receiver = Thread(target=_recv, args=(s, sys.stdout, peer))
         sender.start()

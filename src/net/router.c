@@ -4,11 +4,12 @@
 #include "routing/routing.h"
 #include "routing/routing_msg.h"
 #include <arpa/inet.h>
+#include <log/log.h>
 #include <netemu/netns.h>
 
 struct router
 {
-	struct legacy_node rt;
+	struct legacy_node ln;
     uint32_t router_id;                /* Highest router_id from protocols */
     struct routing *protocols;         /* Hash map of routing protocols */
 };
@@ -28,10 +29,10 @@ struct router *
 router_new(void)
 {
     struct router *r = xmalloc(sizeof(struct router));
-    legacy_node_init(&r->rt, ROUTER);
+    legacy_node_init(&r->ln, ROUTER);
     r->protocols = NULL;
-    r->rt.base.recv_netflow = router_recv_netflow;
-    r->rt.base.send_netflow = router_send_netflow;
+    r->ln.base.recv_netflow = router_recv_netflow;
+    r->ln.base.send_netflow = router_send_netflow;
     r->router_id = 0;
     return r;
 }
@@ -41,7 +42,7 @@ router_stop(struct router *r){
     char rname[MAX_NODE_NAME], internal_intf[MAX_NODE_NAME+10];
     struct routing *rp, *rptmp;
     
-    memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
+    memcpy(rname, r->ln.base.name, MAX_NODE_NAME);
     sprintf(internal_intf, "%s-inet-ext", rname);
     delete_intf(internal_intf);
     HASH_ITER(hh, r->protocols, rp, rptmp) {
@@ -57,7 +58,7 @@ void
 router_destroy(struct router *r)
 {
     router_stop(r);
-    legacy_node_clean(&r->rt);
+    legacy_node_clean(&r->ln);
     free(r);
 }
 
@@ -81,7 +82,7 @@ router_add_bgp(struct router *rt, struct bgp *p)
 void
 router_set_intf_ipv4(struct router *r, uint32_t port_id, 
                    uint32_t addr, uint32_t netmask){
-    legacy_node_set_intf_ipv4(&r->rt, port_id, addr, netmask);   
+    legacy_node_set_intf_ipv4(&r->ln, port_id, addr, netmask);   
 }
 
 struct netflow* 
@@ -90,14 +91,14 @@ router_recv_netflow(struct node *n, struct netflow *flow)
     struct router *r = (struct router*) n;
     /* L2 handling */
     uint16_t eth_type = flow->match.eth_type;
-    struct netflow* nf = l2_recv_netflow(&r->rt, flow); 
-    
+    struct netflow* nf = l2_recv_netflow(&r->ln, flow); 
     if (nf) {
         /*L3 handling */
         if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
             /* Lookup */
-            if (is_l3_destination(&r->rt, nf)){
+            if (is_l3_destination(&r->ln, nf)){
                 /* Do we need router apps? */
+                return NULL;
             //     struct app *app;
             //     uint16_t ip_proto = flow->match.ip_proto;
             //     HASH_FIND(hh, h->apps, &ip_proto, sizeof(uint16_t), app);
@@ -108,6 +109,9 @@ router_recv_netflow(struct node *n, struct netflow *flow)
             //             return find_forwarding_ports(&h->ep, nf);
             //         }
             //     } 
+            }
+            else { 
+                return find_forwarding_ports(&r->ln, nf);
             }
         }
         else if (eth_type == ETH_TYPE_ARP) {
@@ -124,7 +128,7 @@ router_start(struct router *r)
     char rname[MAX_NODE_NAME];
     char intf[MAX_NODE_NAME+10], intf2[MAX_NODE_NAME+10];
     char addr[INET_ADDRSTRLEN];
-    memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
+    memcpy(rname, r->ln.base.name, MAX_NODE_NAME);
 
     if (netns_add(rname)) {
             return -1;
@@ -143,7 +147,7 @@ router_start_protocols(struct router *r)
 {
     char rname[MAX_NODE_NAME];
     struct routing *rp, *rptmp;
-    memcpy(rname, r->rt.base.name, MAX_NODE_NAME);
+    memcpy(rname, r->ln.base.name, MAX_NODE_NAME);
     HASH_ITER(hh, r->protocols, rp, rptmp) {
         rp->start(rp, rname);
     }
@@ -154,6 +158,34 @@ router_send_netflow(struct node *n, struct netflow *flow,
                          uint32_t out_port)
 {
     node_update_port_stats(n, flow, out_port);
+}
+
+static void fib_add(struct router *r, uint8_t *data, size_t len)
+{
+    uint32_t addr, netmask, next_hop, port_id;
+    size_t entries = len / 12; /* Size of each prefix entry */
+    uint8_t *pdata = data;
+    size_t i;
+    for (i = 0; i < entries; ++i) {
+        addr = ntohl( *((uint32_t*) pdata) );
+        netmask = ntohl( *((uint32_t*) (pdata + 4)) );
+        next_hop = ntohl( *((uint32_t*) (pdata + 8)) );
+        struct route_entry_v4 *re = ipv4_lookup(&r->ln.rt, next_hop);
+        if (re) {
+            port_id = re->iface;
+        }
+        else {
+            port_id = 0;
+        }
+        struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
+        memset(e, 0x0, sizeof(struct route_entry_v4));
+        e->ip = addr & netmask;
+        e->netmask = netmask;
+        e->iface = port_id;
+        e->gateway = next_hop;
+        add_ipv4_entry(&r->ln.rt, e);
+        pdata += 12;
+    }
 }
 
 uint8_t*
@@ -174,6 +206,10 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
         }
         case BGP_ANNOUNCE:{
             /* Should never happen ?*/
+            break;
+        }
+        case BGP_FIB: {
+            fib_add(r, data + HEADER_LEN, msg->size -  HEADER_LEN);
             break;
         }
         default:{
@@ -213,14 +249,14 @@ gen_internal_ip(char *addr)
 void 
 router_set_name(struct router* r, char *name)
 {
-    memcpy(r->rt.base.name, name, MAX_NODE_NAME);
+    memcpy(r->ln.base.name, name, MAX_NODE_NAME);
 }
 
 /* Access functions*/
 char *
 router_name(struct router *r)
 {
-    return r->rt.base.name;
+    return r->ln.base.name;
 }
 
 /* Retrieve a datapath port */
@@ -234,7 +270,7 @@ router_port(const struct router *r, uint32_t port_id)
 uint64_t 
 router_uuid(const struct router* r)
 {
-    return r->rt.base.uuid;
+    return r->ln.base.uuid;
 }
 
 uint32_t 

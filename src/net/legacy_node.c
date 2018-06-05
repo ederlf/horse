@@ -27,6 +27,7 @@ void legacy_node_set_intf_ipv4(struct legacy_node *ln, uint32_t port_id,
     e->ip = addr & netmask;
     e->netmask = netmask;
     e->iface = port_id;
+    e->gateway = 0;
     add_ipv4_entry(&ln->rt, e);
 }
 
@@ -34,13 +35,10 @@ void legacy_node_set_intf_ipv4(struct legacy_node *ln, uint32_t port_id,
 uint32_t 
 ip_lookup(struct legacy_node *ln, struct netflow *flow){
     struct route_entry_v4 *re = ipv4_lookup(&ln->rt, flow->match.ipv4_dst);
-    if (!re){
-        /* Default gateway */
-        re = ipv4_lookup(&ln->rt, 0);
-    }
     if (re){
         netflow_add_out_port(flow, re->iface);
         /* IP of the next hop to search in the ARP table */
+        log_debug("Found route %x\n", re->gateway);
         return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
     } 
     /* Could not find a route */
@@ -51,13 +49,7 @@ struct netflow*
 resolve_mac(struct legacy_node *ln, struct netflow *flow, uint32_t ip){
     struct arp_table_entry *ae = arp_table_lookup(&ln->at, ip);
     if (ae){
-        /* Fill Missing information */
-        struct out_port *op;
-        LL_FOREACH(flow->out_ports, op) {
-            struct port *p = node_port(&ln->base, op->port);
-            flow->match.ipv4_src = p->ipv4_addr->addr;
-            memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
-        }
+        /* Write destination MAC */
         memcpy(flow->match.eth_dst, ae->eth_addr, ETH_LEN);
     }
     else {
@@ -71,7 +63,7 @@ resolve_mac(struct legacy_node *ln, struct netflow *flow, uint32_t ip){
         LL_FOREACH(flow->out_ports, op) {
             struct port *p = node_port(&ln->base, op->port);
             /* Need to set missing ip address info */
-            flow->match.ipv4_src = p->ipv4_addr->addr;
+            // flow->match.ipv4_src = p->ipv4_addr->addr;
             memcpy(arp_req->match.eth_src, p->eth_address, ETH_LEN);
             memcpy(arp_req->match.arp_sha, p->eth_address, ETH_LEN);
             arp_req->match.arp_spa = p->ipv4_addr->addr;
@@ -126,6 +118,7 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
             /* Returns if port is not the target */
             if (p->ipv4_addr != NULL && 
                 flow->match.arp_tpa != p->ipv4_addr->addr){
+                log_debug("Not for me %d %d \n", flow->match.arp_tpa, p->ipv4_addr->addr);
                 return NULL;
             } 
             log_debug("Received ARP Request from %x in %x %ld\n",
@@ -171,12 +164,6 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
                 flow = node_flow_pop((struct node*) ln);
                 /* Update the start and end time with the previous ones */ 
                 flow->start_time = start_time;
-                /* Fill l2 information */
-                struct out_port *op;
-                LL_FOREACH(flow->out_ports, op) {
-                    struct port *p = node_port(&ln->base, op->port);
-                    memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
-                }
                 memcpy(flow->match.eth_dst, e->eth_addr, ETH_LEN);
             }
             else {
