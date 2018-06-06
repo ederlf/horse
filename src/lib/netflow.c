@@ -501,14 +501,46 @@ pkt_to_netflow(uint8_t *buffer, struct netflow *nf, size_t pkt_len)
     }
 }
 
-void netflow_clean_out_ports(struct netflow *flow)
+struct ecmp_hash_tuple {
+    uint32_t ip_src;
+    uint32_t ip_dst;
+    uint16_t ip_proto;
+    uint16_t tp_src;
+    uint16_t tp_dst;
+};
+
+uint32_t netflow_calculate_hash(struct netflow *nf)
+{
+    struct ofl_flow_key *m =  &nf->match;
+    uint8_t data[14];
+    memset(data, 0x0, 14);
+    uint32_t crc = 0;
+    struct ecmp_hash_tuple *tuple = (struct ecmp_hash_tuple*) &data[0];
+    if (m->eth_type == ETH_TYPE_IP) {
+        tuple->ip_src = m->ipv4_src;
+        tuple->ip_dst = m->ipv4_dst;
+        tuple->ip_proto = m->ip_proto;
+        if (m->ip_proto == IP_PROTO_TCP) {
+            tuple->tp_src = m->tcp_src;
+            tuple->tp_dst = m->tcp_dst;
+        }
+        else if (m->ip_proto == IP_PROTO_UDP){
+            tuple->tp_src = m->udp_src;
+            tuple->tp_dst = m->udp_dst;
+        }    
+    }
+    crc32(data, 14, &crc);
+    return crc;
+}
+
+void netflow_clean_out_ports(struct netflow *nf)
 {
     struct out_port *p, *tmp;
-    LL_FOREACH_SAFE(flow->out_ports, p, tmp) {
-      LL_DELETE(flow->out_ports, p);
+    LL_FOREACH_SAFE(nf->out_ports, p, tmp) {
+      LL_DELETE(nf->out_ports, p);
       free(p); 
     }
-    flow->out_ports = NULL;
+    nf->out_ports = NULL;
 }
 
 void 
@@ -520,9 +552,9 @@ netflow_add_out_port(struct netflow *nf, uint32_t out_port)
 }
 
 void 
-netflow_update_send_time(struct netflow *flow, uint32_t port_speed)
+netflow_update_send_time(struct netflow *nf, uint32_t port_speed)
 {
   /* Port speed is converted to bits per microseconds */
-  flow->start_time +=  (flow->byte_cnt * 8) / ((port_speed * 1000)/1000000);
+  nf->start_time +=  (nf->byte_cnt * 8) / ((port_speed * 1000)/1000000);
 }   
     
