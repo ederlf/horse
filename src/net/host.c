@@ -81,7 +81,8 @@ host_recv_netflow(struct node *n, struct netflow *flow)
                 if (app){
                     if (app->handle_netflow(nf)){
                         struct out_port *op;
-                        struct netflow *f = find_forwarding_ports(&h->ep, nf);
+                        struct netflow *f = find_forwarding_ports(&h->ep, nf,
+                                                                  false);
                         LL_FOREACH(flow->out_ports, op) {
                             struct port *p = node_port(&h->ep.base, op->port);
                             f->match.ipv4_src = p->ipv4_addr->addr;
@@ -154,7 +155,7 @@ host_execute_app(struct host *h, struct exec *exec)
         flow->exec_id = exec->id;
         log_info("Flow Start time APP %ld", flow-> start_time);
         exec->exec_cnt -= 1;
-        flow = find_forwarding_ports(&h->ep, flow);
+        flow = find_forwarding_ports(&h->ep, flow, false);
         LL_FOREACH(flow->out_ports, op) {
             struct port *p = node_port(&h->ep.base, op->port);
             flow->match.ipv4_src = p->ipv4_addr->addr;
@@ -167,13 +168,13 @@ host_execute_app(struct host *h, struct exec *exec)
 
 void host_set_default_gw(struct host *h, uint32_t ip, uint32_t port)
 {
-    struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
-    memset(e, 0x0, sizeof(struct route_entry_v4));
-    e->ip = 0;
-    e->netmask = 0;
-    e->gateway = ip;
-    e->iface = port;
-    add_ipv4_entry(&h->ep.rt, e);
+    struct route_entry_v4 e; 
+    memset(&e, 0x0, sizeof(struct route_entry_v4));
+    e.ip = 0;
+    e.netmask = 0;
+    e.gateway = ip;
+    e.iface = port;
+    add_ipv4_entry(&h->ep.rt, &e);
 }
 
 void host_set_name(struct host* h, char *name)

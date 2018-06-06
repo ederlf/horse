@@ -52,12 +52,14 @@ cdef extern from "sim/sim.h":
     void router_add_port(router *r, uint32_t port_id, uint8_t *eth_addr,
                          uint32_t speed, uint32_t cur_speed)
     void router_add_bgp(router *r, bgp *p)
-    void router_set_intf_ipv4(router *h, uint32_t port_id,
+    void router_set_intf_ipv4(router *r, uint32_t port_id,
                               uint32_t addr, uint32_t netmask) 
-    uint64_t router_uuid(const router* h)
-    void router_set_name(router *h, char* name)
-    char* router_name(const router *h)
-    char* router_set_id(router *h, char* router_id)
+    uint64_t router_uuid(const router* r)
+    void router_set_name(router *r, char* name)
+    char* router_name(const router *r)
+    char* router_set_id(router *r, char* router_id)
+    void router_set_ecmp(router *r, bint enable)
+    bint router_ecmp(router *r)
 
     # Host.h
     host* host_new()

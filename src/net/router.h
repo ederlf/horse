@@ -28,8 +28,10 @@ uint8_t *router_handle_control_message(struct router *r, uint8_t *data,
                                        size_t *ret_len);
 int router_start(struct router *rt);
 void router_set_name(struct router* r, char *name);
+void router_set_ecmp(struct router*r, bool enable);
 char *router_name(struct router *r);
 struct port *router_port(const struct router *r, uint32_t port_id);
 uint64_t router_uuid(const struct router* r);
 uint32_t router_id(const struct router *r);
+bool router_ecmp(const struct router *r);
 #endif

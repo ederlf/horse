@@ -27,7 +27,7 @@ from msg import ip2int, int2ip
 #         # Convert string to number
 #         ip_mask = ipv4_addr.split('/')
 #         ip_parts = ip_mask[0].split('.')
-#         self.ipv4_addr = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+#         self.ipv4_addr = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(BGP[3])
 #         if len(ip_mask) == 2:
 #             cidr = int(ip_mask[1])
 #             self.ipv4_mask = ((2**cidr) - 1) << (32 - cidr)
@@ -78,10 +78,15 @@ cdef class BGP:
     cdef prefixes
     cdef asn
     cdef router_id
+    cdef max_paths # Maximum number of allowed paths. All attributes should be equal.
+    cdef relax   # Allows load balancing among different ASes. Only AS path needs to match.
 
     def __cinit__(self, config_file=None):
         self.neighbors = {}
         self.prefixes = {}
+        self.max_paths = 0
+        self.relax = False
+
         if config_file and os.path.isfile(config_file):
             self._bgp_ptr = bgp_new(config_file)
             with file(config_file, "r") as f:
@@ -115,12 +120,20 @@ cdef class BGP:
         else:
             self.prefixes[prefix]["NH"] = self.router_id
     
+    def set_maximum_paths(self, value):
+        self.max_paths = value
+
+    def set_relaxed_maximum_paths(self, value = True):
+        self.relax = value 
+
     def write_config_file(self):
         conf = {}
         conf["prefixes"] = self.prefixes
         conf["neighbors"] = self.neighbors
         conf["asn"] = self.asn
         conf["router_id"] = self.router_id
+        conf["max_paths"] = self.max_paths
+        conf["relax"] = self.relax
         with file("/tmp/conf-%s" % self.router_id, "w") as f:
             json.dump(conf, f)
 
@@ -155,6 +168,8 @@ cdef class Router:
         if isinstance(Proto, BGP):
             proto = <BGP> Proto
             proto.write_config_file()
+            if proto.max_paths:
+                router_set_ecmp(self._router_ptr, True)
             router_add_bgp(self._router_ptr, proto._bgp_ptr)
 
     property name:

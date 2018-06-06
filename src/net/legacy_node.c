@@ -2,6 +2,11 @@
 #include <uthash/utlist.h>
 #include <log/log.h>
 
+static uint32_t ip_lookup(struct legacy_node *ln, struct netflow *flow,
+                          bool ecmp);
+static struct netflow* resolve_mac(struct legacy_node *ln,
+                                   struct netflow *flow, uint32_t ip);
+
 void
 legacy_node_init(struct legacy_node *ln, uint16_t type)
 {
@@ -22,19 +27,27 @@ void legacy_node_set_intf_ipv4(struct legacy_node *ln, uint32_t port_id,
     struct port *p = node_port(&ln->base, port_id);
     port_add_v4addr(p, addr, netmask);
     /* Add entry to route table */
-    struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
-    memset(e, 0x0, sizeof(struct route_entry_v4));
-    e->ip = addr & netmask;
-    e->netmask = netmask;
-    e->iface = port_id;
-    e->gateway = 0;
-    add_ipv4_entry(&ln->rt, e);
+    struct route_entry_v4 e; 
+    memset(&e, 0x0, sizeof(struct route_entry_v4));
+    e.ip = addr & netmask;
+    e.netmask = netmask;
+    e.iface = port_id;
+    e.gateway = 0;
+    add_ipv4_entry(&ln->rt, &e);
 }
 
 /* Returns the gateway of destination IP */
-uint32_t 
-ip_lookup(struct legacy_node *ln, struct netflow *flow){
-    struct route_entry_v4 *re = ipv4_lookup(&ln->rt, flow->match.ipv4_dst);
+static uint32_t 
+ip_lookup(struct legacy_node *ln, struct netflow *flow, bool ecmp){
+    /* Calculate ECMP hash*/
+    uint32_t ecmp_hash = 0;
+
+    if (ecmp) {
+        ecmp_hash = netflow_calculate_hash(flow);
+    }
+
+    struct route_entry_v4 *re = ipv4_lookup(&ln->rt, flow->match.ipv4_dst,
+                                            ecmp_hash);
     if (re){
         netflow_add_out_port(flow, re->iface);
         /* IP of the next hop to search in the ARP table */
@@ -45,7 +58,7 @@ ip_lookup(struct legacy_node *ln, struct netflow *flow){
     return 0;   
 }
             
-struct netflow*
+static struct netflow*
 resolve_mac(struct legacy_node *ln, struct netflow *flow, uint32_t ip){
     struct arp_table_entry *ae = arp_table_lookup(&ln->at, ip);
     if (ae){
@@ -84,9 +97,9 @@ resolve_mac(struct legacy_node *ln, struct netflow *flow, uint32_t ip){
 }
 
 struct netflow* 
-find_forwarding_ports(struct legacy_node *ln, struct netflow *flow)
+find_forwarding_ports(struct legacy_node *ln, struct netflow *flow, bool ecmp)
 {
-    uint32_t ip = ip_lookup(ln, flow);
+    uint32_t ip = ip_lookup(ln, flow, ecmp);
     /* Only forward if the next hop ip is found */
     if (ip) {
         return resolve_mac(ln, flow, ip);    
@@ -118,7 +131,6 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
             /* Returns if port is not the target */
             if (p->ipv4_addr != NULL && 
                 flow->match.arp_tpa != p->ipv4_addr->addr){
-                log_debug("Not for me %d %d \n", flow->match.arp_tpa, p->ipv4_addr->addr);
                 return NULL;
             } 
             log_debug("Received ARP Request from %x in %x %ld\n",

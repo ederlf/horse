@@ -1,15 +1,23 @@
 #include "route_table.h"
 #include "lib/util.h"
 #include <stdlib.h>
+#include <uthash/utarray.h>
 
-static void free_ipv4_entry(void* entry)
+
+UT_icd route_entry_icd = {sizeof(struct route_entry_v4), NULL, NULL, NULL};
+
+static void 
+free_ipv4_entry(void* entry)
 {
-    free((struct ipv4_route_entry*)entry);
+    utarray_free((UT_array*) entry);
+    // free((struct route_entry_v4*)entry);
 }
 
-static void free_ipv6_entry(void* entry)
+static void 
+free_ipv6_entry(void* entry)
 {
-    free((struct ipv6_route_entry*)entry);
+    utarray_free((UT_array*)entry);
+    // free((struct route_entry_v6*)entry);
 }
 
 void 
@@ -29,24 +37,35 @@ route_table_clean(struct route_table *rt)
 void 
 add_ipv4_entry(struct route_table *rt, struct route_entry_v4 *e)
 {
+    UT_array *next_hops;
     patricia_node_t *node;
     uint32_t ip = htonl(e->ip);
     int bitlen = 32 - ntz(e->netmask);
     prefix_t *pref = New_Prefix(AF_INET, &ip, bitlen);
     node = patricia_lookup (rt->ipv4_table, pref);
     Deref_Prefix (pref);
-    node->data = (void*) e;
+    if (node->data == NULL){
+        utarray_new(next_hops, &route_entry_icd);
+        node->data = (void*) next_hops;
+    }
+    else {
+        next_hops = (UT_array*) node->data;
+    }
+    utarray_push_back(next_hops, e);
 }
 
-struct route_entry_v4 
-*ipv4_lookup(const struct route_table *rt, uint32_t ip)
+struct route_entry_v4* 
+ipv4_lookup(const struct route_table *rt, uint32_t ip, uint32_t hash)
 {
     ip = htonl(ip);
     prefix_t *pref = New_Prefix(AF_INET, &ip, 32);
     patricia_node_t *node = patricia_search_best(rt->ipv4_table, pref);
     Deref_Prefix (pref);
     if (node != NULL){
-        return (struct route_entry_v4*) node->data;
+        UT_array *next_hops = node->data;
+        size_t n = utarray_len(next_hops);
+        unsigned index = hash % n;
+        return (struct route_entry_v4*) utarray_eltptr(next_hops, index);
     }
     return NULL;
 }

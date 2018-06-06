@@ -39,11 +39,8 @@ void legacy_node_init(struct legacy_node *ln, uint16_t type);
 void legacy_node_clean(struct legacy_node *ln);
 void legacy_node_set_intf_ipv4(struct legacy_node *ln, uint32_t port_id,
                                uint32_t addr, uint32_t netmask);
-uint32_t ip_lookup(struct legacy_node *ln, struct netflow *flow);
-struct netflow* resolve_mac(struct legacy_node *ln, struct netflow *flow,
-                            uint32_t ip);
 struct netflow* find_forwarding_ports(struct legacy_node *ln,
-                                      struct netflow *flow);
+                                      struct netflow *flow, bool ecmp);
 struct netflow* l2_recv_netflow(struct legacy_node *ln, struct netflow *flow);
 bool is_l3_destination(struct legacy_node *ln, struct netflow *flow);
 #endif

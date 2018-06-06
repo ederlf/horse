@@ -11,6 +11,7 @@ struct router
 {
 	struct legacy_node ln;
     uint32_t router_id;                /* Highest router_id from protocols */
+    bool ecmp;
     struct routing *protocols;         /* Hash map of routing protocols */
 };
 
@@ -34,6 +35,7 @@ router_new(void)
     r->ln.base.recv_netflow = router_recv_netflow;
     r->ln.base.send_netflow = router_send_netflow;
     r->router_id = 0;
+    r->ecmp =  false;
     return r;
 }
 
@@ -106,12 +108,11 @@ router_recv_netflow(struct node *n, struct netflow *flow)
             //     log_debug("APP %d %p", ip_proto, app);
             //     if (app){
             //         if (app->handle_netflow(nf)){
-            //             return find_forwarding_ports(&h->ep, nf);
             //         }
             //     } 
             }
             else { 
-                return find_forwarding_ports(&r->ln, nf);
+                return find_forwarding_ports(&r->ln, nf, r->ecmp);
             }
         }
         else if (eth_type == ETH_TYPE_ARP) {
@@ -170,7 +171,7 @@ static void fib_add(struct router *r, uint8_t *data, size_t len)
         addr = ntohl( *((uint32_t*) pdata) );
         netmask = ntohl( *((uint32_t*) (pdata + 4)) );
         next_hop = ntohl( *((uint32_t*) (pdata + 8)) );
-        struct route_entry_v4 *re = ipv4_lookup(&r->ln.rt, next_hop);
+        struct route_entry_v4 *re = ipv4_lookup(&r->ln.rt, next_hop, 0);
         if (re) {
             port_id = re->iface;
         }
@@ -204,8 +205,8 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
             msg_ret = bgp_handle_state_msg((struct bgp*) p, (struct bgp_state*) msg);
             break;
         }
-        case BGP_ANNOUNCE:{
-            /* Should never happen ?*/
+        case BGP_ANNOUNCE:
+        case BGP_ACTIVITY:{
             break;
         }
         case BGP_FIB: {
@@ -252,6 +253,12 @@ router_set_name(struct router* r, char *name)
     memcpy(r->ln.base.name, name, MAX_NODE_NAME);
 }
 
+void 
+router_set_ecmp(struct router*r, bool enable)
+{
+    r->ecmp = enable;
+}
+
 /* Access functions*/
 char *
 router_name(struct router *r)
@@ -277,4 +284,10 @@ uint32_t
 router_id(const struct router *r)
 {
     return r->router_id;
+}
+
+bool 
+router_ecmp(const struct router *r)
+{
+    return r->ecmp;
 }
