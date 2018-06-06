@@ -25,6 +25,7 @@ void *xmalloc(size_t size);
 void *xrealloc(void *v, int size);
 uint32_t random_at_most(uint32_t max);
 char* file_to_string(const char * file_name, size_t *size);
+void crc32(const void *data, size_t n_bytes, uint32_t *crc);
 int nlz(uint32_t x);
 int ntz(uint32_t x);
 uint8_t get_ip_family(char *ip);
