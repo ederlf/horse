@@ -8,7 +8,8 @@
 enum routing_msg_type {
     BGP_STATE = 0,
     BGP_ANNOUNCE = 1,
-    BGP_FIB = 2
+    BGP_FIB = 2,
+    BGP_ACTIVITY = 3
 };
 
 struct routing_msg {

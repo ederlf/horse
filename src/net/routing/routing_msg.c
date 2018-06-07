@@ -75,6 +75,9 @@ routing_msg_pack(struct routing_msg *msg)
             pack_bgp_announce(msg, data);
             break;
         }
+        case BGP_ACTIVITY: {
+            break;
+        }
         default: {
             fprintf(stderr, "Failed to pack. Unknown message %d\n", msg->type);
             return NULL;
@@ -96,7 +99,7 @@ unpack_bgp_state(uint8_t* data, struct routing_msg **msg)
 }
 
 static void
-unpack_fib(uint8_t* data, struct routing_msg **msg) {
+unpack_header(uint8_t* data, struct routing_msg **msg) {
     struct routing_msg *r = xmalloc(sizeof(struct routing_msg));
     *msg = (struct routing_msg*) r;
     UNUSED(data);
@@ -114,8 +117,9 @@ routing_msg_unpack(uint8_t *data, struct routing_msg **msg)
         case BGP_ANNOUNCE: {
             break;
         }
+        case BGP_ACTIVITY:
         case BGP_FIB: {
-            unpack_fib(data, msg);
+            unpack_header(data, msg);
             break;
         }
         default: {
