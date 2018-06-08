@@ -12,6 +12,7 @@ import sys
 import json
 import socket
 import struct
+import syslog
 np = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if np not in sys.path:
     sys.path.append(np)
@@ -52,7 +53,7 @@ class BGPPeer(object):
         # Extract out neighbor information in the given BGP update
     
         neighbor = route["neighbor"]["ip"]
-
+        asn = int(route["neighbor"]["asn"]["peer"])
         if ('state' in route['neighbor'] and route['neighbor']['state']=='down'):
             #TODO WHY NOT COMPLETELY DELETE LOCAL?
             routes = self.rib['input'].get_all()
@@ -85,7 +86,7 @@ class BGPPeer(object):
                 if ('ipv4 unicast' in announce):
                     for next_hop in announce['ipv4 unicast'].keys():
                         for prefix in announce['ipv4 unicast'][next_hop].keys():
-                            attributes = RibTuple(prefix, neighbor, next_hop, origin, as_path,
+                            attributes = RibTuple(prefix, neighbor, asn, next_hop, origin, as_path,
                                          communities, med, atomic_aggregate)
                             self.add_route("input", attributes)
                             announce_route = self.get_route_with_neighbor("input", prefix, neighbor)
@@ -131,31 +132,55 @@ class BGPPeer(object):
             # best path in local, if yes, then delete it and run the best path
             # selection over entire input rib, else just ignore this withdraw
             # message.
-
             announce_route = update['announce']
             #self.logger.debug("decision process local:: "+str(announce_route))
             prefix = announce_route.prefix
             # self.logger.debug(" Peer Object for: "+str(self.id)+" --- processing update for prefix: "+str(prefix))
-            current_best_route = self.get_route('local', prefix)
-            if current_best_route:
+            current_best_routes = self.get_route('local', prefix)
+            tie = False
+            if current_best_routes != None:
                 # This is what should be feed to the decision process
+                current_best_num = len(current_best_routes)
+                current_best_route = current_best_routes[0] 
                 routes = [announce_route, current_best_route]
-                new_best_route = best_path_selection(routes)
+                new_best_routes, tie = best_path_selection(routes)
             else:
                 # This is the first time for this prefix
+                current_best_route = None
                 new_best_route = announce_route
-
-            # self.logger.debug(" Peer Object for: "+str(self.id)+" ---Best Route after Selection: "+str(prefix)+' '+str(new_best_route))
-            if not bgp_routes_are_equal(new_best_route, current_best_route):
-            #     self.logger.debug(" Peer Object for: "+str(self.id)+" --- No change in Best Path...move on "+str(prefix))
-            # else:
-                #self.logger.debug('decision_process_local: announce: new_best_route: '+str(type(new_best_route))+' '+str(new_best_route))
                 self.update_route('local', new_best_route)
-                # Check
-                updated_best_path = self.get_route('local', prefix)
-                # self.logger.debug(" Peer Object for: "+str(self.id)+" Pushed: "+str(new_best_route)+" Observing: "+str(updated_best_path))
-                # self.logger.debug(" Peer Object for: "+str(self.id)+" --- Best Path changed: "+str(prefix)+' '+str(new_best_route)+" Older best route: "+str(current_best_route))
-                return updated_best_path
+                return [new_best_route]
+
+            # There was a previous route, but no tie
+            if not tie: 
+                new_best_route = new_best_routes.pop()
+                if not bgp_routes_are_equal(new_best_route, current_best_route):
+                    self.update_route('local', new_best_route)
+                    # Check
+                    updated_best_path = self.get_route('local', prefix)
+                    return [updated_best_path]
+            # If max_paths is configured and there is a tie, install multiple paths
+            else:
+                # Decide which route should be taken
+                max_paths = self.conf["max_paths"]
+                new_best_route = lowest_router_id(new_best_routes)
+                # Announced is preferred
+                if not bgp_routes_are_equal(new_best_route, current_best_route):
+                    self.update_route('local', new_best_route, new = False)
+                    # Remove the last route to make space
+                    if max_paths < current_best_num + 1:
+                        self.drop_route('local', new_best_route.prefix)
+                # Insert announced in the back.
+                else:
+                    self.update_route('local', announce_route, new = False, best = False)
+                
+                # If ECMP is enabled, send the new route to the fib
+                
+                # Do not send if ases are different from best route
+                if not self.conf["relaxed"] and current_best_route.asn != announce_route.asn:    
+                        return None
+                # Old route should be already in the FIB, just return the announced
+                return [announce_route]
 
         elif('withdraw' in update):
             deleted_route = update['withdraw']
@@ -179,13 +204,6 @@ class BGPPeer(object):
                             return best_route
 
         return None
-                #         else:
-                #             self.logger.debug(" Peer Object for: "+str(self.id)+" ---No best route available for prefix "+str(prefix)+" after receiving withdraw message.")
-                #     else:
-                #         self.logger.debug(" Peer Object for: "+str(self.id)+" ---BGP withdraw for prefix "+str(prefix)+" has no impact on best path")
-                # else:
-                #     self.logger.debug(" Peer Object for: "+str(self.id)+" --- This is weird. How can we not have any delete object in this function")
-
 
     def bgp_update_peers(self, updates):
         # TODO: Verify if the new logic makes sense
@@ -196,10 +214,14 @@ class BGPPeer(object):
             else:
                 prefix = update['withdraw'].prefix
 
-            prev_route = self.get_route("output", prefix)
-            best_route = self.get_route("local", prefix)
-    
-            if best_route:
+            prev_routes = self.get_route("output", prefix)
+            best_routes = self.get_route("local", prefix)
+            if best_routes:
+                best_route = best_routes[0]
+                if prev_routes:
+                    prev_route = prev_routes[0]
+                else:
+                    prev_route = None
                 if ('announce' in update):
                     # Check if best path has changed for this prefix
                     if not bgp_routes_are_equal(best_route, prev_route):
@@ -207,15 +229,15 @@ class BGPPeer(object):
                         # self.logger.debug(str(best_route)+' '+str(prev_route))
                         self.update_route("output", best_route)
                         if best_route:
-                            pass
                             # announce the route to each router of the participant
                             # neighbors = neighbors_up - 
                             for neighbor in self.neighbors_up:
-                                if neighbor != update[neighbor]:
-                                    announcements.append(neighbor, prefix,
-                                                         prefix, best_route.as_path)
+                                neighbor_sender = update['announce'].neighbor
+                                if neighbor != neighbor_sender:
+                                    announce_route(neighbor, prefix,
+                                                    best_route.next-hop, 
+                                                    [self.asn] + best_route.as_path)
                         else:
-                            # self.logger.debug("Race condition problem for prefix: "+str(prefix))
                             continue
 
                 elif ('withdraw' in update):
@@ -227,9 +249,10 @@ class BGPPeer(object):
                             # store announcement in output rib
                             self.update_route("output", best_route)
                             for neighbor in neighbors_up:
-                                if neighbor != update[neighbor]:
-                                    announcements.append(neighbor, prefix,
-                                                         prefix, best_route.as_path)
+                                if neighbor != update["neighbor"]["ip"]:
+                                    announce_route(neighbor, prefix,
+                                                    best_route.next-hop, 
+                                                    [self.asn] + best_route.as_path)
             # else:
             #     "Currently there is no best route to this prefix"
             #     if prev_route:
@@ -257,18 +280,17 @@ class BGPPeer(object):
         # TODO: The decision process for these prefixes is going to be same, we
         # should think about getting rid of such redundant computations.
         best_routes = []
-        import syslog
         for update in updates:
             best_route = self.decision_process_local(update)
             if best_route:
-                best_routes.append(best_route)
+                best_routes += best_route
 
         if len(best_routes):
             msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
                                    routes = best_routes)
+            # import syslog
+            # syslog.syslog("Decided %s" % str(best_routes))
             self.conn.send(msg.pack())
-
-        syslog.syslog("Deciding %s" % str(self.rib['local'].table))
 
         if TIMING:
             elapsed = time.time() - tstart
@@ -278,10 +300,6 @@ class BGPPeer(object):
 
         # Propagate
         announcements = self.bgp_update_peers(updates)
-        # Tell Route Server that it needs to announce these routes
-        for announcement in announcements:
-            # TODO: Complete the logic for this function
-            self.send_announcement(announcement)
 
         if TIMING:
             elapsed = time.time() - tstart
@@ -291,7 +309,8 @@ class BGPPeer(object):
 
     def process_bgp_message(self, line):
         temp_message = json.loads(line)
-        # Convert Unix timestamp to python datetime
+        # # Convert Unix timestamp to python datetime
+        
         bgp_msg_type = temp_message['type']
 
         if bgp_msg_type == 'state':
@@ -304,11 +323,14 @@ class BGPPeer(object):
                 s = rmsg.BGPStateMsg.BGP_STATE_CONNECTED
             else:
                 s = rmsg.BGPStateMsg.BGP_STATE_UP
-            # return message
-            peer_id = struct.unpack("!L", socket.inet_aton(temp_message['neighbor']['ip']))[0] 
-            router_id =  temp_message['neighbor']['address']['local']
             
-            msg = rmsg.BGPStateMsg(local_id = rmsg.ip2int(router_id), peer_id = peer_id,
+            peer = temp_message['neighbor']['address']["peer"]
+            peer_asn = temp_message['neighbor']['asn']['peer']
+            peer_ip = struct.unpack("!L", socket.inet_aton(peer))[0] 
+            router_id =  temp_message['neighbor']['address']['local']
+            router_asn = temp_message['neighbor']['asn']['local']
+                
+            msg = rmsg.BGPStateMsg(local_id = rmsg.ip2int(router_id), peer_id = peer_ip,
                                   state = s)
             if state == 'up':
                 if self.router_id == None:
@@ -317,16 +339,18 @@ class BGPPeer(object):
                         self.conf = json.load(f)
 
                 if self.asn == None:
-                    self.asn = temp_message['neighbor']['asn']['local']
+                    self.asn = router_asn
 
-                self.neighbors_up[temp_message['neighbor']['ip']] = temp_message['neighbor']['asn']['peer']
+                self.neighbors_up[peer] = peer_asn
             elif state == 'down' and self.router_id:
-                self.neighbors_up.pop(temp_message['neighbor']['ip'], 'None')
-            
+                self.neighbors_up.pop(peer_ip, 'None')
             self.conn.send(msg.pack())
 
         elif bgp_msg_type == 'update':
-            self.process_bgp_route(temp_message)
+            msg = rmsg.BGPActivity(local_id = rmsg.ip2int(self.router_id))
+            self.conn.send(msg.pack())
+            syslog.syslog("RECEIVED %s" % str(temp_message))
+            # self.process_bgp_route(temp_message)
         # No reply to be sent
 
     def process_message(self, msg_type, data):
@@ -341,15 +365,6 @@ class BGPPeer(object):
                 announcements.append(a)
             return announcements
         return None
-
-    def send_announcement(self, announcement):
-        "Send the announcements to XRS"
-        announcement.as_path = [self.asn] + announcement.as_path
-        print announcement
-        # self.logger.debug("Sending announcements to XRS. "+str(type(announcement)))
-
-        # self.xrs_client.send(json.dumps(announcement))
-
 
     def add_route(self, rib_name, attributes):
         self.rib[rib_name].update(attributes)
@@ -374,6 +389,10 @@ class BGPPeer(object):
         assert(isinstance(self.rib[rib_name], rib))
         self.rib[rib_name].delete(prefix=prefix)
 
+    def drop_route(self, rib_name, prefix):
+        ssert(isinstance(self.rib[rib_name], rib))
+        self.rib[rib_name].drop(prefix=prefix)
+
     #Only for rib in
     def delete_route_with_neighbor(self, rib_name, prefix, neighbor):
         assert(isinstance(self.rib[rib_name], adj_rib_in))
@@ -381,7 +400,6 @@ class BGPPeer(object):
 
     def filter_route(self, rib_name, item,value):
         return self.rib[rib_name].get_all(**{item:value})
-
 
     def update_route(self, rib_name, attributes):
         self.rib[rib_name].update(attributes)

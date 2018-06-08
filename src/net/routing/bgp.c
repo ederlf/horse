@@ -4,6 +4,7 @@
 #include "lib/net_utils.h"
 #include <netemu/netns.h>
 #include <time.h>
+#include <unistd.h>
 
 static void bgp_init(struct bgp *p, char *config_file);
 static void bgp_start(struct routing *rt, char *rname);
@@ -67,9 +68,11 @@ bgp_start(struct routing *rt, char * rname)
     get_ip_str(net_ip, str_ip, AF_INET);
     setup_veth(rname, intf, intf2, str_ip, "16", "br0");
     /* Start exabgp */
+    printf("Launching BGP %s\n", str_ip);
+    // sleep(10);
     netns_launch(rname, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
-          "exabgp.log.destination=syslog exabgp %s",
+          "exabgp %s",
           str_ip, p->config_file); 
 }
 
