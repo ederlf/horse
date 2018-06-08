@@ -11,6 +11,7 @@
 .deps/
 .libs/
 autom4te.cache/
+python/topos/config/
 config.h
 configure
 config.sub

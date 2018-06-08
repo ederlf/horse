@@ -72,7 +72,7 @@ bgp_start(struct routing *rt, char * rname)
     // sleep(10);
     netns_launch(rname, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
-          "exabgp %s",
+          "exabgp.log.destination=syslog exabgp %s",
           str_ip, p->config_file); 
 }
 

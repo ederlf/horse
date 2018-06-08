@@ -100,6 +100,7 @@ struct netflow*
 find_forwarding_ports(struct legacy_node *ln, struct netflow *flow, bool ecmp)
 {
     uint32_t ip = ip_lookup(ln, flow, ecmp);
+
     /* Only forward if the next hop ip is found */
     if (ip) {
         return resolve_mac(ln, flow, ip);    
@@ -131,6 +132,9 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
             /* Returns if port is not the target */
             if (p->ipv4_addr != NULL && 
                 flow->match.arp_tpa != p->ipv4_addr->addr){
+                log_debug("ARP Request from %x is not for %x %ld\n",
+                      flow->match.arp_spa, p->ipv4_addr->addr, 
+                      flow->start_time);
                 return NULL;
             } 
             log_debug("Received ARP Request from %x in %x %ld\n",

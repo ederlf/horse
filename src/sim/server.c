@@ -48,7 +48,7 @@ server_destroy(struct server *s)
     pthread_cancel(s->server_thr);
     HASH_ITER(hh, s->connections, c, ctmp) {
         HASH_DEL(s->connections, c);
-        bufferevent_free(c->bev);
+        // bufferevent_free(c->bev);
         free(c);
     }
     free(s->address);

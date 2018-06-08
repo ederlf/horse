@@ -15,10 +15,10 @@ template {
                     parsed;
                     update;
             }
-            send {
-                    parsed;
-                    update;
-            }
+            #send {
+            #        parsed;
+            #        update;
+            #}
         }
         local-as 1;
         local-address 10.0.0.1;

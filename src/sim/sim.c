@@ -78,6 +78,7 @@ setup(struct sim *s)
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
     // sleep(5);
+    // exit(0);
 }
 
 struct timespec last = {0};
@@ -215,16 +216,16 @@ des_mode(void *args){
             /* Execute */
             handle_event(&s->evh, ev);
             /* TODO: Very ugly right now*/
-            if ((sch->clock - last_wrt) > 10000000 ){
-                handle_event(&s->evh, make_time_msg(sch->clock));
-                /* Wake up timer */
-                pthread_mutex_lock( &mtx_mode );
-                last_ctrl = sch->clock;
-                sch->mode = FTI;
-                last_wrt = sch->clock;
-                pthread_cond_signal( &mode_cond_var );
-                pthread_mutex_unlock( &mtx_mode );
-            }
+            // if ((sch->clock - last_wrt) > 10000000 ){
+            //     handle_event(&s->evh, make_time_msg(sch->clock));
+            //     /* Wake up timer */
+            //     pthread_mutex_lock( &mtx_mode );
+            //     last_ctrl = sch->clock;
+            //     sch->mode = FTI;
+            //     last_wrt = sch->clock;
+            //     pthread_cond_signal( &mode_cond_var );
+            //     pthread_mutex_unlock( &mtx_mode );
+            // }
             if (ev->type == EVENT_FTI) {
                 
                 /* Wake up timer */
@@ -278,7 +279,6 @@ cont_mode(void* args)
             update_stats(s->evh.topo, cur_ev->time);
             last_stats = cur_ev->time ;
         }
-
         if (cur_ev->type == EVENT_FTI) {
             last_ctrl = cur_ev->time;
         }

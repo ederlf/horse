@@ -301,7 +301,8 @@ class BGPPeer(object):
         if len(best_routes):
             msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
                                    routes = best_routes)
-            syslog.syslog("Decided %s" % str(best_routes))
+
+            # syslog.syslog("Decided %s" % str(best_routes))
             self.conn.send(msg.pack())
 
         if TIMING:
@@ -365,7 +366,6 @@ class BGPPeer(object):
 
     def process_message(self, msg_type, data):
         if msg_type == rmsg.MsgType.BGP_ANNOUNCE:
-            syslog.syslog("Received announce")
             msg = rmsg.BGPAnnounce(msg=data)
             prefixes = self.conf["prefixes"]
             announcements = []
