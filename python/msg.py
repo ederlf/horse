@@ -36,6 +36,7 @@ class MsgType:
     BGP_STATE = 0
     BGP_ANNOUNCE = 1
     BGP_FIB = 2
+    BGP_ACTIVITY = 3
 
 class RouterMsg(object):
     
@@ -123,11 +124,12 @@ class BGPFIBMsg(RouterMsg):
             self.routes = routes
             self.size += len(routes) * 12
 
+    def unpack(self, msg):
+        pass
+
     def pack(self):
         msg = super(BGPFIBMsg, self).pack()
         for route in self.routes:
-            self.size += BGPFIBMsg.FIB_ENTRY_LEN
-            print self.size
             ip, mask = route.prefix.split('/')
             next_hop = route.next_hop
             msg += struct.pack(BGPFIBMsg.FIB_ENTRY, ip2int(ip),
@@ -137,13 +139,32 @@ class BGPFIBMsg(RouterMsg):
             msg+= struct.pack("!%sx" % rest)
         return msg
 
+# This message is basically to inform the simulator that there is BGP activity
+# keeping the simulation mode in the FTI mode.
+class BGPActivity(RouterMsg):
+
+    def __init__(self, local_id = 0, msg = None):
+        if msg:
+            self.unpack(msg)
+        else:
+            super(BGPActivity, self).__init__(msg_type=MsgType.BGP_ACTIVITY,
+                                              size = HEADER_LEN, 
+                                              router_id = local_id)
+    def pack(self):
+        msg = super(BGPActivity, self).pack()
+        return msg
+
+    def unpack(self, msg):
+        super(BGPActivity, self).unpack(msg)
+
 # routes = []
 
 # for i in range(0, 1):
-#     route =  RibTuple('10.0.0.1/24', '172.0.0.2','172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
+#     route =  RibTuple('10.0.0.1/24', '172.0.0.2', 10, '172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
 #     routes.append(route)
 
 # msg = BGPFIBMsg(local_id=1000, routes = routes)
+# print msg.size
 # data = msg.pack()
 
 # msg = BGPStateMsg(local_id = 1000, peer_id = 2000,
