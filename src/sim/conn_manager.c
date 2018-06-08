@@ -75,27 +75,44 @@ conn_manager_of_message_cb(struct of_conn* conn, uint8_t type,
 static void
 conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
 {
-    uint8_t data[8192];
+    static uint8_t pos;
+    static uint8_t header[8];
+    uint16_t len;
     struct conn *c = (struct conn*) ctx;
     struct server *s = (struct server *) c->owner;
     struct conn_manager *cm = (struct conn_manager *) s->owner;
     size_t n;
+    
     /* This callback is invoked when there is data to read on bev. */
     for (;;) {
-        n = bufferevent_read(bev, data, sizeof(data));
+        if (!pos){
+            len = HEADER_LEN;
+            memset(header, 0x0, 8);
+            n = bufferevent_read(bev, header, len);
+            struct routing_msg *msg = (struct routing_msg*) header;
+            if (ROUND_UP(ntohs(msg->size), 8) > HEADER_LEN){
+                pos += len;
+            }
+        }
+        else {
+            uint8_t *data;
+            struct routing_msg *msg = (struct routing_msg*) header;
+            len = ROUND_UP(ntohs(msg->size), 8) - HEADER_LEN;
+            data = xmalloc(len);
+            memcpy(data, header, HEADER_LEN);
+            n = bufferevent_read(bev, data + pos, len);
+            uint64_t time = cm->sch->clock;
+            uint32_t router_id = ntohl(msg->router_id);
+            struct sim_event_fti *ev = sim_event_router_in_new(time, router_id, c->id,
+                                                       data, msg->size);
+            scheduler_insert(cm->sch, (struct sim_event*) ev);
+            pos = 0;
+        }
         if (n <= 0) {
             /* Done. */
             break;
         }
     }
-    struct routing_msg *msg = (struct routing_msg*) data; 
-    uint64_t time = cm->sch->clock;
-    uint16_t msg_len = ntohs(msg->size);    
-    uint8_t *ev_data = xmalloc(msg_len);
-    memcpy(ev_data, data, msg_len);
-    uint32_t router_id = ntohl(msg->router_id);
-    struct sim_event_fti *ev = sim_event_router_in_new(time, router_id, c->id,
-                                                       ev_data, msg->size);
-    scheduler_insert(cm->sch, (struct sim_event*) ev);
-    
 }
+
+// 02014a00264100ffff00a00100000308a00202014a00264000ffff00a0010000
