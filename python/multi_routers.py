@@ -16,17 +16,29 @@ def rand_mac():
         randint(0, 255)
 )
 
+# Creates 254 prefixes
+def gen_prefixes(host):
+    prefixes = []
+    for i in range(0, 200):
+        prefixes.append("1%s0.%s.0.0/16" % (host,i))
+    for i in range(0, 200):
+        prefixes.append("1%s0.0.%s.0/24" % (host,i))
+    return prefixes
+
 topo = Topology()
 #Create OpenFlow switch
 routers = []
 hosts = []
 for i in range(0, NUM):
     r = Router("r%s" % (i+1))
-    r.add_port(port = 1,  eth_addr = "00:00:00:00:01:00", ip = "10.0.0.%s" % (i+1),
+    r.add_port(port = 1,  eth_addr = rand_mac(), ip = "10.0.0.%s" % (i+1),
                netmask = "255.255.0.0")
     # Add BGP
     bgp = BGP(config_file = "/home/vagrant/horse/python/topos/config/conf.ini%s" % (i+1))
-    bgp.add_advertised_prefix("1%s0.0.0.0/16" % i)
+    # bgp.add_advertised_prefix("1%s0.0.0.0/16" % i)
+    bgp.add_advertised_prefixes(prefixes = gen_prefixes(i))
+
+    bgp.set_maximum_paths(2)
     r.add_protocol(bgp)
     routers.append(r)
     # Connect to host
@@ -53,7 +65,7 @@ for i in range(0, len(routers), 2):
     hosts[i+1].ping("1%s0.0.0.1" % (i), time)
 
 # # Start the experiment
-sim = Sim(topo, ctrl_interval = 3000000, end_time = 20000000,
+sim = Sim(topo, ctrl_interval = 2000000, end_time = 60000000,
         log_level = LogLevels.LOG_INFO)
 
 sim.start()

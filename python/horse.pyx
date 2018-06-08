@@ -109,7 +109,8 @@ cdef class BGP:
         else:
             print "No config file provided for bgp router"
 
-    def add_advertised_prefix(self, prefix, next_hop = None, as_path = None, communities = None):
+    def add_advertised_prefix(self, prefix, next_hop = None,
+                              as_path = None, communities = None):
         self.prefixes[prefix] = {}
         if communities:
             self.prefix[prefix]["COMM"] = communities
@@ -120,6 +121,11 @@ cdef class BGP:
         else:
             self.prefixes[prefix]["NH"] = self.router_id
     
+    def add_advertised_prefixes(self, prefixes, next_hop = None, as_path = None,
+                                communities = None):
+        for prefix in prefixes:
+            self.add_advertised_prefix(prefix, next_hop, as_path, communities)
+
     def set_maximum_paths(self, value):
         self.max_paths = value
 
