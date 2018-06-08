@@ -1,0 +1,34 @@
+process client{
+        run /usr/bin/python /home/vagrant/horse/python/router_client.py;
+        encoder json;
+}
+
+template {
+    neighbor router {   
+        family {
+                ipv4 unicast;
+        }
+        api speaking {
+            processes [ client ];
+            neighbor-changes;
+            receive {
+                    parsed;
+                    update;
+            }
+            send {
+                    parsed;
+                    update;
+            }
+        }
+        local-as 2;
+        local-address 10.0.0.2;
+        manual-eor true;
+    }
+}
+
+neighbor 10.0.0.1 {
+        inherit router;
+        peer-as 1;
+        router-id 10.0.0.2 ;
+        group-updates false;
+}
