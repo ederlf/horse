@@ -83,10 +83,12 @@ host_recv_netflow(struct node *n, struct netflow *flow)
                         struct out_port *op;
                         struct netflow *f = find_forwarding_ports(&h->ep, nf,
                                                                   false);
-                        LL_FOREACH(flow->out_ports, op) {
-                            struct port *p = node_port(&h->ep.base, op->port);
-                            f->match.ipv4_src = p->ipv4_addr->addr;
-                            memcpy(f->match.eth_src, p->eth_address, ETH_LEN);
+                        if (f != NULL) {
+                            LL_FOREACH(flow->out_ports, op) {
+                                struct port *p = node_port(&h->ep.base, op->port);
+                                f->match.ipv4_src = p->ipv4_addr->addr;
+                                memcpy(f->match.eth_src, p->eth_address, ETH_LEN);
+                            }
                         }
                         return f;
                     }
@@ -156,14 +158,15 @@ host_execute_app(struct host *h, struct exec *exec)
         log_info("Flow Start time APP %ld", flow-> start_time);
         exec->exec_cnt -= 1;
         flow = find_forwarding_ports(&h->ep, flow, false);
-        LL_FOREACH(flow->out_ports, op) {
-            struct port *p = node_port(&h->ep.base, op->port);
-            flow->match.ipv4_src = p->ipv4_addr->addr;
-            memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+        if (flow != NULL) {
+            LL_FOREACH(flow->out_ports, op) {
+                struct port *p = node_port(&h->ep.base, op->port);
+                flow->match.ipv4_src = p->ipv4_addr->addr;
+                memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+            }
         }
-        return flow;
     }
-    return NULL;
+    return flow;
 }
 
 void host_set_default_gw(struct host *h, uint32_t ip, uint32_t port)
