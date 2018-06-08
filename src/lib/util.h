@@ -33,6 +33,8 @@ int ip_str_addr_compare(char *ip1, char *ip2, uint8_t addr_family);
 void get_ip_str(const struct in_addr ip, char *str, uint8_t addr_family);
 void get_ip_net(char *ip, uint32_t *net_ip, uint8_t addr_family);
 
+#define ROUND_UP(X, Y) (((X) + ((Y) - 1)) / (Y) * (Y))
+
 static inline uint64_t
 hton64(uint64_t n) {
 #if __BYTE_ORDER == __BIG_ENDIAN
