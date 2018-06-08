@@ -68,7 +68,6 @@ def _send(q, peer, stdin):
     while True:
         try:
             line = stdin.readline().strip()
-            # syslog.syslog(line)
             # When the parent dies we are seeing continual newlines, so we only access so many before stopping
             if line == "":
                 counter += 1
@@ -76,12 +75,7 @@ def _send(q, peer, stdin):
                     break
                 continue
             counter = 0
-            # Parse message, and if it's the correct type, store in the database
-            # import syslog
-            # syslog.syslog("GOT %s" % line)
             q.put(line)
-            # message = peer.process_bgp_message(line)
-
         except KeyboardInterrupt:
             pass
         except IOError:
@@ -92,17 +86,17 @@ def _send(q, peer, stdin):
 def _process_sim(sim_queue, peer, stdout):
     while True:
         msg_type, buf = sim_queue.get()
-        # cmds = peer.process_message(msg_type, buf)   
-        # if cmds:
-        #     for cmd in cmds:
-        #         stdout.write(cmd + '\n')
-        #         stdout.flush()  
+        cmds = peer.process_message(msg_type, buf)   
+        if cmds:
+            for cmd in cmds:
+                stdout.write(cmd + '\n')
+                stdout.flush()  
 
 def _process_exa(exabgp_queue, peer):
     while True:
         line = exabgp_queue.get()
-        syslog.syslog("WILL PROCESS %s" % line)
-        peer.process_bgp_message(line)
+        if line != "done":
+            peer.process_bgp_message(line)
 
 ''' main '''
 if __name__ == '__main__':
@@ -125,7 +119,7 @@ if __name__ == '__main__':
         process_exa.daemon = True
         process_sim.daemon = True
         sender.start()
-        # receiver.start()
+        receiver.start()
         process_exa.start()
         process_sim.start()
         sender.join()

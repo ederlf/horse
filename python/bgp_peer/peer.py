@@ -51,19 +51,33 @@ class BGPPeer(object):
 
         route_list = []
         # Extract out neighbor information in the given BGP update
-    
-        neighbor = route["neighbor"]["ip"]
-        asn = int(route["neighbor"]["asn"]["peer"])
-        if ('state' in route['neighbor'] and route['neighbor']['state']=='down'):
-            #TODO WHY NOT COMPLETELY DELETE LOCAL?
-            routes = self.rib['input'].get_all()
+        # { "exabgp": "4.0.1", "time": 1528450259.79, "host" : "horse", 
+        # "pid" : 9879, "ppid" : 1, "counter": 3, "type": "update",
+        # "neighbor": 
+        # { "address": 
+        # { "local": "10.0.0.1", "peer": "10.0.0.2" }, 
+        # "asn": { "local": 1, "peer": 2 } , 
+        # "direction": "receive", 
+        # "message": 
+        # { "update": 
+        # { "attribute": 
+        # { "origin": "igp", "as-path": [ 2 ], "confederation-path": [] }, 
+        # "announce": 
+        # { "ipv4 unicast": 
+        # { "10.0.0.2": [ { "nlri": "130.0.0.0/16" } ] } } } } } }
 
-            for route_item in routes:
-                self.rib['local'].delete(prefix=route_item.prefix)
+        # if ('state' in route['neighbor'] and route['neighbor']['state']=='down'):
+        #     #TODO WHY NOT COMPLETELY DELETE LOCAL?
+        #     routes = self.rib['input'].get_all()
 
-            self.rib["input"].delete_all()
+        #     for route_item in routes:
+        #         self.rib['local'].delete(prefix=route_item.prefix)
+
+        #     self.rib["input"].delete_all()
 
         if ('update' in route['neighbor']['message']):
+            neighbor = route["neighbor"]["address"]["peer"]
+            asn = int(route["neighbor"]["asn"]["peer"])
             if ('attribute' in route['neighbor']['message']['update']):
                 attribute = route['neighbor']['message']['update']['attribute']
 
@@ -80,16 +94,15 @@ class BGPPeer(object):
 
                 atomic_aggregate = attribute['atomic-aggregate'] if 'atomic-aggregate' in attribute else ''
 
-
             if ('announce' in route['neighbor']['message']['update']):
                 announce = route['neighbor']['message']['update']['announce']
                 if ('ipv4 unicast' in announce):
                     for next_hop in announce['ipv4 unicast'].keys():
-                        for prefix in announce['ipv4 unicast'][next_hop].keys():
-                            attributes = RibTuple(prefix, neighbor, asn, next_hop, origin, as_path,
+                        for prefix in announce['ipv4 unicast'][next_hop]:
+                            attributes = RibTuple(prefix['nlri'], neighbor, asn, next_hop, origin, as_path,
                                          communities, med, atomic_aggregate)
                             self.add_route("input", attributes)
-                            announce_route = self.get_route_with_neighbor("input", prefix, neighbor)
+                            announce_route = self.get_route_with_neighbor("input", prefix['nlri'], neighbor)
                             # if announce_route is None:
                             #     self.logger.debug('-------------- announce_route is None')
                             #     self.rib['input'].dump(logger)
@@ -288,8 +301,7 @@ class BGPPeer(object):
         if len(best_routes):
             msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
                                    routes = best_routes)
-            # import syslog
-            # syslog.syslog("Decided %s" % str(best_routes))
+            syslog.syslog("Decided %s" % str(best_routes))
             self.conn.send(msg.pack())
 
         if TIMING:
@@ -310,7 +322,6 @@ class BGPPeer(object):
     def process_bgp_message(self, line):
         temp_message = json.loads(line)
         # # Convert Unix timestamp to python datetime
-        
         bgp_msg_type = temp_message['type']
 
         if bgp_msg_type == 'state':
@@ -349,12 +360,12 @@ class BGPPeer(object):
         elif bgp_msg_type == 'update':
             msg = rmsg.BGPActivity(local_id = rmsg.ip2int(self.router_id))
             self.conn.send(msg.pack())
-            syslog.syslog("RECEIVED %s" % str(temp_message))
-            # self.process_bgp_route(temp_message)
+            self.process_bgp_route(temp_message)
         # No reply to be sent
 
     def process_message(self, msg_type, data):
         if msg_type == rmsg.MsgType.BGP_ANNOUNCE:
+            syslog.syslog("Received announce")
             msg = rmsg.BGPAnnounce(msg=data)
             prefixes = self.conf["prefixes"]
             announcements = []
@@ -439,7 +450,7 @@ def bgp_routes_are_equal(route1, route2):
 def announce_route(neighbor, prefix, next_hop, as_path):
 
     msg = "neighbor " + neighbor + " announce route " + prefix + " next-hop " + str(next_hop)
-    msg += " as-path [ ( " + ' '.join(str(ap) for ap in as_path) + " ) ]"
+    msg += " as-path [  " + ' '.join(str(ap) for ap in as_path) + "  ]"
 
     return msg
 
