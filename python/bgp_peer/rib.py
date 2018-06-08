@@ -6,7 +6,7 @@ from collections import namedtuple
 
 # have all the rib implementations return a consistent interface
 # TODO: Add local pref
-labels = ('prefix', 'neighbor', 'next_hop', 'origin', 'as_path', 'communities', 'med', 'atomic_aggregate')
+labels = ('prefix',  'neighbor', 'neighbor_as', 'next_hop', 'origin', 'as_path', 'communities', 'med', 'atomic_aggregate')
 RibTuple = namedtuple('RibTuple', labels)
 
 class rib(object):
@@ -22,9 +22,19 @@ class rib(rib):
     def __init__(self):
         super(rib, self).__init__()
 
-    def update(self, item):
+    def update(self, item, new = True, best = True):
         assert(isinstance(item, RibTuple))
-        self.table[item.prefix] = item 
+        if new:
+            self.table[item.prefix] = []
+        if best:
+            self.table[item.prefix].insert(0, item) 
+        else:
+            self.table[item.prefix].append(item)
+
+    def drop(self, prefix):
+        if prefix in self.table:
+            if (len(self.table[prefix])):
+                self.table[prefix].pop()
 
     def get(self, prefix):
         if prefix in self.table:
@@ -72,7 +82,7 @@ if __name__ == '__main__':
     #TODO Update test
 
     local_rib = rib()
-    route =  RibTuple('10.0.0.1', '172.0.0.2','172.0.0.2', '10', 'igp', '100, 200, 300', '0', 0,'false')
+    route =  RibTuple('10.0.0.1', '172.0.0.2', 100, '172.0.0.2', '10', 'igp', '100, 200, 300', '0', 0,'false')
     local_rib.update(route)
     print local_rib.get('10.0.0.1')
     local_rib.delete('10.0.0.1')
