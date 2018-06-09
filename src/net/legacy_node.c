@@ -25,15 +25,21 @@ void legacy_node_clean(struct legacy_node *ln)
 void legacy_node_set_intf_ipv4(struct legacy_node *ln, uint32_t port_id,
                                uint32_t addr, uint32_t netmask) {
     struct port *p = node_port(&ln->base, port_id);
-    port_add_v4addr(p, addr, netmask);
-    /* Add entry to route table */
-    struct route_entry_v4 e; 
-    memset(&e, 0x0, sizeof(struct route_entry_v4));
-    e.ip = addr & netmask;
-    e.netmask = netmask;
-    e.iface = port_id;
-    e.gateway = 0;
-    add_ipv4_entry(&ln->rt, &e);
+    if (p != NULL) {
+        port_add_v4addr(p, addr, netmask);
+        /* Add entry to route table */
+        struct route_entry_v4 e; 
+        memset(&e, 0x0, sizeof(struct route_entry_v4));
+        e.ip = addr & netmask;
+        e.netmask = netmask;
+        e.iface = port_id;
+        e.gateway = 0;
+        add_ipv4_entry(&ln->rt, &e);
+    }
+    else {
+        fprintf(stderr, "Trying to configure non existent port %u\n", port_id);
+        exit(EXIT_FAILURE);
+    }
 }
 
 /* Returns the gateway of destination IP */
@@ -54,6 +60,7 @@ ip_lookup(struct legacy_node *ln, struct netflow *flow, bool ecmp){
         log_debug("Found route %x\n", re->gateway);
         return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
     } 
+    log_debug("Route not found\n");
     /* Could not find a route */
     return 0;   
 }
@@ -75,12 +82,16 @@ resolve_mac(struct legacy_node *ln, struct netflow *flow, uint32_t ip){
         struct out_port *op;
         LL_FOREACH(flow->out_ports, op) {
             struct port *p = node_port(&ln->base, op->port);
-            /* Need to set missing ip address info */
-            // flow->match.ipv4_src = p->ipv4_addr->addr;
-            memcpy(arp_req->match.eth_src, p->eth_address, ETH_LEN);
-            memcpy(arp_req->match.arp_sha, p->eth_address, ETH_LEN);
-            arp_req->match.arp_spa = p->ipv4_addr->addr;
-            netflow_add_out_port(arp_req, op->port);
+            if (p != NULL){
+            /* Fills address info */
+                memcpy(arp_req->match.eth_src, p->eth_address, ETH_LEN);
+                memcpy(arp_req->match.arp_sha, p->eth_address, ETH_LEN);
+                arp_req->match.arp_spa = p->ipv4_addr->addr;
+                netflow_add_out_port(arp_req, op->port);
+            }
+            else {
+                return NULL;
+            }
         }
         /* Set Destination address */
         memcpy(arp_req->match.eth_dst, bcast_eth_addr, ETH_LEN); 
@@ -196,12 +207,13 @@ is_l3_destination(struct legacy_node *ln, struct netflow *flow)
 {
     struct port *p = node_port(&ln->base, flow->match.in_port);
     /* IPv4 Assigned and flow is IPv4 */
-    if (p->ipv4_addr && flow->match.ipv4_dst){
-
-        return p->ipv4_addr->addr == flow->match.ipv4_dst;
-    }
-    else if (p->ipv6_addr){
-        return (memcmp(p->ipv6_addr, flow->match.ipv6_dst, IPV6_LEN) == 0);
+    if (p != NULL) {
+        if ( p->ipv4_addr && flow->match.ipv4_dst){
+            return p->ipv4_addr->addr == flow->match.ipv4_dst;
+        }
+        else if (p->ipv6_addr){
+            return (memcmp(p->ipv6_addr, flow->match.ipv6_dst, IPV6_LEN) == 0);
+        }
     }
     return false;
 }
