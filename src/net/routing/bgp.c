@@ -5,11 +5,11 @@
 #include <netemu/netns.h>
 #include <time.h>
 #include <unistd.h>
+#include <uthash/utarray.h>
 
 static void bgp_init(struct bgp *p, char *config_file);
 static void bgp_start(struct routing *rt, char *rname);
 static void bgp_clean(struct routing *rt, char *rname);
-static void set_router_id(struct bgp* p);
 
 struct adv {
     uint32_t ip;
@@ -31,6 +31,7 @@ struct bgp {
     uint16_t neighbor_num;
     struct neighbor *neighbors;
     struct adv *prefixes;
+    UT_array *local_ips;
 };
 
 struct bgp*
@@ -49,31 +50,43 @@ bgp_init(struct bgp *p, char *config_file)
     p->base.clean = bgp_clean;
     if (strlen(config_file) < MAX_FILE_NAME_SIZE) {
         memcpy(p->config_file, config_file, MAX_FILE_NAME_SIZE);
-        set_router_id(p);
     }
     p->neighbors = NULL;
     p->prefixes = NULL;
+    utarray_new(p->local_ips, &ut_str_icd);
 }   
 
 static void 
 bgp_start(struct routing *rt, char * rname)
 {
     char intf[42], intf2[42];
-    UNUSED(rt);
-    char str_ip[INET_ADDRSTRLEN];
-    struct in_addr net_ip = {htonl(rt->router_id)};
     struct bgp *p = (struct bgp*) rt;
-    sprintf(intf2, "%s-bgp", rname);
-    sprintf(intf,"%s-ext", intf2);
-    get_ip_str(net_ip, str_ip, AF_INET);
-    setup_veth(rname, intf, intf2, str_ip, "16", "br0");
+    char **addr = NULL;
+    int i = 1;
+    FILE *stream;
+    char *buf;
+    size_t len;
+    stream = open_memstream(&buf, &len);
+    fprintf(stream, "\"");
+    char ip[INET_ADDRSTRLEN];
+    while ( (addr=(char**)utarray_next(p->local_ips, addr))) {
+        memset(ip, 0x0, INET_ADDRSTRLEN);
+        char *p = strchr(*addr,'/');
+        strncpy(ip, *addr, p - (*addr));
+        sprintf(intf2, "%s-bgp%d", rname, i);
+        sprintf(intf,"%s-bgp-ext%d", rname, i);
+        setup_veth(rname, intf, intf2, ip, p+1, "br0");
+        ++i;
+        fprintf(stream, "%s ", ip);
+    }
+    fprintf(stream, "\"");
+    fclose(stream);
     /* Start exabgp */
-    printf("Launching BGP %s\n", str_ip);
-    // sleep(10);
     netns_launch(rname, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
           "exabgp.log.destination=syslog exabgp %s",
-          str_ip, p->config_file); 
+          buf, p->config_file);
+    free(buf);
 }
 
 void 
@@ -114,52 +127,38 @@ bgp_clean(struct routing *rt, char *rname)
     struct neighbor *cur_n, *ntmp;
     struct adv *cur_prefix, *ptmp;
     char intf[42];
-    sprintf(intf,"%s-bgp-ext", rname);
+    size_t len = utarray_len(p->local_ips);
+    size_t i;
+    for (i = 0; i < len; ++i){
+        sprintf(intf,"%s-bgp-ext%lu", rname, i+1);
+        delete_intf(intf);
+    }
     netns_launch(NULL, "pkill exabgp");
     HASH_ITER(hh, p->neighbors, cur_n, ntmp) {
-        HASH_DEL(p->neighbors, cur_n);  
+        HASH_DEL(p->neighbors, cur_n);
         free(cur_n);
     }
     HASH_ITER(hh, p->prefixes, cur_prefix, ptmp) {
-        HASH_DEL(p->prefixes, cur_prefix);  
+        HASH_DEL(p->prefixes, cur_prefix);
         free(cur_prefix);
-    }
-    delete_intf(intf);
+    };
+    utarray_free(p->local_ips);
 }
 
-/* It consider the exabgp configuration file format only */
-static void
-set_router_id(struct bgp* p)
+void 
+bgp_set_router_id(struct bgp* p, uint32_t router_id)
 {
-    FILE *cfile;
-    char *tmp, *ip;
-    char line[100];
-    cfile = fopen(p->config_file, "r");
-    ip = NULL;
-    while( fgets(line, sizeof(line), cfile) != NULL )  {
-        tmp =  strstr (line,"router-id");
-        if (tmp != NULL ){
-            ip = xmalloc(20);
-            tmp += sizeof("router_id");
-            int i = 0;
-            while(*tmp != ' ' && *tmp != ';'){
-                ip[i] = *tmp;
-                i++;
-                tmp++;
-            }
-            ip[i] = '\0';
-        }   
-    }
-    fclose(cfile);
-    if (ip != NULL) {
-        get_ip_net(ip, &p->base.router_id, AF_INET);
-        p->base.router_id = ntohl(p->base.router_id);
-        free(ip);
-    }
+    p->base.router_id = router_id;
 }
 
-uint32_t 
+uint32_t
 bgp_router_id(struct bgp* p)
 {
     return p->base.router_id;
+}
+
+void
+bgp_add_local_ip(struct bgp *p, char *ip)
+{
+    utarray_push_back(p->local_ips, &ip);
 }
