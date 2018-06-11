@@ -57,7 +57,7 @@ ip_lookup(struct legacy_node *ln, struct netflow *flow, bool ecmp){
     if (re){
         netflow_add_out_port(flow, re->iface);
         /* IP of the next hop to search in the ARP table */
-        log_debug("Found route %x\n", re->gateway);
+        log_debug("Router %s Found route %x\n", ln->base.name, re->gateway);
         return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
     } 
     log_debug("Route not found\n");
