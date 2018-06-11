@@ -162,9 +162,7 @@ static void update_stats(struct topology *topo, uint64_t time){
     struct node *cur_node, *tmp, *nodes;
     nodes = topology_nodes(topo);
     HASH_ITER(hh, nodes, cur_node, tmp) {
-        if (cur_node->type == DATAPATH){
-            dp_write_stats((struct datapath*) cur_node, time, pFile);
-        }
+        node_write_stats(cur_node, time, pFile);
     }
 }
 
