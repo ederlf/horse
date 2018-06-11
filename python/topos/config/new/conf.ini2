@@ -1,5 +1,5 @@
 process client{
-        run /usr/bin/python /home/vagrant/horse/python/router_client.py;
+        run /usr/bin/python /home/vagrant/horse/python/router_client.py r2;
         encoder json;
 }
 
