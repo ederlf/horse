@@ -124,3 +124,21 @@ int node_calculate_port_loss(struct node *n, struct netflow *nf,
     return 0;
     UNUSED(nf);
 }
+
+void node_write_stats(const struct node *n, uint64_t time, FILE *fp)
+{
+    struct port *p, *tmp;
+    uint64_t total_tx = 0; 
+    uint64_t total_rx = 0;
+    uint64_t t = time / 1000000;
+    HASH_ITER(hh, n->ports, p, tmp) {
+        uint64_t tx_rate, rx_rate;
+        tx_rate = p->stats.tx_bytes - p->prev_stats.tx_bytes;
+        rx_rate = p->stats.rx_bytes - p->prev_stats.rx_bytes;
+        total_tx += tx_rate;
+        total_rx += rx_rate;
+        fprintf (fp, "%"PRIu64",%s,%"PRIu64",%"PRIu64"\n", t, p->name, tx_rate, rx_rate);
+        p->prev_stats.tx_bytes = p->stats.tx_bytes;
+        p->prev_stats.rx_bytes = p->stats.rx_bytes;
+    }
+}
