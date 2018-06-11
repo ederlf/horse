@@ -76,4 +76,11 @@ crc32(const void *data, size_t n_bytes, uint32_t *crc) {
     }
 }
 
+static inline
+uint8_t count_set_bits(uint32_t n) {
+    unsigned int c; // c accumulates the total bits set in n
+    for (c=0;n>0;n=n&(n-1)) c++;
+    return c;
+}
+
 #endif
