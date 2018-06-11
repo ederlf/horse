@@ -43,19 +43,12 @@ def _recv(conn, q, peer):
                 msg = conn.recv(readlen)
                 pos = size
                 q.put( (msg_type, buf + msg) )
-                # cmds = peer.process_message(msg_type, buf + msg)
-                # if cmds:
-                #     for cmd in cmds:
-                #         stdout.write(cmd + '\n')
-                #         stdout.flush()  
-                        # time.sleep(1)
             except socket.error, e:
                 err = e.args[0]
                 if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
                     syslog.syslog('No data available')
                     continue
         if pos == size:
-            readlen = 0
             pos = 0
             size = 0
             buf = None
@@ -68,6 +61,7 @@ def _send(q, peer, stdin):
     while True:
         try:
             line = stdin.readline().strip()
+            # syslog.syslog("GOT %s" % line)
             # When the parent dies we are seeing continual newlines, so we only access so many before stopping
             if line == "":
                 counter += 1
@@ -83,39 +77,41 @@ def _send(q, peer, stdin):
             pass
 
 
-def _process_sim(sim_queue, peer, stdout):
+def _process_sim(sim_queue, peer):
     while True:
         msg_type, buf = sim_queue.get()
-        cmds = peer.process_message(msg_type, buf)   
-        if cmds:
-            for cmd in cmds:
-                stdout.write(cmd + '\n')
-                stdout.flush()  
+        peer.process_message(msg_type, buf)   
+        # if cmds:
+        #     for cmd in cmds:
+        #         stdout.write(cmd + '\n')
+        #         stdout.flush()  
 
 def _process_exa(exabgp_queue, peer):
     while True:
         line = exabgp_queue.get()
-        if line != "done":
+        if line != "done" and line != "error":
+            # syslog.syslog(line)
             peer.process_bgp_message(line)
 
 ''' main '''
+
+show_config = "show neighbor configuration"
+
 if __name__ == '__main__':
 
     address = ('172.20.254.254', 6000)
+    rname = sys.argv[1]
     try:
         exabgp_queue = Queue.Queue()
         sim_queue = Queue.Queue()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # s.setblocking(0)
-        s.connect(address)
-        peer = BGPPeer(conn=s)
-        
+        conn.connect(address)
+        peer = BGPPeer(rname, conn, sys.stdout)
         sender = Thread(target=_send, args=(exabgp_queue, peer, sys.stdin))
         process_exa = Thread(target =_process_exa, args=(exabgp_queue, peer))
-        
-        receiver = Thread(target=_recv, args=(s, sim_queue, peer))
-        process_sim = Thread(target =_process_sim, args=(sim_queue, peer, sys.stdout))
-        
+        receiver = Thread(target=_recv, args=(conn, sim_queue, peer))
+        process_sim = Thread(target =_process_sim, args=(sim_queue, peer))
         process_exa.daemon = True
         process_sim.daemon = True
         sender.start()
@@ -123,7 +119,7 @@ if __name__ == '__main__':
         process_exa.start()
         process_sim.start()
         sender.join()
-        s.close()
+        conn.close()
     except OSError as msg:
         print msg
 
