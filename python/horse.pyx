@@ -5,7 +5,8 @@ import random
 import os.path
 import json
 import re
-from msg import ip2int, int2ip
+from msg import ip2int, int2ip, netmask2cidr
+from collections import namedtuple
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -75,6 +76,7 @@ cdef class SDNSwitch:
 cdef class BGP:
     cdef bgp *_bgp_ptr
     cdef neighbors
+    cdef local_ips
     cdef prefixes
     cdef asn
     cdef router_id
@@ -86,6 +88,8 @@ cdef class BGP:
         self.prefixes = {}
         self.max_paths = 0
         self.relax = False
+        self.router_id = 0
+        self.local_ips = []
 
         if config_file and os.path.isfile(config_file):
             self._bgp_ptr = bgp_new(config_file)
@@ -96,10 +100,19 @@ cdef class BGP:
                 asn =  re.findall( r'local-as [0-9]*', conf)
                 ip = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
                 asys = re.findall( r'peer-as [0-9]*', conf)
-                if router_id:
+                local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
+                self.local_ips = [x[14:] for x in local_ips]
+                if router_id and self.router_id == 0:
                     self.router_id = router_id[0][10:]
+                    bgp_set_router_id(self._bgp_ptr, ip2int(self.router_id))
+                else:
+                    for ip in self.local_ips:
+                        int_ip = ip2int(ip)
+                        if int_ip > self.router_id:
+                            self.router_id = ip
+                    bgp_set_router_id(self._bgp_ptr, ip2int(self.router_id))
                 if asn:
-                    self.asn = asn[0][9]
+                    self.asn = asn[0][9:]
                 for neighbor, asn in zip(ip, asys):
                     n = neighbor[9:]
                     asn = int(asn[8:])
@@ -109,17 +122,19 @@ cdef class BGP:
         else:
             print "No config file provided for bgp router"
 
-    def add_advertised_prefix(self, prefix, next_hop = None,
+    def set_router_id(self, router_id):
+        if isinstance(router_id, basestring):
+            bgp_set_router_id(self._bgp_ptr, ip2int(router_id))
+        else:
+            bgp_set_router_id(self._bgp_ptr, router_id)
+
+    def add_advertised_prefix(self, prefix, 
                               as_path = None, communities = None):
         self.prefixes[prefix] = {}
         if communities:
             self.prefix[prefix]["COMM"] = communities
         if as_path:
             self.prefixes[prefix]["AS-PATH"] = as_path
-        if next_hop:
-            self.prefixes[prefix]["NH"] = next_hop
-        else:
-            self.prefixes[prefix]["NH"] = self.router_id
     
     def add_advertised_prefixes(self, prefixes, next_hop = None, as_path = None,
                                 communities = None):
@@ -132,7 +147,7 @@ cdef class BGP:
     def set_relaxed_maximum_paths(self, value = True):
         self.relax = value 
 
-    def write_config_file(self):
+    def write_config_file(self, rname):
         conf = {}
         conf["prefixes"] = self.prefixes
         conf["neighbors"] = self.neighbors
@@ -140,7 +155,7 @@ cdef class BGP:
         conf["router_id"] = self.router_id
         conf["max_paths"] = self.max_paths
         conf["relax"] = self.relax
-        with file("/tmp/conf-%s" % self.router_id, "w") as f:
+        with file("/tmp/conf-bgp.%s" % rname, "w") as f:
             json.dump(conf, f)
 
     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
@@ -151,19 +166,26 @@ cdef class BGP:
         int_ip = ip2int(neighbor_ip) 
         bgp_add_neighbor(self._bgp_ptr, int_ip, neighbor_as)
 
+
+params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
+Port = namedtuple('Port', params)
 cdef class Router:
     cdef router* _router_ptr 
+    cdef ports
 
     def __cinit__(self, name):
         self._router_ptr = router_new()
         # It needs to be improved when number of apps grow
         self.name = name
+        self.ports = {}
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):
         # TODO: Add mac conversion to utils...
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
+        # Add internal for check of configuration
+        self.ports[ip] = Port(port, eth_addr, ip, netmask, max_speed, cur_speed)
         router_add_port(self._router_ptr, port, c_eth_addr, max_speed, cur_speed)
         if ip != None and netmask != None:
             int_ip = ip2int(ip)
@@ -173,9 +195,16 @@ cdef class Router:
     def add_protocol(self, Proto):
         if isinstance(Proto, BGP):
             proto = <BGP> Proto
-            proto.write_config_file()
+            proto.write_config_file(self.name)
             if proto.max_paths:
                 router_set_ecmp(self._router_ptr, True)
+            for ip in proto.local_ips:
+                if ip in self.ports:
+                    port = self.ports[ip]
+                    ip_conf = '/'.join([ip, str(netmask2cidr(port.netmask))])
+                    bgp_add_local_ip(proto._bgp_ptr, ip_conf)
+                else:
+                    print "BGP local port does not exist"
             router_add_bgp(self._router_ptr, proto._bgp_ptr)
 
     property name:
