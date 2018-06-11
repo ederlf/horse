@@ -196,7 +196,6 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
     uint8_t* ret = NULL;
     msg_ret = NULL;
     routing_msg_unpack(data, &msg);
-    /* TODO: this is ugly right now, refactor later */
     switch(msg->type) {
         case BGP_STATE:{
             struct routing *p;
