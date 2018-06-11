@@ -41,8 +41,11 @@ class rib(rib):
             return self.table[prefix]
         return None
 
+    def get_all_routes(self):
+        return self.table
+
     def get_prefixes(self):
-        return sorted(self.table.key())
+        return sorted(self.table.keys())
 
     def delete(self, prefix):
         if prefix in self.table:
