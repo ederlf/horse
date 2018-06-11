@@ -194,9 +194,17 @@ static int count_args(const char *cmd)
 {
 	const char *ptr;
 	int argc = 1;
-
+    int open = 0;
 	for (ptr = cmd; *ptr; ++ptr) {
-		if (isspace(*ptr)) {
+		if (*ptr == '"' && !open){
+            open = 1;
+            ++ptr;
+        }
+        else if (*ptr == '"' && open){
+            open = 0;
+            ++ptr;
+        }
+        if (isspace(*ptr) && !open) {
 			++argc;
 			while (isspace(ptr[1]))
 				++ptr;
@@ -211,9 +219,17 @@ static void split_args(char **argv, char *cmd)
 	char *ptr;
 
 	argv[0] = cmd;
-
+    int open = 0;
 	for (ptr = cmd; *ptr; ++ptr) {
-		if (isspace(*ptr)) {
+        if (*ptr == '"' && !open){
+            open = 1;
+            memmove(&ptr[0], &ptr[1], strlen(ptr));
+        }
+        else if (*ptr == '"' && open){
+            open = 0;
+            memmove(&ptr[0], &ptr[1], strlen(ptr));
+        }
+        if (isspace(*ptr) && !open) {
 			*ptr = 0;
 
 			while (isspace(ptr[1]))
@@ -254,7 +270,7 @@ pid_t netns_launch(const char *name, const char *fmt, ...)
 
 	va_start(ap, fmt);
 	if (vasprintf(&temp, fmt, ap) == -1)
-		exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
 	va_end(ap);
 
 	argc = count_args(temp);
