@@ -84,6 +84,7 @@ bgp_start(struct routing *rt, char * rname)
     /* Start exabgp */
     netns_launch(rname, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
+          "exabgp.log.level=NOTICE "
           "exabgp.log.destination=syslog exabgp %s",
           buf, p->config_file);
     free(buf);
