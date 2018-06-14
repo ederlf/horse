@@ -60,7 +60,7 @@ ip_lookup(struct legacy_node *ln, struct netflow *flow, bool ecmp){
         log_debug("Router %s Found route %x\n", ln->base.name, re->gateway);
         return re->gateway == 0? flow->match.ipv4_dst: re->gateway; 
     } 
-    log_debug("Route not found\n");
+    log_info("Route not found at %s\n",  ln->base.name);
     /* Could not find a route */
     return 0;   
 }
@@ -90,6 +90,7 @@ resolve_mac(struct legacy_node *ln, struct netflow *flow, uint32_t ip){
                 netflow_add_out_port(arp_req, op->port);
             }
             else {
+                log_debug("Port not found %d", op->port);
                 return NULL;
             }
         }
@@ -184,8 +185,7 @@ l2_recv_netflow(struct legacy_node *ln, struct netflow *flow)
                                         flow->match.in_port);
             arp_table_add_entry(&ln->at, e);
             /* Cleans ARP flow */
-            netflow_destroy(flow);
-            flow = NULL;
+            memset(flow, 0x0, sizeof(struct netflow));
             /* Check the stack for a flow waiting for the ARP reply */
             if (!node_is_buffer_empty((struct node*) ln)){
                 flow = node_flow_pop((struct node*) ln);
