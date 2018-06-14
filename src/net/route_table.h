@@ -42,5 +42,5 @@ struct route_entry_v4 *ipv4_search_exact(const struct route_table *rt,
 void add_ipv6_entry(struct route_table *rt, struct route_entry_v6 *e);
 struct route_entry_v6 *ipv6_lookup(const struct route_table *rt,
                                    uint8_t ip[IPV6_LEN]);
-
+void route_table_print(struct route_table *rt, char *res);
 #endif

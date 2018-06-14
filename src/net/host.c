@@ -152,10 +152,15 @@ host_execute_app(struct host *h, struct exec *exec)
     struct netflow *flow = NULL;
     /* If app still has remaining executions */
     if (app) {
+        char dst[INET_ADDRSTRLEN];
+        struct in_addr ipv4_dst;
         struct out_port *op;
         flow = app->start(exec->start_time, exec->args);
         flow->exec_id = exec->id;
-        log_info("Flow Start time APP %ld", flow-> start_time);
+        ipv4_dst.s_addr = ntohl(flow->match.ipv4_dst);
+        get_ip_str(ipv4_dst, dst, AF_INET);
+        log_info("Flow Start from %s to %s time APP %ld",h->ep.base.name, dst,
+                 flow-> start_time);
         exec->exec_cnt -= 1;
         flow = find_forwarding_ports(&h->ep, flow, false);
         if (flow != NULL) {
