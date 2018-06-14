@@ -25,7 +25,7 @@ TIMING = True
 
 class BGPPeer(object):
 
-    def __init__(self, rname, conn, stdout):
+    def __init__(self, rname, conn, stdout, mutex):
         self.rname = rname
         self.rib = {"input": adj_rib_in(),
                     "local": rib(),
@@ -33,10 +33,11 @@ class BGPPeer(object):
         self.neighbors_up = {} # neighbor ip is the key/ ASN is the value
         self.conn = conn # Speak to the simulator
         self.stdout = stdout
+        self.mutex = mutex
         with file("/tmp/conf-bgp.%s" % rname) as f:
             self.conf = json.load(f)
             self.router_id = self.conf['router_id']
-            self.asn = self.conf['asn']
+            self.asn = int(self.conf['asn'])
 
     def __str__(self):
         peer = "router-id:%s, asn:%s" % (self.router_id, self.asn)
@@ -87,9 +88,8 @@ class BGPPeer(object):
                 origin = attribute['origin'] if 'origin' in attribute else ''
 
                 as_path = attribute['as-path'] if 'as-path' in attribute else []
-                
                 # Loop detected
-                if str(self.asn) in as_path:
+                if not self.conf['allowas_in'] and self.asn in as_path:
                     return []
 
                 med = attribute['med'] if 'med' in attribute else ''
@@ -263,6 +263,7 @@ class BGPPeer(object):
                                 if neighbor != neighbor_sender:
                                     # Get the interface the neighbor is connected
                                     next_hop = self.neighbors_up[neighbor][1]
+
                                     self.announce_route(neighbor, prefix,
                                                     next_hop, 
                                                     [self.asn] + best_route.as_path)
@@ -314,10 +315,15 @@ class BGPPeer(object):
             if best_route:
                 best_routes += best_route
         if len(best_routes):
+            # syslog.syslog("%s SENDING BEST ROUTES=============" % self.rname)
             msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
                                    routes = best_routes)
-
+            # syslog.syslog("%s" % str(best_routes))
             self.conn.send(msg.pack())
+            # with file("/tmp/rib%s" % self.rname, "a") as f:
+            #     for route in best_routes:
+            #         f.write("%s %s %s\n" % (route.prefix, route.next_hop, str(route.as_path)))
+            #     f.write("\n") 
 
         if TIMING:
             elapsed = time.time() - tstart
@@ -327,7 +333,7 @@ class BGPPeer(object):
 
         if TIMING:
             elapsed = time.time() - tstart
-            print elapsed
+            # print elapsed
             tstart = time.time()
 
         return announcements
@@ -378,6 +384,7 @@ class BGPPeer(object):
                 route = routes[prefix][0]
                 next_hop = self.neighbors_up[neighbor][1]
                 if neighbor != route.neighbor:
+                    pass
                     self.announce_route(neighbor, prefix, next_hop ,
                                     [self.asn] + route.as_path)
             for prefix in prefixes:
@@ -392,11 +399,15 @@ class BGPPeer(object):
         # return None
 
     def announce_route(self, neighbor, prefix, next_hop, as_path):
-
         msg = "neighbor " + neighbor + " announce route " + prefix + " next-hop " + str(next_hop)
         msg += " as-path [  " + ' '.join(str(ap) for ap in as_path) + "  ]"
-        self.stdout.write(msg + '\n')
-        self.stdout.flush()
+        self.mutex.acquire()
+        try:
+            self.stdout.write(msg + '\n')
+            self.stdout.flush()
+            # time.sleep(0.0001)
+        finally:
+            self.mutex.release()
 
     def add_route(self, rib_name, attributes):
         self.rib[rib_name].update(attributes)

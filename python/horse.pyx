@@ -82,6 +82,7 @@ cdef class BGP:
     cdef router_id
     cdef max_paths # Maximum number of allowed paths. All attributes should be equal.
     cdef relax   # Allows load balancing among different ASes. Only AS path needs to match.
+    cdef allowas_in
 
     def __cinit__(self, config_file=None):
         self.neighbors = {}
@@ -89,6 +90,7 @@ cdef class BGP:
         self.max_paths = 0
         self.relax = False
         self.router_id = 0
+        self.allowas_in = False
         self.local_ips = []
 
         if config_file and os.path.isfile(config_file):
@@ -128,6 +130,9 @@ cdef class BGP:
         else:
             bgp_set_router_id(self._bgp_ptr, router_id)
 
+    def set_allowas_in(self, value):
+        self.allowas_in = value
+
     def add_advertised_prefix(self, prefix, 
                               as_path = None, communities = None):
         self.prefixes[prefix] = {}
@@ -136,10 +141,10 @@ cdef class BGP:
         if as_path:
             self.prefixes[prefix]["AS-PATH"] = as_path
     
-    def add_advertised_prefixes(self, prefixes, next_hop = None, as_path = None,
+    def add_advertised_prefixes(self, prefixes, as_path = None,
                                 communities = None):
         for prefix in prefixes:
-            self.add_advertised_prefix(prefix, next_hop, as_path, communities)
+            self.add_advertised_prefix(prefix, as_path, communities)
 
     def set_maximum_paths(self, value):
         self.max_paths = value
@@ -155,6 +160,7 @@ cdef class BGP:
         conf["router_id"] = self.router_id
         conf["max_paths"] = self.max_paths
         conf["relax"] = self.relax
+        conf["allowas_in"] = self.allowas_in
         with file("/tmp/conf-bgp.%s" % rname, "w") as f:
             json.dump(conf, f)
 
@@ -166,6 +172,9 @@ cdef class BGP:
         int_ip = ip2int(neighbor_ip) 
         bgp_add_neighbor(self._bgp_ptr, int_ip, neighbor_as)
 
+    def get_local_ips(self):
+        return self.local_ips
+
 
 params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
 Port = namedtuple('Port', params)
@@ -173,10 +182,12 @@ cdef class Router:
     cdef router* _router_ptr 
     cdef ports
 
-    def __cinit__(self, name):
-        self._router_ptr = router_new()
-        # It needs to be improved when number of apps grow
+    def __init__(self, name):
         self.name = name
+
+    def __cinit__(self):
+        self._router_ptr = router_new()
+        # self.name = name
         self.ports = {}
 
     def add_port(self, port, eth_addr, ip = None, 
@@ -218,9 +229,118 @@ cdef class Router:
     def uuid(self):
         return router_uuid(self._router_ptr)
 
+cdef class BGPRouter(Router):
+    # TODO: Should just use the members of the BGP class
+    cdef object routes
+    cdef object intfDict
+    cdef object neighbors
+    cdef object bgp
+    cdef object exabgpConfFile
+    cdef object asNum
+
+    # def __new__(cls, name):
+    #     return super().__new__(cls, name)
+
+    def __init__(self, name, intfDict,
+                 asNum, neighbors, routes,
+                 exabgpConfFile=None,
+                 allowas_in = False,
+                 relax = False,
+                 maximum_paths= 0,
+                 runDir='/tmp', *args, **kwargs):
+        
+        # self.name = name
+        super(BGPRouter, self).__init__(name)
+        self.routes = routes
+        self.intfDict = intfDict
+        if exabgpConfFile is not None:
+            self.exabgpConfFile = exabgpConfFile
+            self.bgp = BGP(config_file =  self.exabgpConfFile)
+        else:
+            self.exabgpConfFile = '%s/%s.conf' % (runDir, name)      
+            self.asNum = asNum
+            self.neighbors = neighbors
+            self.generateConfig()
+            self.bgp = BGP(config_file = self.exabgpConfFile)
+            # print self.bgp.get_local_ips()
+
+        self.config()
+        self.configBGP(allowas_in, maximum_paths, relax)
+        self.add_protocol(self.bgp)
+
+    def config(self):
+        for p in self.intfDict:
+            port = self.intfDict[p][0]
+            self.add_port(port = port['id'], eth_addr = port['mac'], ip = port['ipAddrs'][0],
+               netmask = port['netmask'])
+
+    def generateConfig(self):
+        self.generateExaBGP()
+     
+    def generateExaBGP(self):
+        configFile = open(self.exabgpConfFile, 'w+')
+
+        def writeLine(indent, line):
+            intentStr = ''
+            for _ in range(0, indent):
+                intentStr += '  '
+            configFile.write('%s%s\n' % (intentStr, line))
+            
+        def getRouterId(interfaces):
+            for intfAttributesList in interfaces.itervalues():
+                if not isinstance(intfAttributesList, list):
+                    continue
+                # Try use the first set of attributes, but if using vlans they might not have addresses
+                intfAttributes = intfAttributesList[1] if not intfAttributesList[0]['ipAddrs'] else intfAttributesList[0]
+                return intfAttributes['ipAddrs'][0].split('/')[0]
+
+
+        writeLine(0, 'process client{')
+        writeLine(2, 'run /usr/bin/python /home/vagrant/horse/python/router_client.py %s;' % self.name)
+        writeLine(2, 'encoder json;\n}\n')
+
+        writeLine(0, 'template {')
+        writeLine(2, 'neighbor router {')
+        writeLine(4, 'family {')
+        writeLine(6, 'ipv4 unicast;')
+        writeLine(4, '}')
+        writeLine(4, 'api speaking {')
+        writeLine(6, 'processes [client];')
+        writeLine(6, 'neighbor-changes;')
+        writeLine(6, 'receive {')
+        writeLine(8, 'parsed;')
+        writeLine(8, 'update;')
+        writeLine(6, '}')
+        writeLine(4, '}')
+        writeLine(4, 'local-as %s;' % self.asNum)
+        writeLine(4, 'manual-eor true;')
+        writeLine(2, '}')
+        writeLine(0, '}\n')
+
+        router_id = getRouterId(self.intfDict)
+        for neighbor in self.neighbors:
+            writeLine(0, 'neighbor %s {' % neighbor['address'])
+            writeLine(2, 'inherit router;')
+            writeLine(2, 'peer-as %s;' % neighbor['as'])
+            writeLine(2, 'router-id %s;' % router_id)
+            writeLine(2, 'local-address %s;' % neighbor['local-address'] )
+            writeLine(2, 'group-updates false;')
+            writeLine(0, '}\n')
+
+        configFile.close()
+        
+    def configBGP(self, allowas_in, maximum_paths, relax):
+        self.bgp.set_maximum_paths(maximum_paths) 
+        self.bgp.set_relaxed_maximum_paths(relax)
+        self.bgp.set_allowas_in(allowas_in)
+
+        for route in self.routes:
+            self.bgp.add_advertised_prefix(route)
+
 cdef class Host:
     cdef host* _host_ptr
     cdef int exec_id
+    cdef object ports # Quick workaround to get ips
 
     def __cinit__(self, name):
         self._host_ptr = host_new()
@@ -229,6 +349,7 @@ cdef class Host:
         host_add_app(self._host_ptr, 17) #UDP
         self.exec_id = 1
         self.name = name
+        self.ports = []
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):
@@ -236,10 +357,15 @@ cdef class Host:
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
         host_add_port(self._host_ptr, port, c_eth_addr, max_speed, cur_speed)
+        self.ports.append(Port(port, eth_addr, ip, netmask, max_speed, cur_speed))
         if ip != None and netmask != None:
             int_ip = ip2int(ip)
             int_nm = ip2int(netmask)
             host_set_intf_ipv4(self._host_ptr, port, int_ip, int_nm)
+
+
+    def get_ports(self):
+        return self.ports
 
     def set_default_gw(self, ip, port):
         int_ip = ip2int(ip)
@@ -330,6 +456,8 @@ cdef class Topology:
         if "name" in kwargs:
             self.node_info[kwargs["name"]] = kwargs
             self.nodes[kwargs["name"]] = Node
+        else:
+            self.nodes[Node.name] = Node
     
         if isinstance(Node, SDNSwitch):
             dp = <SDNSwitch> Node
