@@ -41,26 +41,36 @@ create_internal_devices(void)
 
 }
 
+// static void
+// connect_routers(struct topology *topo)
+// {
+//     struct link *l, *ltmp;
+//     HASH_ITER(hh, topology_links(topo), l, ltmp){
+
+//     }
+// }
+
 static void 
 setup(struct sim *s)
 {
 
     struct scheduler *sch = s->evh.sch;
     struct topology *topo = s->evh.topo;
+    struct host_node *hnode, *htmp;
     struct node *node, *tmp;
-    
     register_handle_sigchild();
-    HASH_ITER(hh, topology_nodes(topo), node, tmp){
-        if (node->type == HOST) {
-            struct exec *exec, *exec_tmp;
-            HASH_ITER(hh, host_execs((struct host*) node), exec, exec_tmp) {
-                struct sim_event_app_start *ev = sim_event_app_start_new(
+
+    HASH_ITER(hh, topology_hosts(topo), hnode, htmp){
+        struct host *h = hnode->h;
+        struct exec *exec, *exec_tmp;
+        HASH_ITER(hh, host_execs(h), exec, exec_tmp) {
+            struct sim_event_app_start *ev = sim_event_app_start_new(
                                             exec->start_time,
-                                            node->uuid, exec
-                                            );
-                scheduler_insert(sch, (struct sim_event*) ev);
-            }   
+                                            host_uuid(h), exec);
+            scheduler_insert(sch, (struct sim_event*) ev);
         }
+    }
+    HASH_ITER(hh, topology_nodes(topo), node, tmp){
         if (node->type == ROUTER) {
             struct router *r = (struct router*) node;
             printf("Starting router\n");
@@ -74,15 +84,6 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
-    // int i = 0;
-    // while(1){
-    //     sleep(1);
-    //     if (i == 20){
-    //         break;
-    //     }
-    //     ++i;    
-    // }
-    // exit(0);
 }
 
 struct timespec last = {0};
@@ -118,8 +119,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->cont.exec = cont_mode; 
     
     if (sim_config_get_mode(s->config) == EMU_CTRL){
-        struct node *cur_node, *tmp, *nodes;
-        struct datapath *dp;
+        struct dp_node *dps, *dpcur, *dptmp;
         s->evh.cm = conn_manager_new(s->evh.sch);
         
         /* Start server if routers included */
@@ -130,12 +130,10 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
         }
 
         /* Add of_settings to client */
-        nodes = topology_nodes(topo);
-        HASH_ITER(hh, nodes, cur_node, tmp) {
-            if (cur_node->type == DATAPATH){
-                dp = (struct datapath*) cur_node;
-                of_client_add_ofsc(s->evh.cm->of, dp_settings(dp));
-            }
+        dps = topology_datapaths(topo);
+        HASH_ITER(hh, dps, dpcur, dptmp) {
+            struct datapath *dp = dpcur->dp;
+            of_client_add_ofsc(s->evh.cm->of, dp_settings(dp));
         }
         of_client_start(s->evh.cm->of, false);
     }
