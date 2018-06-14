@@ -27,6 +27,8 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/of_unpack.h \
                 src/lib/of_unpack.c \
                 src/lib/openflow.h \
+                src/lib/signal_handler.h \
+                src/lib/signal_handler.c \
                 src/lib/sim_event.h \
                 src/lib/sim_event.c \
                 src/lib/timer.h \
