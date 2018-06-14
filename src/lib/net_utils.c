@@ -3,14 +3,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 void 
-add_veth_pair(char *rname, char *intf1, char* intf2, char* ip, char *mask)
+add_veth_pair(char *rname, char *intf1, char* intf2)
 {
     /* Create interfaces and add to namespace*/
-    netns_run(NULL, "ip link add %s type veth "
+    if (rname != NULL){
+        netns_run(NULL, "ip link add %s type veth "
             "peer name %s netns %s",
             intf1, intf2, rname);
-    set_intf_up(NULL, intf1);
-    set_intf_ip(rname, intf2, ip, mask);
+    }
+    else  {
+        netns_run(NULL, "ip link add %s type veth "
+            "peer name %s",
+            intf1, intf2);  
+    }
 }
 
 /* Set the interface name. To set up the name of an interface out of a namespace
@@ -51,7 +56,8 @@ void
 set_intf_to_bridge(char *intf, char *bridge)
 {
     /* Add to bridge */
-    netns_launch(NULL, "brctl addif %s %s", bridge, intf); 
+    netns_launch(NULL, "ovs-vsctl add-port %s %s", bridge, intf);
+    // netns_launch(NULL, "brctl addif %s %s", bridge, intf); 
 }
 
 void 
@@ -63,8 +69,12 @@ delete_intf(char *iface)
 void 
 create_bridge(char *bridge)
 {
-    netns_run(NULL, "ip link add name %s type bridge", bridge);
+    netns_run(NULL, "ovs-vsctl add-br %s", bridge);
     netns_run(NULL, "ip link set dev %s up", bridge);
+    // netns_run(NULL, "ovs-ofctl add-flow %s action=NORMAL", bridge);
+    // netns_run(NULL, "ip link add name %s type bridge", bridge);
+    // netns_run(NULL, "ip link set br0 type bridge forward_delay 0");
+    // netns_run(NULL, "ip link set dev %s up", bridge);
 }
 
 /* This function does all the steps necessaries to create a veth pair, send
@@ -74,7 +84,10 @@ setup_veth(char *rname, char *intf1, char *intf2, char *ip, char *mask,
            char* bridge)
 {
     /* Create pair */
-    add_veth_pair(rname, intf1, intf2, ip, mask);
+    add_veth_pair(rname, intf1, intf2);
     /* Add interface to bridge */
     set_intf_to_bridge(intf1, bridge);
+    /* Bring them up */
+    set_intf_up(NULL, intf1);
+    set_intf_ip(rname, intf2, ip, mask);
 }
