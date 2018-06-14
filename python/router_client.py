@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
-from threading import Thread
+from threading import Thread, Lock
 import Queue
 import syslog
 import socket
@@ -95,19 +95,18 @@ def _process_exa(exabgp_queue, peer):
 
 ''' main '''
 
-show_config = "show neighbor configuration"
-
 if __name__ == '__main__':
 
     address = ('172.20.254.254', 6000)
     rname = sys.argv[1]
+    mutex = Lock()
     try:
         exabgp_queue = Queue.Queue()
         sim_queue = Queue.Queue()
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # s.setblocking(0)
         conn.connect(address)
-        peer = BGPPeer(rname, conn, sys.stdout)
+        peer = BGPPeer(rname, conn, sys.stdout, mutex)
         sender = Thread(target=_send, args=(exabgp_queue, peer, sys.stdin))
         process_exa = Thread(target =_process_exa, args=(exabgp_queue, peer))
         receiver = Thread(target=_recv, args=(conn, sim_queue, peer))
