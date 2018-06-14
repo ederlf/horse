@@ -14,7 +14,9 @@
 #include <netemu/netns.h>
 #include <uthash/utlist.h>
 #include "lib/openflow.h"
+#include "lib/signal_handler.h"
 #include <log/log.h>
+#include "lib/net_utils.h"
 
 #define EV_NUM 1000000
 
@@ -32,15 +34,9 @@ static void
 create_internal_devices(void)
 {
     /* TODO: Move it somewhere else? */
-    netns_run(NULL, "ip link add name br0 type bridge");
-    netns_run(NULL, "ip link set dev br0 up");
-
-    /* Add veth pair to connect global namespace */
-    netns_run(NULL, "ip link add conn1 type veth peer name conn2");
-    netns_run(NULL, "ip link set dev conn1 up");
-    netns_run(NULL, "ip link set dev conn2 up");
-    netns_run(NULL, "ip link set dev conn2 master br0");
-    netns_run(NULL, "ip addr add 172.20.254.254/16 dev conn1");
+    create_bridge("br0");
+    setup_veth(NULL, "conn2", "conn1", "172.20.254.254", "16", "br0");
+    /* Add static route */
     netns_run(NULL, "ip route add 172.20.0.0/16 dev conn1");
 
 }
@@ -52,7 +48,8 @@ setup(struct sim *s)
     struct scheduler *sch = s->evh.sch;
     struct topology *topo = s->evh.topo;
     struct node *node, *tmp;
- 
+    
+    register_handle_sigchild();
     HASH_ITER(hh, topology_nodes(topo), node, tmp){
         if (node->type == HOST) {
             struct exec *exec, *exec_tmp;
@@ -77,7 +74,14 @@ setup(struct sim *s)
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
     end_ev->type = EVENT_END;
     scheduler_insert(sch, end_ev);
-    // sleep(5);
+    // int i = 0;
+    // while(1){
+    //     sleep(1);
+    //     if (i == 20){
+    //         break;
+    //     }
+    //     ++i;    
+    // }
     // exit(0);
 }
 
@@ -112,7 +116,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->evh.sch = scheduler_new();
     s->evh.live_flows = NULL;
     s->cont.exec = cont_mode; 
-
+    
     if (sim_config_get_mode(s->config) == EMU_CTRL){
         struct node *cur_node, *tmp, *nodes;
         struct datapath *dp;
@@ -135,6 +139,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
         }
         of_client_start(s->evh.cm->of, false);
     }
+
     setup(s);
     wait_all_switches_connect(topo, s->evh.cm);
     pFile = fopen ("bwm.txt","w");
@@ -154,7 +159,8 @@ sim_close(struct sim *s)
     conn_manager_destroy(s->evh.cm);
     /* TODO: move somewhere else */
     netns_launch(NULL, "ip link delete conn1");
-    netns_launch(NULL, "ip link delete dev br0");
+    netns_launch(NULL, "ip link delete conn2");
+    netns_launch(NULL, "ovs-vsctl del-br br0");
 }
 
 static void update_stats(struct topology *topo, uint64_t time){
