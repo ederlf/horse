@@ -2,16 +2,31 @@
 #include <netemu/netns.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 void 
-add_veth_pair(char *rname, char *intf1, char* intf2)
+add_veth_pair(char *intf1, char *rname1, char* intf2, char *rname2)
 {
-    /* Create interfaces and add to namespace*/
-    if (rname != NULL){
+
+    /* Send each to a namespace */
+    if (rname1 != NULL && rname2 != NULL){
+        netns_run(NULL, "ip link add %s netns %s type veth "
+            "peer name %s netns %s",
+            intf1, rname1, intf2, rname2);
+    }
+    /* Adds intf1 to namespace rname1 */
+    else if (rname1 != NULL && rname2 == NULL){
+        netns_run(NULL, "ip link add %s netns %s type veth "
+            "peer name %s",
+            intf1, rname1, intf2);
+    }
+    /* Adds intf2 to namespace rname2 */
+    else if (rname1 == NULL && rname2 != NULL){
         netns_run(NULL, "ip link add %s type veth "
             "peer name %s netns %s",
-            intf1, intf2, rname);
+            intf1, intf2, rname2);
     }
-    else  {
+    /* No namespace */
+    else {
         netns_run(NULL, "ip link add %s type veth "
             "peer name %s",
             intf1, intf2);  
@@ -77,17 +92,16 @@ create_bridge(char *bridge)
     // netns_run(NULL, "ip link set dev %s up", bridge);
 }
 
-/* This function does all the steps necessaries to create a veth pair, send
-   one of the sides to a namespace and connect the other side to a bridge */
 void 
 setup_veth(char *rname, char *intf1, char *intf2, char *ip, char *mask,
            char* bridge)
 {
     /* Create pair */
-    add_veth_pair(rname, intf1, intf2);
+    add_veth_pair(intf1, NULL, intf2, rname);
     /* Add interface to bridge */
     set_intf_to_bridge(intf1, bridge);
     /* Bring them up */
     set_intf_up(NULL, intf1);
     set_intf_ip(rname, intf2, ip, mask);
 }
+

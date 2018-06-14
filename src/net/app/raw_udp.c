@@ -10,8 +10,8 @@ int raw_udp_handle_netflow(struct netflow *flow)
     struct in_addr ipv4_src, ipv4_dst;
     ipv4_src.s_addr = ntohl(flow->match.ipv4_src);
     ipv4_dst.s_addr = ntohl(flow->match.ipv4_dst);
-    get_ip_str(ipv4_src, src, AF_INET);
-    get_ip_str(ipv4_dst, dst, AF_INET);
+    get_ip_str(&ipv4_src, src, AF_INET);
+    get_ip_str(&ipv4_dst, dst, AF_INET);
     log_info("Host %s Received UDP flow from %s at %ld\n", dst,
              src, flow->start_time);
     UNUSED(flow);

@@ -158,7 +158,7 @@ host_execute_app(struct host *h, struct exec *exec)
         flow = app->start(exec->start_time, exec->args);
         flow->exec_id = exec->id;
         ipv4_dst.s_addr = ntohl(flow->match.ipv4_dst);
-        get_ip_str(ipv4_dst, dst, AF_INET);
+        get_ip_str(&ipv4_dst, dst, AF_INET);
         log_info("Flow Start from %s to %s time APP %ld",h->ep.base.name, dst,
                  flow-> start_time);
         exec->exec_cnt -= 1;
