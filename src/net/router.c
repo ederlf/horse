@@ -48,7 +48,7 @@ router_stop(struct router *r){
     sprintf(internal_intf, "%s-inet-ext", rname);
     delete_intf(internal_intf);
     HASH_ITER(hh, r->protocols, rp, rptmp) {
-        rp->clean(rp, rname);
+        rp->clean(rp);
         HASH_DEL(r->protocols, rp);
         free(rp);
     }

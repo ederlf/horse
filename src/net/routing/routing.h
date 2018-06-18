@@ -20,7 +20,7 @@ struct routing {
                    may not apply to every protocol but does not harm */
     uint32_t router_id;
     void (*start) (struct routing *, char *);
-    void (*clean)(struct routing *, char *);
+    void (*clean)(struct routing *);
     UT_hash_handle hh; /* Make it hashable */
 };
 

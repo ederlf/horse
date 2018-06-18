@@ -160,6 +160,8 @@ topology_destroy(struct topology *topo)
     struct node *cur_node, *tmp;
     struct link *ltmp, *lcurr;
     struct dp_node *dncur, *dntmp;
+    struct host_node *hcur, *htmp;
+
     struct router_node *rncur, *rntmp;
     /* Clean links */
     HASH_ITER(hh, topo->links, lcurr, ltmp) {
@@ -187,6 +189,10 @@ topology_destroy(struct topology *topo)
     HASH_ITER(hh, topo->routers, rncur, rntmp) {
         HASH_DEL(topo->routers, rncur);  
         free(rncur);
+    }
+    HASH_ITER(hh, topo->hosts, hcur, htmp) {
+        HASH_DEL(topo->hosts, hcur);  
+        free(hcur);
     }
     free(topo);
 }

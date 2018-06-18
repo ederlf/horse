@@ -9,7 +9,7 @@
 
 static void bgp_init(struct bgp *p, char *config_file);
 static void bgp_start(struct routing *rt, char *rname);
-static void bgp_clean(struct routing *rt, char *rname);
+static void bgp_clean(struct routing *rt);
 
 struct adv {
     uint32_t ip;
@@ -59,24 +59,20 @@ bgp_init(struct bgp *p, char *config_file)
 static void 
 bgp_start(struct routing *rt, char * rname)
 {
-    char intf[42], intf2[42];
-    struct bgp *p = (struct bgp*) rt;
+    // char intf[42], intf2[42];
+    struct bgp *b = (struct bgp*) rt;
     char **addr = NULL;
-    int i = 1;
+    // int i = 1;
     FILE *stream;
     char *buf;
     size_t len;
     stream = open_memstream(&buf, &len);
     fprintf(stream, "\"");
     char ip[INET_ADDRSTRLEN];
-    while ( (addr=(char**)utarray_next(p->local_ips, addr))) {
+    while ( (addr=(char**)utarray_next(b->local_ips, addr))) {
         memset(ip, 0x0, INET_ADDRSTRLEN);
         char *p = strchr(*addr,'/');
         strncpy(ip, *addr, p - (*addr));
-        sprintf(intf2, "%s-bgp%d", rname, i);
-        sprintf(intf,"%s-bgp-ext%d", rname, i);
-        setup_veth(rname, intf, intf2, ip, p+1, "br0");
-        ++i;
         fprintf(stream, "%s ", ip);
     }
     fprintf(stream, "\"");
@@ -86,7 +82,7 @@ bgp_start(struct routing *rt, char * rname)
           "exabgp.tcp.bind=%s "
           "exabgp.log.level=NOTICE "
           "exabgp.log.destination=syslog exabgp %s",
-          buf, p->config_file);
+          buf, b->config_file);
     free(buf);
 }
 
@@ -122,18 +118,12 @@ bgp_handle_state_msg(struct bgp *p, struct bgp_state *msg)
 }
 
 static void
-bgp_clean(struct routing *rt, char *rname)
+bgp_clean(struct routing *rt)
 {
     struct bgp *p = (struct bgp*) rt;
     struct neighbor *cur_n, *ntmp;
     struct adv *cur_prefix, *ptmp;
-    char intf[42];
-    size_t len = utarray_len(p->local_ips);
-    size_t i;
-    for (i = 0; i < len; ++i){
-        sprintf(intf,"%s-bgp-ext%lu", rname, i+1);
-        delete_intf(intf);
-    }
+
     netns_launch(NULL, "pkill exabgp");
     HASH_ITER(hh, p->neighbors, cur_n, ntmp) {
         HASH_DEL(p->neighbors, cur_n);

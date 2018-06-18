@@ -35,20 +35,98 @@ create_internal_devices(void)
 {
     /* TODO: Move it somewhere else? */
     create_bridge("br0");
-    setup_veth(NULL, "conn2", "conn1", "172.20.254.254", "16", "br0");
+    setup_veth(NULL, "conn1", "conn2", "172.20.254.254", "16", "br0");
     /* Add static route */
     netns_run(NULL, "ip route add 172.20.0.0/16 dev conn1");
 
 }
 
-// static void
-// connect_routers(struct topology *topo)
-// {
-//     struct link *l, *ltmp;
-//     HASH_ITER(hh, topology_links(topo), l, ltmp){
+static void
+setup_routers(struct topology *topo)
+{
+    struct link *l, *ltmp, *added;
+    struct router_node *rnode, *rtmp;
 
-//     }
-// }
+    added = NULL;
+
+    HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
+        struct router *r = rnode->rt;
+        printf("Starting Router %s\n", router_name(r));
+        router_start(r);
+    }
+
+    HASH_ITER(hh, topology_links(topo), l, ltmp){
+        struct node *n1, *n2;
+        struct link *done = NULL;
+        HASH_FIND(hh, added, &l->node1, sizeof(struct node_port_pair), done);
+        if (done){
+            continue;
+        }
+        else {
+            n1 = topology_node(topo, l->node1.uuid);
+            n2 = topology_node(topo, l->node2.uuid);
+            if (n1->type == ROUTER && n2->type == ROUTER){
+                char intf1[42], intf2[42];
+                struct port *port1, *port2;
+                struct router *r1 = (struct router*) n1;
+                struct router *r2 = (struct router*) n2;
+                uint32_t p1 = l->node1.port;
+                uint32_t p2 = l->node2.port;
+                sprintf(intf1, "eth%u", p1);
+                sprintf(intf2, "eth%u", p2);
+                add_veth_pair(intf1, router_name(r1), intf2, router_name(r2));
+                port1 = router_port(r1, p1);
+                port2 = router_port(r2, p2);
+                if (port1){
+                    if (port1->ipv4_addr){
+                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
+                        struct in_addr ip;
+                        int mask;
+                        ip.s_addr = htonl(port1->ipv4_addr->addr);
+                        mask = count_set_bits(port1->ipv4_addr->netmask);
+                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
+                        get_ip_str(&ip, ip_str, AF_INET);
+                        set_intf_ip(router_name(r1), intf1, ip_str,
+                                    netmask_str);
+                    }
+                    
+                }
+                if (port2){
+                    if (port2->ipv4_addr){
+                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
+                        struct in_addr ip;
+                        int mask;
+                        ip.s_addr = htonl(port2->ipv4_addr->addr);
+                        mask = count_set_bits(port1->ipv4_addr->netmask);
+                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
+                        get_ip_str(&ip, ip_str, AF_INET);
+                        set_intf_ip(router_name(r2), intf2, ip_str,
+                                    netmask_str);
+                    }
+                }
+                /* Create a backwards link so it does not repeat*/
+                done = (struct link*) xmalloc(sizeof(struct link));
+                memset(done, 0x0, sizeof(struct link));
+                done->node1.port = l->node2.port;
+                done->node1.uuid = l->node2.uuid;
+                done->node2.port = l->node1.port;
+                done->node2.uuid = l->node1.uuid;
+                HASH_ADD(hh, added, node1, sizeof(struct node_port_pair), done);
+            }
+        }
+    }
+    /* Need to think a better way to no go twice over the the routers */
+    HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
+        struct router *r = rnode->rt;
+        router_start_protocols(r);
+        // sleep(1);
+    }
+
+    HASH_ITER(hh, added, l, ltmp){
+        HASH_DEL(added, l);
+        free(l);
+    }
+}
 
 static void 
 setup(struct sim *s)
@@ -57,7 +135,6 @@ setup(struct sim *s)
     struct scheduler *sch = s->evh.sch;
     struct topology *topo = s->evh.topo;
     struct host_node *hnode, *htmp;
-    struct node *node, *tmp;
     register_handle_sigchild();
 
     HASH_ITER(hh, topology_hosts(topo), hnode, htmp){
@@ -70,15 +147,12 @@ setup(struct sim *s)
             scheduler_insert(sch, (struct sim_event*) ev);
         }
     }
-    HASH_ITER(hh, topology_nodes(topo), node, tmp){
-        if (node->type == ROUTER) {
-            struct router *r = (struct router*) node;
-            printf("Starting router\n");
-            topology_add_router_to_map(topo, r);
-            router_start(r);
-            router_start_protocols(r);
-        }
-    }
+    setup_routers(topo);
+    // int i = 0;
+    // while (i < 20){
+    //     sleep(1);
+    //     ++i;
+    // }
     /* Event to stop the simulator */
     struct sim_event *end_ev; 
     end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
@@ -119,7 +193,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     s->cont.exec = cont_mode; 
     
     if (sim_config_get_mode(s->config) == EMU_CTRL){
-        struct dp_node *dps, *dpcur, *dptmp;
+        struct dp_node *dpcur, *dptmp;
         s->evh.cm = conn_manager_new(s->evh.sch);
         
         /* Start server if routers included */
@@ -130,8 +204,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
         }
 
         /* Add of_settings to client */
-        dps = topology_datapaths(topo);
-        HASH_ITER(hh, dps, dpcur, dptmp) {
+        HASH_ITER(hh, topology_datapaths(topo), dpcur, dptmp) {
             struct datapath *dp = dpcur->dp;
             of_client_add_ofsc(s->evh.cm->of, dp_settings(dp));
         }
@@ -282,6 +355,7 @@ cont_mode(void* args)
             last_stats = cur_ev->time ;
         }
         if (cur_ev->type == EVENT_FTI) {
+            printf("Executing FTI\n");
             last_ctrl = cur_ev->time;
         }
         else if(cur_ev->type == EVENT_END){
@@ -300,6 +374,7 @@ cont_mode(void* args)
     if ( (sch->clock - last_ctrl) > 
         sim_config_get_ctrl_idle_interval(s->config)) {
         pthread_mutex_lock( &mtx_mode );
+        printf("Switching to DES %lu\n", sch->clock );
         sch->mode = DES;
         /* Wake up timer */
         pthread_cond_signal( &mode_cond_var );
