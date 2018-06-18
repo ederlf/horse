@@ -245,7 +245,8 @@ static void split_args(char **argv, char *cmd)
 pid_t netns_launch(const char *name, const char *fmt, ...)
 {
 	char *temp, **argv;
-	int argc, nullfd;
+	int argc;
+    int nullfd;
 	va_list ap;
 	pid_t pid;
 
@@ -287,7 +288,8 @@ pid_t netns_launch(const char *name, const char *fmt, ...)
 
 int netns_run(const char *name, const char *fmt, ...)
 {
-	int status, argc, nullfd;
+	int status, argc;
+    int nullfd;
 	char *temp, **argv;
 	va_list ap;
 	pid_t pid;
