@@ -146,32 +146,14 @@ ip_str_addr_compare(char *ip1, char *ip2, uint8_t addr_family)
 }
 
 void
-get_ip_str(const struct in_addr ip, char *str, uint8_t addr_family)
+get_ip_str(void *addr, char *str, uint8_t addr_family)
 {
-    if ( addr_family == AF_INET ){
-        inet_ntop(AF_INET, &(ip), str, INET_ADDRSTRLEN);
-    }
-    else if ( addr_family == AF_INET6 ) {
-        inet_ntop(AF_INET6, &(ip), str, INET6_ADDRSTRLEN);
-    }
-    else {
-        fprintf(stderr, "Unknown family address %u\n", addr_family);
-    }
+    inet_ntop(addr_family, addr, str,
+              addr_family == AF_INET? INET_ADDRSTRLEN: INET6_ADDRSTRLEN);
 }
 
 void 
-get_ip_net(char *ip, uint32_t *net_ip, uint8_t addr_family)
+get_ip_net(char *ip, void *net_ip, uint8_t addr_family)
 {
-    /* IPv4 */
-    if ( addr_family == AF_INET ){
-        // struct in_addr *in_addr_ip;
-        inet_pton(AF_INET, ip, net_ip);
-    } 
-    /* IPv6 */
-    else if ( addr_family == AF_INET6 ) {
-        inet_pton(AF_INET6, ip, net_ip);
-    }
-    else {
-        fprintf(stderr, "Unknown family address %u\n", addr_family);
-    }
+    inet_pton(addr_family, ip, net_ip);
 }

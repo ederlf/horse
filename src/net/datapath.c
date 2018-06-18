@@ -465,11 +465,13 @@ dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uin
     return NULL;
 }
 
-void dp_set_name(struct datapath* dp, char *name) {
+void 
+dp_set_name(struct datapath* dp, char *name) {
     memcpy(dp->base.name, name, MAX_NODE_NAME);
 }
 
-char *dp_name(struct datapath *dp)
+char *
+dp_name(struct datapath *dp)
 {
     return dp->base.name;
 }
