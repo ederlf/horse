@@ -30,8 +30,8 @@ int nlz(uint32_t x);
 int ntz(uint32_t x);
 uint8_t get_ip_family(char *ip);
 int ip_str_addr_compare(char *ip1, char *ip2, uint8_t addr_family);
-void get_ip_str(const struct in_addr ip, char *str, uint8_t addr_family);
-void get_ip_net(char *ip, uint32_t *net_ip, uint8_t addr_family);
+void get_ip_str(void* ip, char *str, uint8_t addr_family);
+void get_ip_net(char *ip, void *net_ip, uint8_t addr_family);
 
 #define ROUND_UP(X, Y) (((X) + ((Y) - 1)) / (Y) * (Y))
 
