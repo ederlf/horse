@@ -21,7 +21,11 @@ horse_LDADD = .libs/libhorse.a -lcfluid_base -loci -levent
 TESTS = flow_table_test scheduler_test instruction_test netflow_test
 unit_test_CFLAGS = -DUNIT_TESTING=1 -I./src -I./vendor
 
-noinst_PROGRAMS = flow_table_test scheduler_test instruction_test netflow_test
+noinst_PROGRAMS = horse_daemon flow_table_test scheduler_test instruction_test netflow_test
+
+horse_daemon_SOURCES = src/horse_daemon.c
+horse_daemon_CFLAGS = $(AM_CFLAGS) -lpcap
+horse_daemon_LD_ADD = -lpcap
 
 flow_table_test_SOURCES = tests/flow_table_test.c
 flow_table_test_CFLAGS = $(unit_test_CFLAGS)
