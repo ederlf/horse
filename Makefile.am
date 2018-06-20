@@ -14,7 +14,7 @@ include src/automake.mk
 
 bin_PROGRAMS = horse
 horse_SOURCES = src/horse.c
-horse_LDADD = .libs/libhorse.a -lcfluid_base -loci -levent
+horse_LDADD = .libs/libhorse.la -lcfluid_base -loci -levent
 
 
 # Unit tests
@@ -25,7 +25,7 @@ noinst_PROGRAMS = horse_daemon flow_table_test scheduler_test instruction_test n
 
 horse_daemon_SOURCES = src/horse_daemon.c
 horse_daemon_CFLAGS = $(AM_CFLAGS) -lpcap
-horse_daemon_LD_ADD = -lpcap
+horse_daemon_LDADD = .libs/libroutingmsg.la
 
 flow_table_test_SOURCES = tests/flow_table_test.c
 flow_table_test_CFLAGS = $(unit_test_CFLAGS)
