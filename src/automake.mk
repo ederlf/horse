@@ -1,6 +1,10 @@
-#noinst_LIBRARIES += libhorse.a
+#noinst_LIBRARIES += libhorse.a 
 
-lib_LTLIBRARIES = libhorse.la
+lib_LTLIBRARIES = libhorse.la libroutingmsg.la
+
+libroutingmsg_la_SOURCES = src/routing_msg/routing_msg.h \
+                src/routing_msg/routing_msg.c
+
 libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/action.c \
                 src/lib/action_list.h \
@@ -69,10 +73,13 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/router.c \
                 src/net/routing/bgp.h \
                 src/net/routing/bgp.c \
+                src/net/routing/exabgp_daemon.h \
+                src/net/routing/exabgp_daemon.c \
+                src/net/routing/quagga_daemon.h \
+                src/net/routing/quagga_daemon.c \
+                src/net/routing/routing_daemon.h \
                 src/net/routing/routing.h \
                 src/net/routing/routing.c \
-                src/net/routing/routing_msg.h \
-                src/net/routing/routing_msg.c \
                 src/net/topology.h \
                 src/net/topology.c \
                 src/sim/conn_manager.h \
@@ -88,4 +95,5 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/sim/sim_config.h \
                 src/sim/sim_config.c 
 
-libhorse_la_LIBADD = libjson.la liblog.la libnetemu.la libpatricia.la 
+libhorse_la_LIBADD = libjson.la liblog.la libnetemu.la libpatricia.la libroutingmsg.la
+
