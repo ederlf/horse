@@ -34,6 +34,7 @@ server_new(char* address, uint16_t port)
     s->port = port;
     s->event_cb = event_cb;
     s->connections = NULL;
+    s->running = 0;
     // if (!evpthread_on) { 
     //     evthread_use_pthreads();
     //     evpthread_on = 1;
@@ -45,7 +46,9 @@ void
 server_destroy(struct server *s)
 {
     struct conn *c, *ctmp;
-    pthread_cancel(s->server_thr);
+    if (s->running){
+        pthread_cancel(s->server_thr);
+    }
     HASH_ITER(hh, s->connections, c, ctmp) {
         HASH_DEL(s->connections, c);
         // bufferevent_free(c->bev);
@@ -151,4 +154,5 @@ void server_start(struct server *s)
 {   
     s->event_cb = event_cb;
     pthread_create(&s->server_thr, (pthread_attr_t*)0, server_listen, (void*)s);
+    s->running = 1;
 }

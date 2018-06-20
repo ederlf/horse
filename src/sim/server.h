@@ -14,6 +14,7 @@ struct conn {
 struct server {
     uint16_t port;
     char *address; 
+    int running;
     pthread_t server_thr;
     struct conn *connections;
     void *owner; 
