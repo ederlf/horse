@@ -13,7 +13,8 @@
 #include <arpa/inet.h>
 #include <pcap/pcap.h>
 #include <pthread.h>
-#include "net/routing/routing_msg.h"
+#include <sys/socket.h> 
+#include "routing_msg/routing_msg.h"
 #include "lib/packets.h"
 
 struct daemon_data {
@@ -99,6 +100,12 @@ static void capture_cb(u_char *user,
                 tmp_pkt += sizeof(struct tcp_header);
                 uint8_t bgp_type = *tmp_pkt;
                 if (bgp_type == BGP_UPDATE || bgp_type == BGP_OPEN){
+                    uint8_t msg_data[HEADER_LEN] = {0x0, BGP_ACTIVITY, 0x0, HEADER_LEN};
+                    memcpy(msg_data+4, &data->ddata.router_id, sizeof(uint32_t));
+                    if (send(data->ddata.server_fd, msg_data, HEADER_LEN, 0) == -1){
+                        perror("Failed to send message");
+                        exit (1);
+                    }
                     /* SEND Activity to Controller */
                 }
             }

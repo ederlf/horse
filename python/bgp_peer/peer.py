@@ -13,6 +13,7 @@ import json
 import socket
 import struct
 import syslog
+
 np = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if np not in sys.path:
     sys.path.append(np)
@@ -34,10 +35,13 @@ class BGPPeer(object):
         self.conn = conn # Speak to the simulator
         self.stdout = stdout
         self.mutex = mutex
+        # self.router_id = 0
         with file("/tmp/conf-bgp.%s" % rname) as f:
             self.conf = json.load(f)
             self.router_id = self.conf['router_id']
             self.asn = int(self.conf['asn'])
+            # syslog.syslog("I opened the file and parsed %s %s" % 
+                # (self.rname, self.router_id))
 
     def __str__(self):
         peer = "router-id:%s, asn:%s" % (self.router_id, self.asn)
@@ -267,6 +271,8 @@ class BGPPeer(object):
                                     self.announce_route(neighbor, prefix,
                                                     next_hop, 
                                                     [self.asn] + best_route.as_path)
+                                    # msg = rmsg.BGPActivity(local_id = rmsg.ip2int(self.router_id))
+                                    # self.conn.send(msg.pack())
                         else:
                             continue
 
@@ -319,6 +325,7 @@ class BGPPeer(object):
             msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
                                    routes = best_routes)
             # syslog.syslog("%s" % str(best_routes))
+            # syslog.syslog("Peer is sending his FIB %s" % self.rname)
             self.conn.send(msg.pack())
             # with file("/tmp/rib%s" % self.rname, "a") as f:
             #     for route in best_routes:
@@ -343,6 +350,10 @@ class BGPPeer(object):
         # # Convert Unix timestamp to python datetime
         bgp_msg_type = temp_message['type']
 
+        if bgp_msg_type == 'notification' or bgp_msg_type == 'open':
+            msg = rmsg.BGPActivity(local_id = rmsg.ip2int(self.router_id))
+            self.conn.send(msg.pack())
+
         if bgp_msg_type == 'state':
             state = temp_message['neighbor']['state']
             s = 0
@@ -361,6 +372,7 @@ class BGPPeer(object):
                                    peer_id = rmsg.ip2int(peer),
                                    state = s)
             if state == 'up':
+                syslog.syslog("Peer %s is up with %s" % (peer, temp_message['neighbor']['address']['local'] ))
                 local_ip =  temp_message['neighbor']['address']['local']
                 self.neighbors_up[peer] = (peer_asn, local_ip)
             elif state == 'down':
@@ -384,15 +396,18 @@ class BGPPeer(object):
                 route = routes[prefix][0]
                 next_hop = self.neighbors_up[neighbor][1]
                 if neighbor != route.neighbor:
-                    pass
                     self.announce_route(neighbor, prefix, next_hop ,
                                     [self.asn] + route.as_path)
+                    msg = rmsg.BGPActivity(local_id = rmsg.ip2int(self.router_id))
+                    self.conn.send(msg.pack())
             for prefix in prefixes:
                 as_path = [self.asn]
                 # Just a guarantee, because the session may flap
                 if self.neighbors_up[neighbor]:
                     next_hop = self.neighbors_up[neighbor][1]                
-                self.announce_route(neighbor, prefix, next_hop, as_path)
+                    self.announce_route(neighbor, prefix, next_hop, as_path)
+                    msg = rmsg.BGPActivity(local_id = rmsg.ip2int(self.router_id))
+                    self.conn.send(msg.pack())
             
                 # announcements.append(a)
             # return announcements

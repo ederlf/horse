@@ -41,6 +41,42 @@ create_internal_devices(void)
 
 }
 
+static void 
+wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
+{
+    uint32_t switches;
+    uint32_t time = 0;
+    switches = HASH_COUNT(cm->of->active_conns);
+    while (switches < topology_dps_num(topo))  {
+        sleep(1);
+        switches = HASH_COUNT(cm->of->active_conns);
+        time++;
+        /* Exit if it takes too long to connect */ 
+        if (time > 60) {
+            fprintf(stderr, "Connection time expired\n");
+            exit(1);
+        }
+    } 
+}
+
+// static void 
+// wait_all_external_connections(struct topology *topo, struct conn_manager *cm)
+// {
+//     uint32_t connected;
+//     uint32_t time = 0;
+//     connected = HASH_COUNT(cm->server->connections);
+//     while (connected < topology_routers_num(topo))  {
+//         sleep(1);
+//         connected = HASH_COUNT(cm->server->connections);
+//         time++;
+//         /* Exit if it takes too long to connect */ 
+//         if (time > 60) {
+//             fprintf(stderr, "Connection time expired\n");
+//             exit(1);
+//         }
+//     } 
+// }
+
 static void
 setup_routers(struct topology *topo)
 {
@@ -115,12 +151,12 @@ setup_routers(struct topology *topo)
             }
         }
     }
-    /* Need to think a better way to no go twice over the the routers */
-    HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
-        struct router *r = rnode->rt;
-        router_start_protocols(r);
-        // sleep(1);
-    }
+    // /* Need to think a better way to no go twice over the the routers */
+    // HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
+    //     struct router *r = rnode->rt;
+    //     router_start_protocols(r);
+    //     // sleep(1);
+    // }
 
     HASH_ITER(hh, added, l, ltmp){
         HASH_DEL(added, l);
@@ -163,24 +199,6 @@ setup(struct sim *s)
 struct timespec last = {0};
 struct timespec now = {0};
 FILE *pFile;
-
-static void 
-wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
-{
-    uint32_t switches;
-    uint32_t time = 0;
-    switches = HASH_COUNT(cm->of->active_conns);
-    while (switches < topology_dps_num(topo))  {
-        sleep(1);
-        switches = HASH_COUNT(cm->of->active_conns);
-        time++;
-        /* Exit if it takes too long to connect */ 
-        if (time > 60) {
-            fprintf(stderr, "Connection time expired\n");
-            exit(1);
-        }
-    } 
-}
 
 static void
 sim_init(struct sim *s, struct topology *topo, struct sim_config *config) 
@@ -355,7 +373,6 @@ cont_mode(void* args)
             last_stats = cur_ev->time ;
         }
         if (cur_ev->type == EVENT_FTI) {
-            printf("Executing FTI\n");
             last_ctrl = cur_ev->time;
         }
         else if(cur_ev->type == EVENT_END){
@@ -374,7 +391,6 @@ cont_mode(void* args)
     if ( (sch->clock - last_ctrl) > 
         sim_config_get_ctrl_idle_interval(s->config)) {
         pthread_mutex_lock( &mtx_mode );
-        printf("Switching to DES %lu\n", sch->clock );
         sch->mode = DES;
         /* Wake up timer */
         pthread_cond_signal( &mode_cond_var );

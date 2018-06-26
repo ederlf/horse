@@ -41,13 +41,6 @@ cdef extern from "sim/sim.h":
     uint64_t dp_id(const datapath* dp)
     uint64_t dp_uuid(const datapath* dp)
 
-    # BGP.h
-    bgp* bgp_new(char *config_file)
-    void bgp_add_neighbor(bgp *p, uint32_t neighbor_ip, uint32_t neighbor_as);
-    void bgp_add_adv_prefix(bgp *p, uint32_t prefix, uint8_t cidr);
-    void bgp_set_router_id(bgp *p, uint32_t router_id)
-    void bgp_add_local_ip(bgp *p, char *ip)
-
     # Router.h
     router* router_new()
     void router_destroy(router *r)

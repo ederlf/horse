@@ -1,7 +1,7 @@
 #include "conn_manager.h"
 #include "lib/util.h"
 #include "lib/openflow.h"
-#include "net/routing/routing_msg.h"
+#include "routing_msg/routing_msg.h"
 
 static void conn_manager_of_message_cb(struct of_conn* conn, uint8_t type,
                                        void *data, size_t len);
@@ -114,5 +114,3 @@ conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
         }
     }
 }
-
-// 02014a00264100ffff00a00100000308a00202014a00264000ffff00a0010000

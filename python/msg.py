@@ -1,5 +1,5 @@
 import struct
-import ipaddress
+# import ipaddress
 import os
 import sys
 import socket

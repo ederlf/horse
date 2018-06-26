@@ -73,107 +73,107 @@ cdef class SDNSwitch:
     def uuid(self):
         return dp_uuid(self._dp_ptr)     
 
-cdef class BGP:
-    cdef bgp *_bgp_ptr
-    cdef neighbors
-    cdef local_ips
-    cdef prefixes
-    cdef asn
-    cdef router_id
-    cdef max_paths # Maximum number of allowed paths. All attributes should be equal.
-    cdef relax   # Allows load balancing among different ASes. Only AS path needs to match.
-    cdef allowas_in
+# cdef class BGP:
+#     cdef bgp *_bgp_ptr
+#     cdef neighbors
+#     cdef local_ips
+#     cdef prefixes
+#     cdef asn
+#     cdef router_id
+#     cdef max_paths # Maximum number of allowed paths. All attributes should be equal.
+#     cdef relax   # Allows load balancing among different ASes. Only AS path needs to match.
+#     cdef allowas_in
 
-    def __cinit__(self, config_file=None):
-        self.neighbors = {}
-        self.prefixes = {}
-        self.max_paths = 0
-        self.relax = False
-        self.router_id = 0
-        self.allowas_in = False
-        self.local_ips = []
+#     def __cinit__(self, config_file=None):
+#         self.neighbors = {}
+#         self.prefixes = {}
+#         self.max_paths = 0
+#         self.relax = False
+#         self.router_id = 0
+#         self.allowas_in = False
+#         self.local_ips = []
 
-        if config_file and os.path.isfile(config_file):
-            self._bgp_ptr = bgp_new(config_file)
-            with file(config_file, "r") as f:
-                conf = f.read()
-                # neighbor = []
-                router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
-                asn =  re.findall( r'local-as [0-9]*', conf)
-                ip = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
-                asys = re.findall( r'peer-as [0-9]*', conf)
-                local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
-                self.local_ips = [x[14:] for x in local_ips]
-                if router_id and self.router_id == 0:
-                    self.router_id = router_id[0][10:]
-                    bgp_set_router_id(self._bgp_ptr, ip2int(self.router_id))
-                else:
-                    for ip in self.local_ips:
-                        int_ip = ip2int(ip)
-                        if int_ip > self.router_id:
-                            self.router_id = ip
-                    bgp_set_router_id(self._bgp_ptr, ip2int(self.router_id))
-                if asn:
-                    self.asn = asn[0][9:]
-                for neighbor, asn in zip(ip, asys):
-                    n = neighbor[9:]
-                    asn = int(asn[8:])
-                    self.neighbors[n] = {}
-                    self.neighbors[n]["MED"] = 0
-                    self.neighbors[n]["ASN"] = asn
-        else:
-            print "No config file provided for bgp router"
+#         if config_file and os.path.isfile(config_file):
+#             self._bgp_ptr = bgp_new(config_file)
+#             with file(config_file, "r") as f:
+#                 conf = f.read()
+#                 # neighbor = []
+#                 router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
+#                 asn =  re.findall( r'local-as [0-9]*', conf)
+#                 ip = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
+#                 asys = re.findall( r'peer-as [0-9]*', conf)
+#                 local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
+#                 self.local_ips = [x[14:] for x in local_ips]
+#                 if router_id and self.router_id == 0:
+#                     self.router_id = router_id[0][10:]
+#                     bgp_set_router_id(self._bgp_ptr, ip2int(self.router_id))
+#                 else:
+#                     for ip in self.local_ips:
+#                         int_ip = ip2int(ip)
+#                         if int_ip > self.router_id:
+#                             self.router_id = ip
+#                     bgp_set_router_id(self._bgp_ptr, ip2int(self.router_id))
+#                 if asn:
+#                     self.asn = asn[0][9:]
+#                 for neighbor, asn in zip(ip, asys):
+#                     n = neighbor[9:]
+#                     asn = int(asn[8:])
+#                     self.neighbors[n] = {}
+#                     self.neighbors[n]["MED"] = 0
+#                     self.neighbors[n]["ASN"] = asn
+#         else:
+#             print "No config file provided for bgp router"
 
-    def set_router_id(self, router_id):
-        if isinstance(router_id, basestring):
-            bgp_set_router_id(self._bgp_ptr, ip2int(router_id))
-        else:
-            bgp_set_router_id(self._bgp_ptr, router_id)
+#     def set_router_id(self, router_id):
+#         if isinstance(router_id, basestring):
+#             bgp_set_router_id(self._bgp_ptr, ip2int(router_id))
+#         else:
+#             bgp_set_router_id(self._bgp_ptr, router_id)
 
-    def set_allowas_in(self, value):
-        self.allowas_in = value
+#     def set_allowas_in(self, value):
+#         self.allowas_in = value
 
-    def add_advertised_prefix(self, prefix, 
-                              as_path = None, communities = None):
-        self.prefixes[prefix] = {}
-        if communities:
-            self.prefix[prefix]["COMM"] = communities
-        if as_path:
-            self.prefixes[prefix]["AS-PATH"] = as_path
+#     def add_advertised_prefix(self, prefix, 
+#                               as_path = None, communities = None):
+#         self.prefixes[prefix] = {}
+#         if communities:
+#             self.prefix[prefix]["COMM"] = communities
+#         if as_path:
+#             self.prefixes[prefix]["AS-PATH"] = as_path
     
-    def add_advertised_prefixes(self, prefixes, as_path = None,
-                                communities = None):
-        for prefix in prefixes:
-            self.add_advertised_prefix(prefix, as_path, communities)
+#     def add_advertised_prefixes(self, prefixes, as_path = None,
+#                                 communities = None):
+#         for prefix in prefixes:
+#             self.add_advertised_prefix(prefix, as_path, communities)
 
-    def set_maximum_paths(self, value):
-        self.max_paths = value
+#     def set_maximum_paths(self, value):
+#         self.max_paths = value
 
-    def set_relaxed_maximum_paths(self, value = True):
-        self.relax = value 
+#     def set_relaxed_maximum_paths(self, value = True):
+#         self.relax = value 
 
-    def write_config_file(self, rname):
-        conf = {}
-        conf["prefixes"] = self.prefixes
-        conf["neighbors"] = self.neighbors
-        conf["asn"] = self.asn
-        conf["router_id"] = self.router_id
-        conf["max_paths"] = self.max_paths
-        conf["relax"] = self.relax
-        conf["allowas_in"] = self.allowas_in
-        with file("/tmp/conf-bgp.%s" % rname, "w") as f:
-            json.dump(conf, f)
+#     def write_config_file(self, rname):
+#         conf = {}
+#         conf["prefixes"] = self.prefixes
+#         conf["neighbors"] = self.neighbors
+#         conf["asn"] = self.asn
+#         conf["router_id"] = self.router_id
+#         conf["max_paths"] = self.max_paths
+#         conf["relax"] = self.relax
+#         conf["allowas_in"] = self.allowas_in
+#         with file("/tmp/conf-bgp.%s" % rname, "w") as f:
+#             json.dump(conf, f)
 
-    def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
-        for prefix in prefixes:
-            self.add_advertised_prefix(prefix, next_hop, as_path, communities)
+#     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
+#         for prefix in prefixes:
+#             self.add_advertised_prefix(prefix, next_hop, as_path, communities)
 
-    def add_neighbor(self, neighbor_ip, neighbor_as):
-        int_ip = ip2int(neighbor_ip) 
-        bgp_add_neighbor(self._bgp_ptr, int_ip, neighbor_as)
+#     def add_neighbor(self, neighbor_ip, neighbor_as):
+#         int_ip = ip2int(neighbor_ip) 
+#         bgp_add_neighbor(self._bgp_ptr, int_ip, neighbor_as)
 
-    def get_local_ips(self):
-        return self.local_ips
+#     def get_local_ips(self):
+#         return self.local_ips
 
 
 params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
@@ -181,6 +181,13 @@ Port = namedtuple('Port', params)
 cdef class Router:
     cdef router* _router_ptr 
     cdef ports
+    cdef object daemon
+    cdef object routes
+    cdef object intfDict
+    cdef object neighbors
+    cdef object bgp
+    cdef object exabgpConfFile
+    cdef object asNum
 
     def __init__(self, name):
         self.name = name
@@ -203,21 +210,6 @@ cdef class Router:
             int_nm = ip2int(netmask)
             router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
 
-    def add_protocol(self, Proto):
-        if isinstance(Proto, BGP):
-            proto = <BGP> Proto
-            proto.write_config_file(self.name)
-            if proto.max_paths:
-                router_set_ecmp(self._router_ptr, True)
-            for ip in proto.local_ips:
-                if ip in self.ports:
-                    port = self.ports[ip]
-                    ip_conf = '/'.join([ip, str(netmask2cidr(port.netmask))])
-                    bgp_add_local_ip(proto._bgp_ptr, ip_conf)
-                else:
-                    print "BGP local port does not exist"
-            router_add_bgp(self._router_ptr, proto._bgp_ptr)
-
     property name:
         def __get__(self):
             return router_name(self._router_ptr)
@@ -228,114 +220,6 @@ cdef class Router:
     @property
     def uuid(self):
         return router_uuid(self._router_ptr)
-
-cdef class BGPRouter(Router):
-    # TODO: Should just use the members of the BGP class
-    cdef object routes
-    cdef object intfDict
-    cdef object neighbors
-    cdef object bgp
-    cdef object exabgpConfFile
-    cdef object asNum
-
-    # def __new__(cls, name):
-    #     return super().__new__(cls, name)
-
-    def __init__(self, name, intfDict,
-                 asNum, neighbors, routes,
-                 exabgpConfFile=None,
-                 allowas_in = False,
-                 relax = False,
-                 maximum_paths= 0,
-                 runDir='/tmp', *args, **kwargs):
-        
-        # self.name = name
-        super(BGPRouter, self).__init__(name)
-        self.routes = routes
-        self.intfDict = intfDict
-        if exabgpConfFile is not None:
-            self.exabgpConfFile = exabgpConfFile
-            self.bgp = BGP(config_file =  self.exabgpConfFile)
-        else:
-            self.exabgpConfFile = '%s/%s.conf' % (runDir, name)      
-            self.asNum = asNum
-            self.neighbors = neighbors
-            self.generateConfig()
-            self.bgp = BGP(config_file = self.exabgpConfFile)
-            # print self.bgp.get_local_ips()
-
-        self.config()
-        self.configBGP(allowas_in, maximum_paths, relax)
-        self.add_protocol(self.bgp)
-
-    def config(self):
-        for p in self.intfDict:
-            port = self.intfDict[p][0]
-            self.add_port(port = port['id'], eth_addr = port['mac'], ip = port['ipAddrs'][0],
-               netmask = port['netmask'])
-
-    def generateConfig(self):
-        self.generateExaBGP()
-     
-    def generateExaBGP(self):
-        configFile = open(self.exabgpConfFile, 'w+')
-
-        def writeLine(indent, line):
-            intentStr = ''
-            for _ in range(0, indent):
-                intentStr += '  '
-            configFile.write('%s%s\n' % (intentStr, line))
-            
-        def getRouterId(interfaces):
-            for intfAttributesList in interfaces.itervalues():
-                if not isinstance(intfAttributesList, list):
-                    continue
-                # Try use the first set of attributes, but if using vlans they might not have addresses
-                intfAttributes = intfAttributesList[1] if not intfAttributesList[0]['ipAddrs'] else intfAttributesList[0]
-                return intfAttributes['ipAddrs'][0].split('/')[0]
-
-
-        writeLine(0, 'process client{')
-        writeLine(2, 'run /usr/bin/python /home/vagrant/horse/python/router_client.py %s;' % self.name)
-        writeLine(2, 'encoder json;\n}\n')
-
-        writeLine(0, 'template {')
-        writeLine(2, 'neighbor router {')
-        writeLine(4, 'family {')
-        writeLine(6, 'ipv4 unicast;')
-        writeLine(4, '}')
-        writeLine(4, 'api speaking {')
-        writeLine(6, 'processes [client];')
-        writeLine(6, 'neighbor-changes;')
-        writeLine(6, 'receive {')
-        writeLine(8, 'parsed;')
-        writeLine(8, 'update;')
-        writeLine(6, '}')
-        writeLine(4, '}')
-        writeLine(4, 'local-as %s;' % self.asNum)
-        writeLine(4, 'manual-eor true;')
-        writeLine(2, '}')
-        writeLine(0, '}\n')
-
-        router_id = getRouterId(self.intfDict)
-        for neighbor in self.neighbors:
-            writeLine(0, 'neighbor %s {' % neighbor['address'])
-            writeLine(2, 'inherit router;')
-            writeLine(2, 'peer-as %s;' % neighbor['as'])
-            writeLine(2, 'router-id %s;' % router_id)
-            writeLine(2, 'local-address %s;' % neighbor['local-address'] )
-            writeLine(2, 'group-updates false;')
-            writeLine(0, '}\n')
-
-        configFile.close()
-        
-    def configBGP(self, allowas_in, maximum_paths, relax):
-        self.bgp.set_maximum_paths(maximum_paths) 
-        self.bgp.set_relaxed_maximum_paths(relax)
-        self.bgp.set_allowas_in(allowas_in)
-
-        for route in self.routes:
-            self.bgp.add_advertised_prefix(route)
 
 cdef class Host:
     cdef host* _host_ptr

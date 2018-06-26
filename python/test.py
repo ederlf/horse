@@ -25,4 +25,4 @@ topo.add_link(sw1, h1, 1, 1)
 topo.add_link(sw1, h2, 2, 1)
 
 sim = Sim(topo)
-sim.start()
+#sim.start()

@@ -17,7 +17,7 @@ if path not in sys.path:
 
 from bgp_peer.peer import BGPPeer
     
-def _recv(conn, q, peer):
+def _recv(conn, q):
     readlen = 0
     pos = 0
     size = 0
@@ -54,7 +54,7 @@ def _recv(conn, q, peer):
             buf = None
 
 
-def _send(q, peer, stdin):
+def _send(q, stdin):
     counter = 0
     message = None
     
@@ -80,6 +80,7 @@ def _send(q, peer, stdin):
 def _process_sim(sim_queue, peer):
     while True:
         msg_type, buf = sim_queue.get()
+        # syslog.syslog("%s" %(str(peer)))
         peer.process_message(msg_type, buf)   
         # if cmds:
         #     for cmd in cmds:
@@ -89,6 +90,7 @@ def _process_sim(sim_queue, peer):
 def _process_exa(exabgp_queue, peer):
     while True:
         line = exabgp_queue.get()
+        # syslog.syslog("%s" %(str(peer)))
         if line != "done" and line != "error":
             # syslog.syslog(line)
             peer.process_bgp_message(line)
@@ -101,24 +103,26 @@ if __name__ == '__main__':
     rname = sys.argv[1]
     mutex = Lock()
     try:
-        exabgp_queue = Queue.Queue()
-        sim_queue = Queue.Queue()
-        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # s.setblocking(0)
-        conn.connect(address)
-        peer = BGPPeer(rname, conn, sys.stdout, mutex)
-        sender = Thread(target=_send, args=(exabgp_queue, peer, sys.stdin))
-        process_exa = Thread(target =_process_exa, args=(exabgp_queue, peer))
-        receiver = Thread(target=_recv, args=(conn, sim_queue, peer))
-        process_sim = Thread(target =_process_sim, args=(sim_queue, peer))
-        process_exa.daemon = True
-        process_sim.daemon = True
-        sender.start()
-        receiver.start()
-        process_exa.start()
-        process_sim.start()
-        sender.join()
-        conn.close()
+        pass
+        # exabgp_queue = Queue.Queue()
+        # sim_queue = Queue.Queue()
+        # sender = Thread(target=_send, args=(exabgp_queue, sys.stdin))
+        # sender.start()
+        # conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # # s.setblocking(0)
+        # conn.connect(address)
+        # peer = BGPPeer(rname, conn, sys.stdout, mutex)
+        # receiver = Thread(target=_recv, args=(conn, sim_queue))
+        # process_exa = Thread(target =_process_exa, args=(exabgp_queue, peer))
+        # process_sim = Thread(target =_process_sim, args=(sim_queue, peer))
+        # process_exa.daemon = True
+        # process_sim.daemon = True
+        # receiver.start()
+        # process_exa.start()
+        # process_sim.start()
+        # sender.join()
+        # # receiver.join()
+        # conn.close()
     except OSError as msg:
         print msg
 

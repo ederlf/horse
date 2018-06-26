@@ -1,8 +1,8 @@
 #include "router.h"
 #include "legacy_node.h"
 #include "lib/net_utils.h"
-#include "routing/routing.h"
-#include "routing/routing_msg.h"
+#include "routing/routing_daemon.h"
+#include "routing_msg/routing_msg.h"
 #include <arpa/inet.h>
 #include <log/log.h>
 #include <netemu/netns.h>
@@ -12,7 +12,7 @@ struct router
 	struct legacy_node ln;
     uint32_t router_id;                /* Highest router_id from protocols */
     bool ecmp;
-    struct routing *protocols;         /* Hash map of routing protocols */
+    struct routing_daemon *daemon;
 };
 
 /* The internal network is 172.20.0.0/16, enabling 16384 possible namespaces. 
@@ -31,7 +31,6 @@ router_new(void)
 {
     struct router *r = xmalloc(sizeof(struct router));
     legacy_node_init(&r->ln, ROUTER);
-    r->protocols = NULL;
     r->ln.base.recv_netflow = router_recv_netflow;
     r->ln.base.send_netflow = router_send_netflow;
     r->router_id = 0;
@@ -42,18 +41,12 @@ router_new(void)
 static void
 router_stop(struct router *r){
     char rname[MAX_NODE_NAME], internal_intf[MAX_NODE_NAME+10];
-    struct routing *rp, *rptmp;
     
     memcpy(rname, r->ln.base.name, MAX_NODE_NAME);
     sprintf(internal_intf, "%s-inet-ext", rname);
     delete_intf(internal_intf);
-    HASH_ITER(hh, r->protocols, rp, rptmp) {
-        rp->clean(rp);
-        HASH_DEL(r->protocols, rp);
-        free(rp);
-    }
-
     netns_delete(rname);
+    r->daemon->stop(r->daemon);
 }
 
 void 
@@ -72,13 +65,14 @@ router_add_port(struct router *r, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
 }
 
 void 
-router_add_bgp(struct router *rt, struct bgp *p)
+router_set_quagga_daemon(struct router *r, struct quagga_daemon *d)
 {
-    HASH_ADD(hh, rt->protocols, type, sizeof(uint16_t), (struct routing*) p);
-    uint32_t bgp_rid = bgp_router_id(p);
-    if (bgp_rid > rt->router_id){
-        rt->router_id = bgp_rid;
-    }
+    r->daemon = (struct routing_daemon*) d;
+}
+
+void router_set_exabgp_daemon(struct router *r, struct exabgp_daemon *d)
+{
+    r->daemon = (struct routing_daemon*) d;
 }
 
 void
@@ -140,18 +134,8 @@ router_start(struct router *r)
     gen_internal_ip(addr);
     setup_veth(rname, intf, intf2, addr, "16", "br0");
     // set_intf_up(rname, "lo");
+    r->daemon->start(r->daemon);
     return 0;
-}
-
-void 
-router_start_protocols(struct router *r)
-{
-    char rname[MAX_NODE_NAME];
-    struct routing *rp, *rptmp;
-    memcpy(rname, r->ln.base.name, MAX_NODE_NAME);
-    HASH_ITER(hh, r->protocols, rp, rptmp) {
-        rp->start(rp, rname);
-    }
 }
 
 void 
@@ -198,10 +182,6 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
     routing_msg_unpack(data, &msg);
     switch(msg->type) {
         case BGP_STATE:{
-            struct routing *p;
-            uint16_t proto = BGP;
-            HASH_FIND(hh, r->protocols, &proto, sizeof(uint16_t), p);
-            msg_ret = bgp_handle_state_msg((struct bgp*) p, (struct bgp_state*) msg);
             break;
         }
         case BGP_ANNOUNCE:
