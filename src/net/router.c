@@ -238,6 +238,12 @@ router_set_ecmp(struct router*r, bool enable)
     r->ecmp = enable;
 }
 
+void 
+router_set_id(struct router *r, uint32_t router_id)
+{
+    r->router_id = router_id;
+}
+
 /* Access functions*/
 char *
 router_name(struct router *r)

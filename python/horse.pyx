@@ -79,24 +79,28 @@ Port = namedtuple('Port', params)
 cdef class Router:
     cdef router* _router_ptr 
     cdef ports
-    cdef object daemon
-    cdef object routes
-    cdef object intfDict
-    cdef object neighbors
-    cdef object bgp
-    cdef object exabgpConfFile
-    cdef object asNum
+    cdef router_id
 
     def __cinit__(self, name, *protocols, daemon="quagga", runDir = "/tmp",
                   **config_files):
         self._router_ptr = router_new()
         self.name = name
         self.ports = {}
+        self.id_set = False
         if daemon == "quagga":
-            self.daemon = QuaggaDaemon(self.name, runDir, protocols, config_files)
+            self.daemon = QuaggaDaemon(self.name, runDir, protocols,
+                                       config_files)
 
         elif daemon == "exabgp":
-            self.daemon = ExaBGPDaemon(self.name, runDir, protocols, config_files)
+            self.daemon = ExaBGPDaemon(self.name, runDir, protocols,
+                                       config_files)
+            self.id_set = True
+
+        if self.daemon.router_id:
+            router_set_id(self._router_ptr, int2ip(self.daemon.router_id))
+
+        if self.daemon.ecmp_enabled:
+            router_set_ecmp(self._router_ptr, self.daemon.ecmp_enabled)
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):
@@ -104,12 +108,19 @@ cdef class Router:
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
         # Add internal for check of configuration
-        self.ports[ip] = Port(port, eth_addr, ip, netmask, max_speed, cur_speed)
-        router_add_port(self._router_ptr, port, c_eth_addr, max_speed, cur_speed)
+        self.ports[ip] = Port(port, eth_addr, ip, netmask, max_speed,
+                              cur_speed)
+        router_add_port(self._router_ptr, port, c_eth_addr, max_speed,
+                        cur_speed)
         if ip != None and netmask != None:
             int_ip = ip2int(ip)
             int_nm = ip2int(netmask)
-            router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
+            router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)     
+            if not self.id_set and router_id(self._router_ptr) < int_ip:
+                router_set_id(self._router_ptr, int_ip)
+
+    def pick_router_id(self):
+        return max([ip2int(ip) for ip in self.ports])
 
     property name:
         def __get__(self):
@@ -142,7 +153,8 @@ cdef class Host:
         mac = eth_addr.replace(':', '').decode('hex')
         cdef uint8_t *c_eth_addr = mac
         host_add_port(self._host_ptr, port, c_eth_addr, max_speed, cur_speed)
-        self.ports.append(Port(port, eth_addr, ip, netmask, max_speed, cur_speed))
+        self.ports.append(Port(port, eth_addr, ip, netmask, max_speed,
+                               cur_speed))
         if ip != None and netmask != None:
             int_ip = ip2int(ip)
             int_nm = ip2int(netmask)
@@ -159,11 +171,13 @@ cdef class Host:
     def ping(self, dst, start_time = 0):
         cdef uint32_t ip
         ip = ip2int(dst)
-        host_add_app_exec(self._host_ptr, self.exec_id, 1, 1, start_time, <void*> &ip, sizeof(int))
+        host_add_app_exec(self._host_ptr, self.exec_id, 1, 1,
+                          start_time, <void*> &ip, sizeof(int))
         self.exec_id += 1
 
     # Rate in Mbps, duration and interval in seconds
-    def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001, src_port = random.randint(5002, 65000)):
+    def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001,
+            src_port = random.randint(5002, 65000)):
         cdef uint32_t ip
         cdef raw_udp_args args
         ip = ip2int(dst)
@@ -171,7 +185,8 @@ cdef class Host:
         args.ip_dst = ip
         args.dst_port = dst_port
         args.src_port = src_port 
-        host_add_app_exec(self._host_ptr, self.exec_id, 17, duration, start_time, <void*> &args, sizeof(raw_udp_args))
+        host_add_app_exec(self._host_ptr, self.exec_id, 17, duration,
+                          start_time, <void*> &args, sizeof(raw_udp_args))
         self.exec_id += 1
 
     property name:
@@ -255,7 +270,8 @@ cdef class Topology:
             topology_add_router(self._topo_ptr, r._router_ptr)
 
     def add_link(self, node1, node2, port1, port2, bw = 1, latency = 0):
-        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, bw, latency, False)
+        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1,
+                          port2, bw, latency, False)
 
     property nodes:
         def __get__(self):

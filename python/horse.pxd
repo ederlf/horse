@@ -49,9 +49,10 @@ cdef extern from "sim/sim.h":
     uint64_t router_uuid(const router* r)
     void router_set_name(router *r, char* name)
     char* router_name(const router *r)
-    char* router_set_id(router *r, char* router_id)
+    void router_set_id(router *r, uint32_t router_id)
     void router_set_ecmp(router *r, bint enable)
     bint router_ecmp(router *r)
+    uint32_t router_id(const router *r)
 
     # Host.h
     host* host_new()
