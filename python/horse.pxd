@@ -20,9 +20,6 @@ cdef extern from "sim/sim.h":
     cdef struct sim_config:
         pass
 
-    cdef struct bgp:
-        pass
-
     cdef struct raw_udp_args:
         uint64_t duration  
         uint64_t rate      
@@ -46,7 +43,7 @@ cdef extern from "sim/sim.h":
     void router_destroy(router *r)
     void router_add_port(router *r, uint32_t port_id, uint8_t *eth_addr,
                          uint32_t speed, uint32_t cur_speed)
-    void router_add_bgp(router *r, bgp *p)
+    # void router_add_bgp(router *r, bgp *p)
     void router_set_intf_ipv4(router *r, uint32_t port_id,
                               uint32_t addr, uint32_t netmask) 
     uint64_t router_uuid(const router* r)
