@@ -74,7 +74,6 @@ cdef class SDNSwitch:
     def uuid(self):
         return dp_uuid(self._dp_ptr)     
 
-
 params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
 Port = namedtuple('Port', params)
 cdef class Router:
@@ -88,7 +87,8 @@ cdef class Router:
     cdef object exabgpConfFile
     cdef object asNum
 
-    def __cinit__(self, name, daemon="quagga", runDir = "/tmp", *protocols, **config_files):
+    def __cinit__(self, name, *protocols, daemon="quagga", runDir = "/tmp",
+                  **config_files):
         self._router_ptr = router_new()
         self.name = name
         self.ports = {}
