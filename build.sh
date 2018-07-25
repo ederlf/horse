@@ -2,6 +2,7 @@
 
 #install deps if we are in travis
 if [ -n "$TRAVIS" ]; then
+	sudo apt-get update
 	sudo apt-get install python-pip
 	sudo pip install cython
 	sudo apt-get install autoconf libtool build-essential pkg-config
