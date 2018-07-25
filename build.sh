@@ -5,7 +5,7 @@ if [ -n "$TRAVIS" ]; then
 	sudo apt-get install python-pip
 	sudo pip install cython
 	sudo apt-get install autoconf libtool build-essential pkg-config
-	sudo apt-get install libevent-dev
+	sudo apt-get install libevent-dev libpcap-dev
 	git clone https://github.com/ederlf/libcfluid_base.git && cd $TRAVIS_BUILD_DIR/libcfluid_base && 
 	git checkout multi-client && ./autogen.sh && ./configure && make
 	sudo make install
