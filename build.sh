@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 #install deps if we are in travis
 if [ -n "$TRAVIS" ]; then
