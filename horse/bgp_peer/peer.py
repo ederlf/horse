@@ -40,8 +40,8 @@ class BGPPeer(object):
             self.conf = json.load(f)
             self.router_id = self.conf['router_id']
             self.asn = int(self.conf['asn'])
-            # syslog.syslog("I opened the file and parsed %s %s" % 
-                # (self.rname, self.router_id))
+            syslog.syslog("I opened the file and parsed %s %s" % 
+                (self.rname, self.router_id))
 
     def __str__(self):
         peer = "router-id:%s, asn:%s" % (self.router_id, self.asn)
@@ -321,10 +321,10 @@ class BGPPeer(object):
             if best_route:
                 best_routes += best_route
         if len(best_routes):
-            # syslog.syslog("%s SENDING BEST ROUTES=============" % self.rname)
+            syslog.syslog("%s SENDING BEST ROUTES=============" % self.rname)
             msg = rmsg.BGPFIBMsg(local_id = rmsg.ip2int(self.router_id),
                                    routes = best_routes)
-            # syslog.syslog("%s" % str(best_routes))
+            syslog.syslog("%s" % str(best_routes))
             # syslog.syslog("Peer is sending his FIB %s" % self.rname)
             self.conn.send(msg.pack())
             # with file("/tmp/rib%s" % self.rname, "a") as f:

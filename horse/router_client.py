@@ -80,7 +80,7 @@ def _send(q, stdin):
 def _process_sim(sim_queue, peer):
     while True:
         msg_type, buf = sim_queue.get()
-        # syslog.syslog("%s" %(str(peer)))
+        syslog.syslog("%s" %(str(peer)))
         peer.process_message(msg_type, buf)   
         # if cmds:
         #     for cmd in cmds:
@@ -103,26 +103,25 @@ if __name__ == '__main__':
     rname = sys.argv[1]
     mutex = Lock()
     try:
-        pass
-        # exabgp_queue = Queue.Queue()
-        # sim_queue = Queue.Queue()
-        # sender = Thread(target=_send, args=(exabgp_queue, sys.stdin))
-        # sender.start()
-        # conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # # s.setblocking(0)
-        # conn.connect(address)
-        # peer = BGPPeer(rname, conn, sys.stdout, mutex)
-        # receiver = Thread(target=_recv, args=(conn, sim_queue))
-        # process_exa = Thread(target =_process_exa, args=(exabgp_queue, peer))
-        # process_sim = Thread(target =_process_sim, args=(sim_queue, peer))
-        # process_exa.daemon = True
-        # process_sim.daemon = True
-        # receiver.start()
-        # process_exa.start()
-        # process_sim.start()
-        # sender.join()
-        # # receiver.join()
-        # conn.close()
+        exabgp_queue = Queue.Queue()
+        sim_queue = Queue.Queue()
+        sender = Thread(target=_send, args=(exabgp_queue, sys.stdin))
+        sender.start()
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # s.setblocking(0)
+        conn.connect(address)
+        peer = BGPPeer(rname, conn, sys.stdout, mutex)
+        receiver = Thread(target=_recv, args=(conn, sim_queue))
+        process_exa = Thread(target =_process_exa, args=(exabgp_queue, peer))
+        process_sim = Thread(target =_process_sim, args=(sim_queue, peer))
+        process_exa.daemon = True
+        process_sim.daemon = True
+        receiver.start()
+        process_exa.start()
+        process_sim.start()
+        sender.join()
+        # receiver.join()
+        conn.close()
     except OSError as msg:
         print msg
 

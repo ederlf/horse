@@ -35,6 +35,7 @@ router_new(void)
     r->ln.base.send_netflow = router_send_netflow;
     r->router_id = 0;
     r->ecmp =  false;
+    r->daemon = NULL;
     return r;
 }
 
@@ -134,8 +135,13 @@ router_start(struct router *r)
     gen_internal_ip(addr);
     setup_veth(rname, intf, intf2, addr, "16", "br0");
     // set_intf_up(rname, "lo");
-    r->daemon->start(r->daemon);
     return 0;
+}
+
+void 
+router_start_daemon(struct router *r)
+{
+    r->daemon->start(r->daemon);
 }
 
 void 

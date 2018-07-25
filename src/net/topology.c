@@ -47,15 +47,6 @@ struct topology* topology_new(void)
     return topo;
 }
 
-void 
-topology_add_router_to_map(struct topology *topo, struct router *r)
-{
-    struct router_node *rn = xmalloc(sizeof (struct router_node));
-    rn->router_id = router_id(r);
-    rn->rt = r;
-    HASH_ADD(hh, topo->routers, router_id, sizeof(uint32_t), rn);  
-}
-
 /* One function for each type is necessary because of the Python binding */
 void 
 topology_add_router(struct topology *topo, struct router *r)

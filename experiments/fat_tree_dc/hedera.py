@@ -109,7 +109,7 @@ if args.horse:
     path = "/home/vagrant/horse/python/"
     if path not in sys.path:
         sys.path.append(path)
-    from horse import *
+    from horse.horse import *
     from ripl.horsedctopo import FatTreeTopo as HorseFatTreeTopo
     from ripl.horsebgptopo import HorseBGPFatTreeTopo
 
@@ -357,7 +357,7 @@ def main():
   # If Mininet start the topology now
   if not args.horse:
     net.start()
-    # CLI(net) 
+    CLI(net) 
 
   flowsToCreate = []
   for fcount in range(args.fph):

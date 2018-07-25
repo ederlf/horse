@@ -11,7 +11,7 @@
 struct router; 
 
 struct router *router_new(void);
-void router_start_protocols(struct router *r);
+void router_start_daemon(struct router *r);
 void router_destroy(struct router *h);
 void router_add_port(struct router *h, uint32_t port_id, 
                  uint8_t eth_addr[ETH_LEN], uint32_t speed, 

@@ -12,9 +12,9 @@ include vendor/netemu/automake.mk
 include vendor/patricia/automake.mk
 include src/automake.mk
 
-bin_PROGRAMS = horse
-horse_SOURCES = src/horse.c
-horse_LDADD = .libs/libhorse.la -lcfluid_base -loci -levent
+bin_PROGRAMS = main
+main_SOURCES = src/main.c
+main_LDADD = .libs/libhorse.la -lcfluid_base -loci -levent
 
 
 # Unit tests

@@ -15,12 +15,12 @@ Based on the code from @author Brandon Heller (brandonh@stanford.edu)
 import sys
 from random import randint
 
-path = "/home/vagrant/horse/python/"
-if path not in sys.path:
-    sys.path.append(path)
+# path = "/home/vagrant/horse/horse-python/"
+# if path not in sys.path:
+#     sys.path.append(path)
 
-from horse import *
-from router import BGPNeighbor, BGP
+from horse.horse import *
+from horse.router import BGPNeighbor, BGP
 
 def rand_mac():
     return "%02x:%02x:%02x:%02x:%02x:%02x" % (

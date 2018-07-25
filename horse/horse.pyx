@@ -1,5 +1,5 @@
 cimport horse
-from router import QuaggaDaemon, ExaBGPDaemon
+from router cimport ExaBGPDaemon, QuaggaDaemon
 from libc.stdint cimport uint64_t
 from libc.stdint cimport UINT64_MAX
 import random
@@ -7,7 +7,8 @@ import os.path
 import json
 import re
 from msg import ip2int, int2ip, netmask2cidr
-from collections import namedtuple
+from collections import namedtuple 
+
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -77,30 +78,40 @@ cdef class SDNSwitch:
 params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
 Port = namedtuple('Port', params)
 cdef class Router:
-    cdef router* _router_ptr 
+    cdef router* _router_ptr
+    cdef daemon
     cdef ports
-    cdef router_id
+    cdef id_set
+    # cdef quagga_daemon *quagga_ptr
 
-    def __cinit__(self, name, *protocols, daemon="quagga", runDir = "/tmp",
+    def __cinit__(self, name, *protocols, daemon = "quagga", runDir = "/tmp",
                   **config_files):
         self._router_ptr = router_new()
         self.name = name
         self.ports = {}
         self.id_set = False
+        qd = NULL
+        self.daemon = daemon
         if daemon == "quagga":
-            self.daemon = QuaggaDaemon(self.name, runDir, protocols,
+            self.daemon = QuaggaDaemon(self.name, runDir, *protocols,
                                        config_files)
+            # router_set_quagga_daemon(self._router_ptr, self.daemon._qd_ptr)
 
         elif daemon == "exabgp":
             self.daemon = ExaBGPDaemon(self.name, runDir, protocols,
                                        config_files)
+            self.set_exabgp_daemon(self.daemon)
+            # router_set_exabgp_daemon(self._router_ptr, self.daemon._exa_ptr)
+        if self.daemon.router_id:
+            router_set_id(self._router_ptr, ip2int(self.daemon.router_id))
             self.id_set = True
 
-        if self.daemon.router_id:
-            router_set_id(self._router_ptr, int2ip(self.daemon.router_id))
+        if self.daemon.get_ecmp_enabled():
+            router_set_ecmp(self._router_ptr, self.daemon.get_ecmp_enabled())
 
-        if self.daemon.ecmp_enabled:
-            router_set_ecmp(self._router_ptr, self.daemon.ecmp_enabled)
+
+    def set_exabgp_daemon(self, ExaBGPDaemon d):
+        router_set_exabgp_daemon(self._router_ptr, d.get_exabgp_ptr())
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):
@@ -159,7 +170,6 @@ cdef class Host:
             int_ip = ip2int(ip)
             int_nm = ip2int(netmask)
             host_set_intf_ipv4(self._host_ptr, port, int_ip, int_nm)
-
 
     def get_ports(self):
         return self.ports
@@ -249,8 +259,8 @@ cdef class Topology:
     #         topology_destroy(self._topo_ptr)
 
     # @staticmethod
-    cdef topology* topo_ptr(self):
-        return self._topo_ptr
+    # cdef topology* topo_ptr(self):
+    #     return self._topo_ptr
 
     def add_node(self, Node, **kwargs):
         if "name" in kwargs:

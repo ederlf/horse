@@ -2,6 +2,7 @@ from libc.stdint cimport uint64_t
 from libc.stdint cimport uint32_t
 from libc.stdint cimport uint16_t
 from libc.stdint cimport uint8_t
+from router cimport quagga_daemon, exabgp_daemon
 
 cdef extern from "sim/sim.h":
 
@@ -47,6 +48,8 @@ cdef extern from "sim/sim.h":
     void router_set_intf_ipv4(router *r, uint32_t port_id,
                               uint32_t addr, uint32_t netmask) 
     uint64_t router_uuid(const router* r)
+    void router_set_quagga_daemon(router *r, quagga_daemon *d)
+    void router_set_exabgp_daemon(router *r, exabgp_daemon *d)
     void router_set_name(router *r, char* name)
     char* router_name(const router *r)
     void router_set_id(router *r, uint32_t router_id)

@@ -151,17 +151,19 @@ setup_routers(struct topology *topo)
             }
         }
     }
-    // /* Need to think a better way to no go twice over the the routers */
-    // HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
-    //     struct router *r = rnode->rt;
-    //     router_start_protocols(r);
-    //     // sleep(1);
-    // }
+
+    /* Need to think a better way to no go twice over the the routers */
+    HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
+        struct router *r = rnode->rt;
+        router_start_daemon(r);
+        // sleep(1);
+    }
 
     HASH_ITER(hh, added, l, ltmp){
         HASH_DEL(added, l);
         free(l);
     }
+
 }
 
 static void 
@@ -185,7 +187,7 @@ setup(struct sim *s)
     }
     setup_routers(topo);
     // int i = 0;
-    // while (i < 20){
+    // while (i < 10){
     //     sleep(1);
     //     ++i;
     // }

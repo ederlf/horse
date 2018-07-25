@@ -241,6 +241,7 @@ class BgpRouter(Router):
         writeLine(1, 'timers bgp %s' % '3 9')
         writeLine(1, '!')
         writeLine(1, 'maximum-paths 64')
+        
         for neighbor in self.neighbors:
             writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))
             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])

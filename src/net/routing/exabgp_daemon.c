@@ -35,16 +35,22 @@ start_exabgp(struct routing_daemon* r)
     struct exabgp_daemon *d = (struct exabgp_daemon*) r;
     char **addr = NULL;
     stream = open_memstream(&buf, &len);
-    char ip[INET_ADDRSTRLEN];
+    // char ip[INET_ADDRSTRLEN];
+    fprintf(stream, "\" ");
     while ( (addr=(char**)utarray_next(d->ips, addr))) {
-        memset(ip, 0x0, INET_ADDRSTRLEN);
-        char *p = strchr(*addr,'/');
-        strncpy(ip, *addr, p - (*addr));
-        fprintf(stream, "%s ", ip);
+        
+        // memset(ip, 0x0, INET_ADDRSTRLEN);
+        // char *p = strchr(*addr,'/');
+        // printf("Buf is %s\n", *addr);
+        // strncpy(ip, *addr, p - (*addr));
+        fprintf(stream, "%s ", *addr);
+
     }
     fprintf(stream, "\"");
     fclose(stream);
     /* Start exabgp */
+    printf("%s\n", d->config_file);
+    printf("%s\n", buf);
     netns_launch(d->base.namespace, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
           "exabgp.log.level=NOTICE "
@@ -74,3 +80,4 @@ exabgp_daemon_add_port_ip(struct exabgp_daemon *d, char *ip)
 {
     utarray_push_back(d->ips, &ip);
 }
+
