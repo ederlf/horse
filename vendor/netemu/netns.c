@@ -251,7 +251,6 @@ pid_t netns_launch(const char *name, const char *fmt, ...)
 	pid_t pid;
 
 	pid = fork();
-
 	if (pid == -1) {
 		perror("fork");
 		return -1;
@@ -302,7 +301,7 @@ int netns_run(const char *name, const char *fmt, ...)
 	}
 	if (pid != 0) {
 		waitpid(pid, &status, 0);
-		return WEXITSTATUS(status) == EXIT_SUCCESS ? 0 : -1;
+		return WEXITSTATUS(status) == EXIT_SUCCESS ? pid : -1;
 	}
 
 	/* TODO: use pipe here, process output on failure */

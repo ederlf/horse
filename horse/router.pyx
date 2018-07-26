@@ -235,7 +235,6 @@ cdef class QuaggaDaemon(Daemon):
             # Generate Basic zebra file.
             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
             self.generateZebra()
-        print self.zebraConfFile
         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
         if "bgpd_conf" in kwargs:
             self.bgpd_conf = kwargs["bgpd_conf"]
@@ -261,7 +260,6 @@ cdef class QuaggaDaemon(Daemon):
                 bgp = <BGP> p
                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
                 self.generateBgpd(bgp)
-                print self.bgpd_conf
                 set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)   
                 self.check_ecmp(bgp)
 
@@ -360,7 +358,6 @@ cdef class ExaBGPDaemon(Daemon):
                 self.check_ecmp(bgp)
                 for i in range(0, len(bgp.neighbors)): 
                     neigh = bgp.neighbors[i]
-                    # print neigh
                     self.local_ips.append(neigh.local_ip)
                     self.add_ip(neigh.local_ip)
                 self.router_id = bgp.router_id = max(self.local_ips)
