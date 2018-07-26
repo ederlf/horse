@@ -15,7 +15,7 @@ if [ -n "$TRAVIS" ]; then
 	sudo make install
 	cd $TRAVIS_BUILD_DIR
 	./boot.sh && ./configure && make
-	cd $TRAVIS_BUILD_DIR/horse && python setup.py build_ext --inplace
+	python setup.py build_ext --inplace
 else
 	./boot.sh && ./configure && make
 	cd python && python setup.py build_ext --inplace
