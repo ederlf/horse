@@ -11,6 +11,9 @@ if [ -n "$TRAVIS" ]; then
 	git checkout multi-client && ./autogen.sh && ./configure && make
 	sudo make install
 	cd $TRAVIS_BUILD_DIR
+    git clone https://github.com/google/cmockery.git && cd $TRAVIS_BUILD_DIR/cmockery && ./configure && make 
+    sudo make install
+    cd $TRAVIS_BUILD_DIR
 	./boot.sh && ./configure && make
 	cd $TRAVIS_BUILD_DIR/python && python setup.py build_ext --inplace
 else
