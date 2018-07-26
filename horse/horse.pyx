@@ -93,15 +93,15 @@ cdef class Router:
         qd = NULL
         self.daemon = daemon
         if daemon == "quagga":
-            self.daemon = QuaggaDaemon(self.name, runDir, *protocols,
+            self.daemon = QuaggaDaemon(self.name, runDir, protocols,
                                        config_files)
-            # router_set_quagga_daemon(self._router_ptr, self.daemon._qd_ptr)
+            self.set_quagga_daemon(self.daemon)
 
         elif daemon == "exabgp":
             self.daemon = ExaBGPDaemon(self.name, runDir, protocols,
                                        config_files)
             self.set_exabgp_daemon(self.daemon)
-            # router_set_exabgp_daemon(self._router_ptr, self.daemon._exa_ptr)
+
         if self.daemon.router_id:
             router_set_id(self._router_ptr, ip2int(self.daemon.router_id))
             self.id_set = True
@@ -112,6 +112,9 @@ cdef class Router:
 
     def set_exabgp_daemon(self, ExaBGPDaemon d):
         router_set_exabgp_daemon(self._router_ptr, d.get_exabgp_ptr())
+
+    def set_quagga_daemon(self, QuaggaDaemon d):
+        router_set_quagga_daemon(self._router_ptr, d.get_quagga_ptr())
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):

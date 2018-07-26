@@ -50,29 +50,28 @@ start_quagga(struct routing_daemon *r)
     sprintf(sock_location, "/tmp/zebra%s.api", d->base.namespace);
     if (d->config.zebra_file != NULL) {
         struct sockaddr_un server;
-        char zebra_pid_file[MAX_NAMESPACE_ID+15];        
+        char zebra_pid_file[MAX_NAMESPACE_ID+15];      
         sprintf(zebra_pid_file, "/tmp/zebra%s.pid", d->base.namespace);
+        printf("Zebra file is %s %s %s\n", d->config.zebra_file, sock_location, zebra_pid_file);  
         netns_launch(d->base.namespace, "zebra -d -f %s -z %s -i %s",
           d->config.zebra_file, sock_location,  zebra_pid_file);
     
         d->sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (d->sock_fd < 0){
             perror("opening stream socket when starting zebra");
-            exit(1);
+            goto error;
         }
-
+        memset(&server, 0x0, sizeof(struct sockaddr_un));
         server.sun_family = AF_UNIX;
-        strcpy(server.sun_path, sock_location);
-        if (connect(d->sock_fd, (struct sockaddr *) &server,
+        strncpy(server.sun_path, sock_location, sizeof(server.sun_path) - 1);
+        while (connect(d->sock_fd, (const struct sockaddr *) &server,
                     sizeof(struct sockaddr_un)) < 0) {
-            close(d->sock_fd);
-            perror("connecting stream socket when starting zebra");
-            exit(1);
+            continue;
         }
     }
     else {
-        perror("Configuration for zebra not found. Exiting...");
-        exit(1);
+        perror("Configuration for zebra not found. ");
+        goto error;
     }
 
     if (d->config.bgpd_file != NULL) {
@@ -105,6 +104,10 @@ start_quagga(struct routing_daemon *r)
         netns_launch(d->base.namespace, "ripngd -d -f %s -z %s -i %s",
           d->config.ripngd_file, sock_location,  ripngd_pid_file);
     }
+
+    /* TODO: Return an error code for the function */
+    error:
+    return;
 }
 
 static void 
@@ -138,8 +141,10 @@ set_quagga_daemon_zebra_file(struct quagga_daemon *d, char *fname)
 void 
 set_quagga_daemon_bgpd_file(struct quagga_daemon *d, char *fname)
 {
+    
     d->config.bgpd_file = xmalloc(strlen(fname)+1);
     strcpy(d->config.bgpd_file, fname);
+    
 }
 
 void 

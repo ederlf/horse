@@ -6,6 +6,13 @@ cdef class Daemon:
 
 cdef class QuaggaDaemon(Daemon):
     cdef quagga_daemon* _qd_ptr
+    cdef zebraConfFile
+    cdef bgpd_conf
+    cdef ospfd_conf
+    cdef ospf6d_conf
+    cdef ripd_conf
+    cdef ripngd_conf 
+    cdef quagga_daemon* get_quagga_ptr(self)
 
 cdef class ExaBGPDaemon(Daemon):
     cdef exabgp_daemon* _exa_ptr

@@ -35,12 +35,13 @@ cdef class BGPNeighbor:
     cdef filter_list
     cdef route_map
     cdef route_reflector_client
+    cdef port
 
 
     def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,
                   peer_weight = None, maximum_prefix = None, distribute_list = 
                   None, prefix_list = None, filter_list = None, 
-                  route_map = None, route_reflector_client = False):
+                  route_map = None, route_reflector_client = False, port = None):
         self.asn = asn
         self.ip = ip
         self.local_ip = local_ip
@@ -52,6 +53,7 @@ cdef class BGPNeighbor:
         self.prefix_list = filter_list
         self.route_map = route_map
         self.route_reflector_client = route_reflector_client
+        self.port = port
 
     def neighbor_to_dict(self):
         d = {}
@@ -72,7 +74,9 @@ cdef class BGPNeighbor:
         def __get__(self):
             return self.local_ip
 
-
+    property port:
+        def __get__(self):
+            return self.port
 
         # def __set__(self, asn):
         #     self.router_id = router_id
@@ -223,15 +227,15 @@ cdef class QuaggaDaemon(Daemon):
     # cdef runDir
 
     # Can receive either a configuration file or a protocol object
-    def __cinit__(self, namespace, runDir = "/tmp", *protocols, **kwargs):
+    def __cinit__(self, namespace, runDir, protocols, kwargs):
         
         super(QuaggaDaemon, self).__init__(namespace, runDir)
         self._qd_ptr = quagga_daemon_new(namespace)
         if not "zebra_conf" in kwargs:
             # Generate Basic zebra file.
-            self.zebraConfFile = runDir + "/zebra%s" % namespace
+            self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
             self.generateZebra()
-
+        print self.zebraConfFile
         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
         if "bgpd_conf" in kwargs:
             self.bgpd_conf = kwargs["bgpd_conf"]
@@ -239,15 +243,14 @@ cdef class QuaggaDaemon(Daemon):
             bgp = self.parse_bgpd_file()
             if bgp.router_id:
                 self.router_id = bgp.router_id
-            # bgp.write_auxiliary_config_file(runDir, self.namespace)
             self.check_ecmp(bgp)
-        if "ospfd_conf" in kwargs["ospfd_conf"]:
-            self.ospfd_conf = kwargs["ospf6d_conf"]
+        if "ospfd_conf" in kwargs:
+            self.ospfd_conf = kwargs["ospfd_conf"]
             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
         if "ospf6d_conf" in kwargs:
             self.ospf6d_conf = kwargs["ospf6d_conf"]
             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)
-        if "ripd_conf" in kwargs["ripd_conf"]:
+        if "ripd_conf" in kwargs:
             self.ripd_conf = kwargs["ripd_conf"]
             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
         if "ripngd_conf"  in kwargs:
@@ -255,10 +258,16 @@ cdef class QuaggaDaemon(Daemon):
             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
         for p in protocols:
             if isinstance(p, BGP):
+                bgp = <BGP> p
                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
-                self.generateBgpd(p)
-                # bgp.write_auxiliary_config_file(runDir, self.namespace)   
+                self.generateBgpd(bgp)
+                print self.bgpd_conf
+                set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)   
                 self.check_ecmp(bgp)
+
+
+    cdef quagga_daemon* get_quagga_ptr(self):
+        return self._qd_ptr
 
     def generateZebra(self):
         configFile = open(self.zebraConfFile, 'w+')
@@ -268,35 +277,35 @@ cdef class QuaggaDaemon(Daemon):
                                                            self.namespace))
         configFile.close()
 
-    def generateBgpd(self, bgp):
+    def generateBgpd(self, BGP bgp):
         configFile = open(self.bgpd_conf, 'w+')
-        writeLine(0, 'hostname %s' % self.namespace);
-        writeLine(0, 'password %s' % 'horse')
-        writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
-        writeLine(0, 'debug bgp')
-        writeLine(0, '!')
-        writeLine(0, 'router bgp %s' % bgp.asn)
+        writeLine(configFile, 0, 'hostname %s' % self.namespace);
+        writeLine(configFile, 0, 'password %s' % 'horse')
+        writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))
+        writeLine(configFile, 0, 'debug bgp')
+        writeLine(configFile, 0, '!')
+        writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
         if bgp.router_id:
-            writeLine(1, 'bgp router-id %s' % bgp.router_id)
+            writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
         if bgp.relax:
-            writeLine(1, 'bgp bestpath as-path multipath-relax')    
+            writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')    
         
         # writeLine(1, 'timers bgp %s' % '3 9')
         if bgp.maximum_paths:
-            writeLine(1, 'maximum-paths %s' % bgp.maximum_paths)
-        writeLine(1, '!')
+            writeLine(configFile, 1, 'maximum-paths %s' % bgp.maximum_paths)
+        writeLine(configFile, 1, '!')
         
-        for neighbor in self.neighbors:
-            writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))
-            writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])
-            writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))
-            writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))
-            if 'port' in neighbor:
-                writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))
-            writeLine(1, '!')
+        for neighbor in bgp.neighbors:
+            writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))
+            writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
+            writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
+            writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
+            if neighbor.port:
+                writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))
+            writeLine(configFile, 1, '!')
             
-        for route in self.routes:
-            writeLine(1, 'network %s' % route)
+        for route in bgp.networks:
+            writeLine(configFile, 1, 'network %s' % route)
         configFile.close()
 
     def parse_bgpd_file(self):
