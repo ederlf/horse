@@ -32,130 +32,6 @@ struct pcap_data {
 #define ERR_RET(x) do { perror(x); return EXIT_FAILURE; } while (0);
 #define BUFFER_SIZE 4095
 
-int client_connect(uint32_t server_ip, uint16_t port)
-{
-    int sockfd; // numbytes;  
-    // char buf[MAXDATASIZE];
-    struct sockaddr_in their_addr; /* connector's address information */
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("socket");
-        exit(1);
-    }
-
-    their_addr.sin_family = AF_INET;      /* host byte order */
-    their_addr.sin_port = htons(port);    /* short, network byte order */
-    their_addr.sin_addr.s_addr = server_ip;
-    bzero(&(their_addr.sin_zero), 8);     /* zero the rest of the struct */
-
-    if (connect(sockfd, (struct sockaddr *)&their_addr, \
-                                          sizeof(struct sockaddr)) == -1) {
-        perror("connect");
-        exit(1);
-    }
-
-    return sockfd;
-    // while (1) {
-    //     if (send(sockfd, "Hello, world!\n", 14, 0) == -1){
-    //         perror("send");
-    //         exit (1);
-    //     }
-    //     printf("After the send function \n");
-
-    //     if ((numbytes=recv(sockfd, buf, MAXDATASIZE, 0)) == -1) {
-    //         perror("recv");
-    //         exit(1);
-    //     }   
-
-    //     buf[numbytes] = '\0';
-
-    //     printf("Received in pid=%d, text=: %s \n",getpid(), buf);
-    //     sleep(1);
-    // }
-    return 0;
-}
-
-
-/* callback function when packet have captured */
-static void capture_cb(u_char *user,
-    const struct pcap_pkthdr *h, const u_char *packet)
-{
-    struct pcap_data *data = (struct pcap_data*) user;
-    (void) h;
-    uint8_t *tmp_pkt = (uint8_t*) packet;
-    uint16_t eth_type = *((uint16_t*) (tmp_pkt+14));
-    if (ntohs(eth_type) == ETH_TYPE_IP){
-        tmp_pkt += 16;
-        struct ip_header *ip = (struct ip_header*) tmp_pkt;
-        printf("ETH TYPE %x %x\n", ntohs(eth_type), ntohl(data->ddata.router_id));
-        if (ip->ip_proto == IP_PROTO_OSPF) {
-            /*TODO */
-        } 
-        else if (ip->ip_proto == IP_PROTO_TCP){
-            tmp_pkt += sizeof(struct ip_header);
-            struct tcp_header *tcp= (struct tcp_header*) tmp_pkt;
-            /* BGP */
-            if (ntohs(tcp->tcp_src) == TCP_PORT_BGP || 
-                ntohs(tcp->tcp_dst) == TCP_PORT_BGP){
-                tmp_pkt += sizeof(struct tcp_header);
-                uint8_t bgp_type = *tmp_pkt;
-                if (bgp_type == BGP_UPDATE || bgp_type == BGP_OPEN){
-                    uint8_t msg_data[HEADER_LEN] = {0x0, BGP_ACTIVITY, 0x0, HEADER_LEN};
-                    memcpy(msg_data+4, &data->ddata.router_id, sizeof(uint32_t));
-                    if (send(data->ddata.server_fd, msg_data, HEADER_LEN, 0) == -1){
-                        perror("Failed to send message");
-                        exit (1);
-                    }
-                    /* SEND Activity to Controller */
-                }
-            }
-        }
-    }
-}
-
-static void* capture(void* args)
-{
-    /* the error code buf of libpcap, PCAP_ERRBUF_SIZE = 256 */
-    char ebuf[PCAP_ERRBUF_SIZE];
-    pcap_t *pd;
-    int pcap_loop_ret;
-    struct bpf_program filter;
-    struct pcap_data data;
-    struct daemon_data *dd = (struct daemon_data*) args;
-    /* grab a device to peak into */
-
-    /* create capture handler of libpcap */
-    pd = pcap_open_live("any", 1024, 0, 1000, ebuf);
-    if(pd == NULL) {
-        /* e.g. "Operation not permitted" */
-        printf("pcap_open_live error: %s\n", ebuf);
-        exit(1);
-    }
-    data.pd = pd;
-    data.ddata = *dd;
-    if ( pcap_compile(pd, &filter, "ip", 1, PCAP_NETMASK_UNKNOWN) == -1){
-       fprintf(stderr, "ERROR: %s\n", pcap_geterr(pd) );
-       exit(1);
-    }
-
-    /* Load the filter program into the packet capture device. */
-    if (pcap_setfilter(pd,&filter) == -1){
-        fprintf(stderr, "ERROR: %s\n", pcap_geterr(pd) );
-        exit(1);
-    }
-
-    /* start the loop of capture, loop 5 times */
-    printf("Starting loop\n");
-
-    pcap_loop_ret = pcap_loop(pd, -1, capture_cb, (u_char*)&data);
-    printf("pcap_loop returned: %d\n", pcap_loop_ret);
-
-    pcap_close(pd);
-    return 0;
-}
-
-
-
 static 
 void daemonise(void) {
     // Fork, allowing the parent process to terminate.
@@ -203,8 +79,138 @@ void daemonise(void) {
     }
 }
 
+int client_connect(uint32_t server_ip, uint16_t port)
+{
+    int sockfd; // numbytes;  
+    // char buf[MAXDATASIZE];
+    struct sockaddr_in their_addr; /* connector's address information */
+
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    their_addr.sin_family = AF_INET;      /* host byte order */
+    their_addr.sin_port = htons(port);    /* short, network byte order */
+    their_addr.sin_addr.s_addr = server_ip;
+    bzero(&(their_addr.sin_zero), 8);     /* zero the rest of the struct */
+
+    if (connect(sockfd, (struct sockaddr *)&their_addr, \
+                                          sizeof(struct sockaddr)) == -1) {
+        perror("connect");
+        exit(1);
+    }
+
+    return sockfd;
+    // while (1) {
+    //     if (send(sockfd, "Hello, world!\n", 14, 0) == -1){
+    //         perror("send");
+    //         exit (1);
+    //     }
+    //     printf("After the send function \n");
+
+    //     if ((numbytes=recv(sockfd, buf, MAXDATASIZE, 0)) == -1) {
+    //         perror("recv");
+    //         exit(1);
+    //     }   
+
+    //     buf[numbytes] = '\0';
+
+    //     printf("Received in pid=%d, text=: %s \n",getpid(), buf);
+    //     sleep(1);
+    // }
+    return 0;
+}
+
+
+/* callback function when a packet is captured */
+static void capture_cb(u_char *user,
+    const struct pcap_pkthdr *h, const u_char *packet)
+{
+    struct pcap_data *data = (struct pcap_data*) user;
+    (void) h;
+    uint8_t *tmp_pkt = (uint8_t*) packet;
+    uint16_t eth_type = *((uint16_t*) (tmp_pkt+14));
+    char fname[40];
+    sprintf(fname, "/tmp/daemon%u.log", data->ddata.router_id);
+    FILE *f = fopen(fname, "a");
+    if (ntohs(eth_type) == ETH_TYPE_IP){
+        tmp_pkt += 16;
+        struct ip_header *ip = (struct ip_header*) tmp_pkt;
+        if (ip->ip_proto == IP_PROTO_OSPF) {
+            /*TODO */
+        } 
+        else if (ip->ip_proto == IP_PROTO_TCP){
+            tmp_pkt += sizeof(struct ip_header);
+            struct tcp_header *tcp= (struct tcp_header*) tmp_pkt;
+            /* BGP */
+            uint32_t hlen = (ntohs(tcp->tcp_ctl) >> 12) * 4;
+            if (ntohs(tcp->tcp_src) == TCP_PORT_BGP || 
+                ntohs(tcp->tcp_dst) == TCP_PORT_BGP){
+                /* Skip marker and length */
+                tmp_pkt += hlen + 18;
+                uint8_t bgp_type = *tmp_pkt;
+                /* SEND Activity to Controller */
+                if (bgp_type == BGP_UPDATE || bgp_type == BGP_OPEN){
+                    uint8_t msg_data[HEADER_LEN] = {0x0, BGP_ACTIVITY, 
+                                                    0x0, HEADER_LEN};
+                    memcpy(msg_data+4, &data->ddata.router_id,
+                           sizeof(uint32_t));
+                    int ret = send(data->ddata.server_fd, msg_data,
+                                   HEADER_LEN, 0);
+                    if (ret == -1){
+                        perror("Failed to send message");
+                    }
+                }
+            }
+        }
+    }
+    fclose(f);
+}
+
+static void* capture(void* args)
+{
+    /* the error code buf of libpcap, PCAP_ERRBUF_SIZE = 256 */
+    char ebuf[PCAP_ERRBUF_SIZE];
+    pcap_t *pd;
+    int pcap_loop_ret;
+    struct bpf_program filter;
+    struct pcap_data data;
+    struct daemon_data *dd = (struct daemon_data*) args;
+    /* grab a device to peak into */
+
+    /* create capture handler of libpcap */
+    pd = pcap_open_live("any", 1024, 0, 1000, ebuf);
+    if(pd == NULL) {
+        /* e.g. "Operation not permitted" */
+        printf("pcap_open_live error: %s\n", ebuf);
+        exit(1);
+    }
+    data.pd = pd;
+    data.ddata = *dd;
+    if ( pcap_compile(pd, &filter, "ip", 1, PCAP_NETMASK_UNKNOWN) == -1){
+       fprintf(stderr, "ERROR: %s\n", pcap_geterr(pd) );
+       exit(1);
+    }
+
+    /* Load the filter program into the packet capture device. */
+    if (pcap_setfilter(pd,&filter) == -1){
+        fprintf(stderr, "ERROR: %s\n", pcap_geterr(pd) );
+        exit(1);
+    }
+
+    /* start the loop of capture, loop 5 times */
+    printf("Starting loop\n");
+
+    pcap_loop_ret = pcap_loop(pd, -1, capture_cb, (u_char*)&data);
+    printf("pcap_loop returned: %d\n", pcap_loop_ret);
+
+    pcap_close(pd);
+    return 0;
+}
+
 static
-int loop (int sock, struct sockaddr_nl *addr)
+int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
 {
     int     received_bytes = 0;
     struct  nlmsghdr *nlh;
@@ -249,6 +255,9 @@ int loop (int sock, struct sockaddr_nl *addr)
     for ( ; NLMSG_OK(nlh, received_bytes); \
                     nlh = NLMSG_NEXT(nlh, received_bytes))
     {
+        uint32_t destination = 0;
+        uint32_t netmask= 0;
+        uint32_t next_hop= 0;
         /* Get the route data */
          route_entry = (struct rtmsg *) NLMSG_DATA(nlh);
 
@@ -263,8 +272,9 @@ int loop (int sock, struct sockaddr_nl *addr)
             continue;
                 */
 
-                route_netmask = route_entry->rtm_dst_len;
-                route_protocol = route_entry->rtm_protocol;
+        route_netmask = route_entry->rtm_dst_len;
+        netmask = htonl(~((1 << (32 - route_netmask)) - 1));
+        route_protocol = route_entry->rtm_protocol;
 
         /* Get attributes of route_entry */
         route_attribute = (struct rtattr *) RTM_RTA(route_entry);
@@ -272,32 +282,56 @@ int loop (int sock, struct sockaddr_nl *addr)
         /* Get the route atttibutes len */
         route_attribute_len = RTM_PAYLOAD(nlh);
         /* Loop through all attributes */
+        char fname[40];
+        sprintf(fname, "/tmp/daemon%u.log", dd->router_id);
+        FILE *f = fopen(fname, "a");
         for ( ; RTA_OK(route_attribute, route_attribute_len); \
             route_attribute = RTA_NEXT(route_attribute, route_attribute_len))
         {
             /* Get the destination address */
             if (route_attribute->rta_type == RTA_DST)
             {
+                // memcpy(RTA_DATA(route_attribute), )
+                destination = *(uint32_t*) RTA_DATA(route_attribute);
+                fprintf(f, "Destination %x\n", destination);
                 inet_ntop(AF_INET, RTA_DATA(route_attribute), \
                         destination_address, sizeof(destination_address));
             }
             /* Get the gateway (Next hop) */
             if (route_attribute->rta_type == RTA_GATEWAY)
             {
+                next_hop = *(uint32_t*) RTA_DATA(route_attribute);
                 inet_ntop(AF_INET, RTA_DATA(route_attribute), \
                         gateway_address, sizeof(gateway_address));
             }
         }
-
+        /* TODO: Send all prefixes in a single message? */
+        
         /* Now we can dump the routing attributes */
         if (nlh->nlmsg_type == RTM_DELROUTE)
-            fprintf(stdout, "Deleting route to destination --> %s/%d proto %d and gateway %s\n", \
+            fprintf(f, "Deleting route to destination --> %s/%d proto %d and gateway %s\n", \
                 destination_address, route_netmask, route_protocol, gateway_address);
-        if (nlh->nlmsg_type == RTM_NEWROUTE)
-            printf("Adding route to destination --> %s/%d proto %d and gateway %s\n", \
+        
+        if (nlh->nlmsg_type == RTM_NEWROUTE){
+            if (destination) {
+                uint8_t msg_data[HEADER_LEN+12] = {0x0, BGP_FIB, 0x0, HEADER_LEN+12};
+                memcpy(msg_data+4, &dd->router_id,
+                       sizeof(uint32_t));
+                memcpy(msg_data + HEADER_LEN, &destination, sizeof(uint32_t));
+                memcpy(msg_data + 12, &netmask, sizeof(uint32_t));
+                memcpy(msg_data + 16, &next_hop, sizeof(uint32_t));
+                int ret = send(dd->server_fd, msg_data,
+                               HEADER_LEN+12, 0);
+                if (ret == -1){
+                    perror("Failed to send message");
+                }
+            }
+            fprintf(f, "Adding route to destination --> %s/%d proto %d and gateway %s\n", \
                                 destination_address, route_netmask, route_protocol, gateway_address);
+        }
+        fclose(f);
     }
-
+        
     return 0;
 }
 
@@ -306,8 +340,7 @@ void* route_table_monitor(void* args)
 {
     int sock = -1;
     struct sockaddr_nl addr;
-    struct deamon_data *dd = (struct deamon_data*) args;
-    (void) dd;
+    struct daemon_data *dd = (struct daemon_data*) args;
     /* Zeroing addr */
     bzero (&addr, sizeof(addr));
 
@@ -325,7 +358,7 @@ void* route_table_monitor(void* args)
     }
 
     while (1){
-        loop (sock, &addr);
+        loop (sock, &addr, dd);
     }
 
     /* Close socket */
@@ -349,7 +382,13 @@ int main(int argc, char* argv[])
     inet_pton(AF_INET, argv[1], &router_id);
     inet_pton(AF_INET, "172.20.254.254", &server_ip);
     dd.router_id = router_id;
+    char fname[40];
+    sprintf(fname, "/tmp/daemon%u.log", router_id);
+    FILE *f = fopen(fname, "w");
+    fprintf(f, "Daemon started %u\n", router_id);
     dd.server_fd = client_connect(server_ip, 6000);
+    fprintf(f, "Daemon connected %u\n", router_id);
+    fclose(f);
     daemonise();
     if (pthread_create(&pcap, NULL, capture, &dd) != 0) {
         perror("pthread_create() error");
@@ -360,6 +399,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
     pthread_join(pcap, 0);
+    pthread_join(route_mon, 0);
     // close(sockfd);
     return 0;
 }
