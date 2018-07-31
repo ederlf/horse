@@ -824,16 +824,23 @@ struct __pyx_obj_5horse_6router_Daemon {
  * 
  * cdef class QuaggaDaemon(Daemon):             # <<<<<<<<<<<<<<
  *     cdef quagga_daemon* _qd_ptr
- * 
+ *     cdef zebraConfFile
  */
 struct __pyx_obj_5horse_6router_QuaggaDaemon {
   struct __pyx_obj_5horse_6router_Daemon __pyx_base;
+  struct __pyx_vtabstruct_5horse_6router_QuaggaDaemon *__pyx_vtab;
   struct quagga_daemon *_qd_ptr;
+  PyObject *zebraConfFile;
+  PyObject *bgpd_conf;
+  PyObject *ospfd_conf;
+  PyObject *ospf6d_conf;
+  PyObject *ripd_conf;
+  PyObject *ripngd_conf;
 };
 
 
-/* "horse/router.pxd":10
- *     cdef quagga_daemon* _qd_ptr
+/* "horse/router.pxd":17
+ *     cdef quagga_daemon* get_quagga_ptr(self)
  * 
  * cdef class ExaBGPDaemon(Daemon):             # <<<<<<<<<<<<<<
  *     cdef exabgp_daemon* _exa_ptr
@@ -869,10 +876,11 @@ struct __pyx_obj_5horse_6router_BGPNeighbor {
   PyObject *filter_list;
   PyObject *route_map;
   PyObject *route_reflector_client;
+  PyObject *port;
 };
 
 
-/* "horse/router.pyx":88
+/* "horse/router.pyx":92
  * 
  * # This class serves as a configuration for the BGP protocol
  * cdef class BGP:             # <<<<<<<<<<<<<<
@@ -896,7 +904,21 @@ struct __pyx_obj_5horse_6router_BGP {
 
 
 
-/* "horse/router.pyx":327
+/* "horse/router.pyx":224
+ *             self.router_id = router_id
+ * 
+ * cdef class QuaggaDaemon(Daemon):             # <<<<<<<<<<<<<<
+ *     # cdef quagga_daemon* _qd_ptr
+ *     # cdef router_id
+ */
+
+struct __pyx_vtabstruct_5horse_6router_QuaggaDaemon {
+  struct quagga_daemon *(*get_quagga_ptr)(struct __pyx_obj_5horse_6router_QuaggaDaemon *);
+};
+static struct __pyx_vtabstruct_5horse_6router_QuaggaDaemon *__pyx_vtabptr_5horse_6router_QuaggaDaemon;
+
+
+/* "horse/router.pyx":334
  * 
  * 
  * cdef class ExaBGPDaemon(Daemon):             # <<<<<<<<<<<<<<
@@ -1225,11 +1247,17 @@ static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject 
 static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
 #endif
 
-/* PyDictContains.proto */
-static CYTHON_INLINE int __Pyx_PyDict_ContainsTF(PyObject* item, PyObject* dict, int eq) {
-    int result = PyDict_Contains(dict, item);
+/* PySequenceContains.proto */
+static CYTHON_INLINE int __Pyx_PySequence_ContainsTF(PyObject* item, PyObject* seq, int eq) {
+    int result = PySequence_Contains(seq, item);
     return unlikely(result < 0) ? result : (result == (eq == Py_EQ));
 }
+
+/* ArgTypeTest.proto */
+#define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
+    ((likely((Py_TYPE(obj) == type) | (none_allowed && (obj == Py_None)))) ? 1 :\
+        __Pyx__ArgTypeTest(obj, type, name, exact))
+static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
 
 /* PyObjectSetAttrStr.proto */
 #if CYTHON_USE_TYPE_SLOTS
@@ -1239,15 +1267,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
 #define __Pyx_PyObject_DelAttrStr(o,n)   PyObject_DelAttr(o,n)
 #define __Pyx_PyObject_SetAttrStr(o,n,v) PyObject_SetAttr(o,n,v)
 #endif
-
-/* PySequenceContains.proto */
-static CYTHON_INLINE int __Pyx_PySequence_ContainsTF(PyObject* item, PyObject* seq, int eq) {
-    int result = PySequence_Contains(seq, item);
-    return unlikely(result < 0) ? result : (result == (eq == Py_EQ));
-}
-
-/* None.proto */
-static CYTHON_INLINE void __Pyx_RaiseUnboundLocalError(const char *varname);
 
 /* ListCompAppend.proto */
 #if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
@@ -1271,12 +1290,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetSlice(
         PyObject* obj, Py_ssize_t cstart, Py_ssize_t cstop,
         PyObject** py_start, PyObject** py_stop, PyObject** py_slice,
         int has_cstart, int has_cstop, int wraparound);
-
-/* ArgTypeTest.proto */
-#define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
-    ((likely((Py_TYPE(obj) == type) | (none_allowed && (obj == Py_None)))) ? 1 :\
-        __Pyx__ArgTypeTest(obj, type, name, exact))
-static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
 
 /* PyObject_GenericGetAttrNoDict.proto */
 #if CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP && PY_VERSION_HEX < 0x03070000
@@ -1358,6 +1371,7 @@ static int __Pyx_check_binary_version(void);
 /* InitStrings.proto */
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
+static struct quagga_daemon *__pyx_f_5horse_6router_12QuaggaDaemon_get_quagga_ptr(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self); /* proto*/
 static struct exabgp_daemon *__pyx_f_5horse_6router_12ExaBGPDaemon_get_exabgp_ptr(struct __pyx_obj_5horse_6router_ExaBGPDaemon *__pyx_v_self); /* proto*/
 
 /* Module declarations from 'horse.router' */
@@ -1385,21 +1399,19 @@ static const char __pyx_k_r[] = "r";
 static const char __pyx_k_w[] = "w";
 static const char __pyx_k__2[] = "  ";
 static const char __pyx_k__3[] = "/";
-static const char __pyx_k_as[] = "as";
 static const char __pyx_k_ip[] = "ip";
 static const char __pyx_k_os[] = "os";
 static const char __pyx_k_re[] = "re";
-static const char __pyx_k__13[] = "!";
-static const char __pyx_k__27[] = "}";
-static const char __pyx_k__28[] = "}\n";
-static const char __pyx_k__31[] = "_";
+static const char __pyx_k__12[] = "!";
+static const char __pyx_k__22[] = "}";
+static const char __pyx_k__23[] = "}\n";
+static const char __pyx_k__26[] = "_";
 static const char __pyx_k_asn[] = "asn";
 static const char __pyx_k_max[] = "max";
 static const char __pyx_k_med[] = "med";
 static const char __pyx_k_msg[] = "msg";
 static const char __pyx_k_s_s[] = "%s%s\n";
 static const char __pyx_k_sys[] = "sys";
-static const char __pyx_k_tmp[] = "/tmp";
 static const char __pyx_k_w_2[] = "w+";
 static const char __pyx_k_zip[] = "zip";
 static const char __pyx_k_COMM[] = "COMM";
@@ -1437,21 +1449,19 @@ static const char __pyx_k_indent[] = "indent";
 static const char __pyx_k_int2ip[] = "int2ip";
 static const char __pyx_k_ip2int[] = "ip2int";
 static const char __pyx_k_isfile[] = "isfile";
+static const char __pyx_k_kwargs[] = "kwargs";
 static const char __pyx_k_parsed[] = "parsed;";
 static const char __pyx_k_prefix[] = "prefix";
 static const char __pyx_k_reduce[] = "__reduce__";
-static const char __pyx_k_routes[] = "routes";
 static const char __pyx_k_runDir[] = "runDir";
 static const char __pyx_k_update[] = "update;";
 static const char __pyx_k_AS_PATH[] = "AS-PATH";
 static const char __pyx_k_RKERNEL[] = "RKERNEL";
 static const char __pyx_k_RSTATIC[] = "RSTATIC";
-static const char __pyx_k_address[] = "address";
 static const char __pyx_k_as_path[] = "as_path";
 static const char __pyx_k_findall[] = "findall";
 static const char __pyx_k_ipAddrs[] = "ipAddrs";
 static const char __pyx_k_receive[] = "receive {";
-static const char __pyx_k_zebra_s[] = "/zebra%s";
 static const char __pyx_k_getstate[] = "__getstate__";
 static const char __pyx_k_local_ip[] = "local_ip";
 static const char __pyx_k_networks[] = "networks";
@@ -1512,13 +1522,13 @@ static const char __pyx_k_template[] = "template {";
     static const char __pyx_k_redistribute[] = "redistribute";
     static const char __pyx_k_router_bgp_s[] = "router bgp %s";
     static const char __pyx_k_s_conf_bgp_s[] = "%s/conf-bgp.%s";
+    static const char __pyx_k_zebra_s_conf[] = "/zebra%s.conf";
     static const char __pyx_k_ebgp_multihop[] = "ebgp_multihop";
     static const char __pyx_k_generateZebra[] = "generateZebra";
     static const char __pyx_k_maximum_paths[] = "maximum_paths";
     static const char __pyx_k_next_hop_self[] = "next_hop_self";
     static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
     static const char __pyx_k_s_bgpd_s_conf[] = "%s/bgpd%s.conf";
-    static const char __pyx_k_zebraConfFile[] = "zebraConfFile";
     static const char __pyx_k_inherit_router[] = "inherit router;";
     static const char __pyx_k_intfAttributes[] = "intfAttributes";
     static const char __pyx_k_maximum_prefix[] = "maximum_prefix";
@@ -1576,21 +1586,19 @@ static const char __pyx_k_template[] = "template {";
         static PyObject *__pyx_n_s_RSTATIC;
         static PyObject *__pyx_n_s_Router;
         static PyObject *__pyx_n_s_TypeError;
-        static PyObject *__pyx_kp_s__13;
+        static PyObject *__pyx_kp_s__12;
         static PyObject *__pyx_kp_s__2;
-        static PyObject *__pyx_kp_s__27;
-        static PyObject *__pyx_kp_s__28;
+        static PyObject *__pyx_kp_s__22;
+        static PyObject *__pyx_kp_s__23;
+        static PyObject *__pyx_n_s__26;
         static PyObject *__pyx_kp_s__3;
-        static PyObject *__pyx_n_s__31;
         static PyObject *__pyx_n_s_add_advertised_prefix;
         static PyObject *__pyx_n_s_add_ip;
         static PyObject *__pyx_n_s_add_neighbor;
-        static PyObject *__pyx_n_s_address;
         static PyObject *__pyx_n_s_allowas_in;
         static PyObject *__pyx_n_s_always_compare_med;
         static PyObject *__pyx_kp_s_api_speaking;
         static PyObject *__pyx_n_s_append;
-        static PyObject *__pyx_n_s_as;
         static PyObject *__pyx_n_s_as_path;
         static PyObject *__pyx_n_s_asn;
         static PyObject *__pyx_kp_s_bgp_bestpath_as_path_multipath;
@@ -1644,6 +1652,7 @@ static const char __pyx_k_template[] = "template {";
         static PyObject *__pyx_n_s_isfile;
         static PyObject *__pyx_n_s_itervalues;
         static PyObject *__pyx_n_s_json;
+        static PyObject *__pyx_n_s_kwargs;
         static PyObject *__pyx_n_s_line;
         static PyObject *__pyx_kp_s_local_address_0_9_0_9_3;
         static PyObject *__pyx_kp_s_local_address_s;
@@ -1724,7 +1733,6 @@ static const char __pyx_k_template[] = "template {";
         static PyObject *__pyx_n_s_router_id;
         static PyObject *__pyx_kp_s_router_id_0_9_0_9_3;
         static PyObject *__pyx_kp_s_router_id_s;
-        static PyObject *__pyx_n_s_routes;
         static PyObject *__pyx_n_s_runDir;
         static PyObject *__pyx_kp_s_run_usr_bin_python_home_vagrant;
         static PyObject *__pyx_kp_s_s_bgpd_s_conf;
@@ -1738,7 +1746,6 @@ static const char __pyx_k_template[] = "template {";
         static PyObject *__pyx_n_s_sys;
         static PyObject *__pyx_kp_s_template;
         static PyObject *__pyx_n_s_test;
-        static PyObject *__pyx_kp_s_tmp;
         static PyObject *__pyx_kp_s_update;
         static PyObject *__pyx_n_s_value;
         static PyObject *__pyx_n_s_w;
@@ -1746,17 +1753,17 @@ static const char __pyx_k_template[] = "template {";
         static PyObject *__pyx_n_s_write;
         static PyObject *__pyx_n_s_writeLine;
         static PyObject *__pyx_n_s_write_auxiliary_config_file;
-        static PyObject *__pyx_n_s_zebraConfFile;
         static PyObject *__pyx_n_s_zebra_conf;
-        static PyObject *__pyx_kp_s_zebra_s;
+        static PyObject *__pyx_kp_s_zebra_s_conf;
         static PyObject *__pyx_n_s_zip;
 static PyObject *__pyx_pf_5horse_6router_writeLine(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_configFile, PyObject *__pyx_v_indent, PyObject *__pyx_v_line); /* proto */
 static PyObject *__pyx_pf_5horse_6router_2getRouterId(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_interfaces); /* proto */
-static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self, PyObject *__pyx_v_asn, PyObject *__pyx_v_ip, PyObject *__pyx_v_local_ip, PyObject *__pyx_v_ebgp_multihop, PyObject *__pyx_v_next_hop_self, PyObject *__pyx_v_peer_weight, PyObject *__pyx_v_maximum_prefix, PyObject *__pyx_v_distribute_list, CYTHON_UNUSED PyObject *__pyx_v_prefix_list, PyObject *__pyx_v_filter_list, PyObject *__pyx_v_route_map, PyObject *__pyx_v_route_reflector_client); /* proto */
+static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self, PyObject *__pyx_v_asn, PyObject *__pyx_v_ip, PyObject *__pyx_v_local_ip, PyObject *__pyx_v_ebgp_multihop, PyObject *__pyx_v_next_hop_self, PyObject *__pyx_v_peer_weight, PyObject *__pyx_v_maximum_prefix, PyObject *__pyx_v_distribute_list, CYTHON_UNUSED PyObject *__pyx_v_prefix_list, PyObject *__pyx_v_filter_list, PyObject *__pyx_v_route_map, PyObject *__pyx_v_route_reflector_client, PyObject *__pyx_v_port); /* proto */
 static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_3asn___get__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2ip___get__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_8local_ip___get__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_4port___get__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_4__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_6__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
 static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6router_BGP *__pyx_v_self, PyObject *__pyx_v_asn, PyObject *__pyx_v_router_id, PyObject *__pyx_v_neighbors, PyObject *__pyx_v_networks, PyObject *__pyx_v_med, PyObject *__pyx_v_always_compare_med, PyObject *__pyx_v_redistribute, PyObject *__pyx_v_multiple_instances, CYTHON_UNUSED PyObject *__pyx_v_maximum_paths, PyObject *__pyx_v_relax, PyObject *__pyx_v_allowas_in); /* proto */
@@ -1786,7 +1793,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_8__reduce_cython__(CYTHON_UNUSE
 static PyObject *__pyx_pf_5horse_6router_6Daemon_10__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_5horse_6router_Daemon *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
 static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self, PyObject *__pyx_v_namespace, PyObject *__pyx_v_runDir, PyObject *__pyx_v_protocols, PyObject *__pyx_v_kwargs); /* proto */
 static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_2generateZebra(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self, PyObject *__pyx_v_bgp); /* proto */
+static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self, struct __pyx_obj_5horse_6router_BGP *__pyx_v_bgp); /* proto */
 static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_8__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_10__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
@@ -1817,28 +1824,23 @@ static PyObject *__pyx_tuple__6;
 static PyObject *__pyx_tuple__7;
 static PyObject *__pyx_tuple__8;
 static PyObject *__pyx_tuple__9;
-static PyObject *__pyx_slice__21;
-static PyObject *__pyx_slice__22;
-static PyObject *__pyx_slice__23;
-static PyObject *__pyx_slice__24;
-static PyObject *__pyx_slice__25;
+static PyObject *__pyx_slice__16;
+static PyObject *__pyx_slice__17;
+static PyObject *__pyx_slice__18;
+static PyObject *__pyx_slice__19;
+static PyObject *__pyx_slice__20;
 static PyObject *__pyx_tuple__10;
 static PyObject *__pyx_tuple__11;
-static PyObject *__pyx_tuple__12;
+static PyObject *__pyx_tuple__13;
 static PyObject *__pyx_tuple__14;
 static PyObject *__pyx_tuple__15;
-static PyObject *__pyx_tuple__16;
-static PyObject *__pyx_tuple__17;
-static PyObject *__pyx_tuple__18;
-static PyObject *__pyx_tuple__19;
-static PyObject *__pyx_tuple__20;
-static PyObject *__pyx_tuple__26;
+static PyObject *__pyx_tuple__21;
+static PyObject *__pyx_tuple__24;
+static PyObject *__pyx_tuple__25;
+static PyObject *__pyx_tuple__27;
 static PyObject *__pyx_tuple__29;
-static PyObject *__pyx_tuple__30;
-static PyObject *__pyx_tuple__32;
-static PyObject *__pyx_tuple__34;
-static PyObject *__pyx_codeobj__33;
-static PyObject *__pyx_codeobj__35;
+static PyObject *__pyx_codeobj__28;
+static PyObject *__pyx_codeobj__30;
 /* Late includes */
 
 /* "horse/router.pyx":9
@@ -2301,7 +2303,7 @@ static PyObject *__pyx_pf_5horse_6router_2getRouterId(CYTHON_UNUSED PyObject *__
   return __pyx_r;
 }
 
-/* "horse/router.pyx":40
+/* "horse/router.pyx":41
  * 
  * 
  *     def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,             # <<<<<<<<<<<<<<
@@ -2324,50 +2326,54 @@ static int __pyx_pw_5horse_6router_11BGPNeighbor_1__cinit__(PyObject *__pyx_v_se
   PyObject *__pyx_v_filter_list = 0;
   PyObject *__pyx_v_route_map = 0;
   PyObject *__pyx_v_route_reflector_client = 0;
+  PyObject *__pyx_v_port = 0;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_asn,&__pyx_n_s_ip,&__pyx_n_s_local_ip,&__pyx_n_s_ebgp_multihop,&__pyx_n_s_next_hop_self,&__pyx_n_s_peer_weight,&__pyx_n_s_maximum_prefix,&__pyx_n_s_distribute_list,&__pyx_n_s_prefix_list,&__pyx_n_s_filter_list,&__pyx_n_s_route_map,&__pyx_n_s_route_reflector_client,0};
-    PyObject* values[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_asn,&__pyx_n_s_ip,&__pyx_n_s_local_ip,&__pyx_n_s_ebgp_multihop,&__pyx_n_s_next_hop_self,&__pyx_n_s_peer_weight,&__pyx_n_s_maximum_prefix,&__pyx_n_s_distribute_list,&__pyx_n_s_prefix_list,&__pyx_n_s_filter_list,&__pyx_n_s_route_map,&__pyx_n_s_route_reflector_client,&__pyx_n_s_port,0};
+    PyObject* values[13] = {0,0,0,0,0,0,0,0,0,0,0,0,0};
     values[2] = ((PyObject *)Py_None);
     values[3] = ((PyObject *)Py_False);
     values[4] = ((PyObject *)Py_False);
 
-    /* "horse/router.pyx":41
+    /* "horse/router.pyx":42
  * 
  *     def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,
  *                   peer_weight = None, maximum_prefix = None, distribute_list =             # <<<<<<<<<<<<<<
  *                   None, prefix_list = None, filter_list = None,
- *                   route_map = None, route_reflector_client = False):
+ *                   route_map = None, route_reflector_client = False, port = None):
  */
     values[5] = ((PyObject *)Py_None);
     values[6] = ((PyObject *)Py_None);
 
-    /* "horse/router.pyx":42
+    /* "horse/router.pyx":43
  *     def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,
  *                   peer_weight = None, maximum_prefix = None, distribute_list =
  *                   None, prefix_list = None, filter_list = None,             # <<<<<<<<<<<<<<
- *                   route_map = None, route_reflector_client = False):
+ *                   route_map = None, route_reflector_client = False, port = None):
  *         self.asn = asn
  */
     values[7] = ((PyObject *)Py_None);
     values[8] = ((PyObject *)Py_None);
     values[9] = ((PyObject *)Py_None);
 
-    /* "horse/router.pyx":43
+    /* "horse/router.pyx":44
  *                   peer_weight = None, maximum_prefix = None, distribute_list =
  *                   None, prefix_list = None, filter_list = None,
- *                   route_map = None, route_reflector_client = False):             # <<<<<<<<<<<<<<
+ *                   route_map = None, route_reflector_client = False, port = None):             # <<<<<<<<<<<<<<
  *         self.asn = asn
  *         self.ip = ip
  */
     values[10] = ((PyObject *)Py_None);
     values[11] = ((PyObject *)Py_False);
+    values[12] = ((PyObject *)Py_None);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case 13: values[12] = PyTuple_GET_ITEM(__pyx_args, 12);
+        CYTHON_FALLTHROUGH;
         case 12: values[11] = PyTuple_GET_ITEM(__pyx_args, 11);
         CYTHON_FALLTHROUGH;
         case 11: values[10] = PyTuple_GET_ITEM(__pyx_args, 10);
@@ -2404,7 +2410,7 @@ static int __pyx_pw_5horse_6router_11BGPNeighbor_1__cinit__(PyObject *__pyx_v_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_ip)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 12, 1); __PYX_ERR(0, 40, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 13, 1); __PYX_ERR(0, 41, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -2466,12 +2472,20 @@ static int __pyx_pw_5horse_6router_11BGPNeighbor_1__cinit__(PyObject *__pyx_v_se
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_route_reflector_client);
           if (value) { values[11] = value; kw_args--; }
         }
+        CYTHON_FALLTHROUGH;
+        case 12:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_port);
+          if (value) { values[12] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 40, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 41, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case 13: values[12] = PyTuple_GET_ITEM(__pyx_args, 12);
+        CYTHON_FALLTHROUGH;
         case 12: values[11] = PyTuple_GET_ITEM(__pyx_args, 11);
         CYTHON_FALLTHROUGH;
         case 11: values[10] = PyTuple_GET_ITEM(__pyx_args, 10);
@@ -2510,18 +2524,19 @@ static int __pyx_pw_5horse_6router_11BGPNeighbor_1__cinit__(PyObject *__pyx_v_se
     __pyx_v_filter_list = values[9];
     __pyx_v_route_map = values[10];
     __pyx_v_route_reflector_client = values[11];
+    __pyx_v_port = values[12];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 12, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 40, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 13, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 41, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGPNeighbor.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(((struct __pyx_obj_5horse_6router_BGPNeighbor *)__pyx_v_self), __pyx_v_asn, __pyx_v_ip, __pyx_v_local_ip, __pyx_v_ebgp_multihop, __pyx_v_next_hop_self, __pyx_v_peer_weight, __pyx_v_maximum_prefix, __pyx_v_distribute_list, __pyx_v_prefix_list, __pyx_v_filter_list, __pyx_v_route_map, __pyx_v_route_reflector_client);
+  __pyx_r = __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(((struct __pyx_obj_5horse_6router_BGPNeighbor *)__pyx_v_self), __pyx_v_asn, __pyx_v_ip, __pyx_v_local_ip, __pyx_v_ebgp_multihop, __pyx_v_next_hop_self, __pyx_v_peer_weight, __pyx_v_maximum_prefix, __pyx_v_distribute_list, __pyx_v_prefix_list, __pyx_v_filter_list, __pyx_v_route_map, __pyx_v_route_reflector_client, __pyx_v_port);
 
-  /* "horse/router.pyx":40
+  /* "horse/router.pyx":41
  * 
  * 
  *     def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,             # <<<<<<<<<<<<<<
@@ -2534,14 +2549,14 @@ static int __pyx_pw_5horse_6router_11BGPNeighbor_1__cinit__(PyObject *__pyx_v_se
   return __pyx_r;
 }
 
-static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self, PyObject *__pyx_v_asn, PyObject *__pyx_v_ip, PyObject *__pyx_v_local_ip, PyObject *__pyx_v_ebgp_multihop, PyObject *__pyx_v_next_hop_self, PyObject *__pyx_v_peer_weight, PyObject *__pyx_v_maximum_prefix, PyObject *__pyx_v_distribute_list, CYTHON_UNUSED PyObject *__pyx_v_prefix_list, PyObject *__pyx_v_filter_list, PyObject *__pyx_v_route_map, PyObject *__pyx_v_route_reflector_client) {
+static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self, PyObject *__pyx_v_asn, PyObject *__pyx_v_ip, PyObject *__pyx_v_local_ip, PyObject *__pyx_v_ebgp_multihop, PyObject *__pyx_v_next_hop_self, PyObject *__pyx_v_peer_weight, PyObject *__pyx_v_maximum_prefix, PyObject *__pyx_v_distribute_list, CYTHON_UNUSED PyObject *__pyx_v_prefix_list, PyObject *__pyx_v_filter_list, PyObject *__pyx_v_route_map, PyObject *__pyx_v_route_reflector_client, PyObject *__pyx_v_port) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "horse/router.pyx":44
+  /* "horse/router.pyx":45
  *                   None, prefix_list = None, filter_list = None,
- *                   route_map = None, route_reflector_client = False):
+ *                   route_map = None, route_reflector_client = False, port = None):
  *         self.asn = asn             # <<<<<<<<<<<<<<
  *         self.ip = ip
  *         self.local_ip = local_ip
@@ -2552,8 +2567,8 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->asn);
   __pyx_v_self->asn = __pyx_v_asn;
 
-  /* "horse/router.pyx":45
- *                   route_map = None, route_reflector_client = False):
+  /* "horse/router.pyx":46
+ *                   route_map = None, route_reflector_client = False, port = None):
  *         self.asn = asn
  *         self.ip = ip             # <<<<<<<<<<<<<<
  *         self.local_ip = local_ip
@@ -2565,7 +2580,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->ip);
   __pyx_v_self->ip = __pyx_v_ip;
 
-  /* "horse/router.pyx":46
+  /* "horse/router.pyx":47
  *         self.asn = asn
  *         self.ip = ip
  *         self.local_ip = local_ip             # <<<<<<<<<<<<<<
@@ -2578,7 +2593,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->local_ip);
   __pyx_v_self->local_ip = __pyx_v_local_ip;
 
-  /* "horse/router.pyx":47
+  /* "horse/router.pyx":48
  *         self.ip = ip
  *         self.local_ip = local_ip
  *         self.ebgp_multihop = ebgp_multihop             # <<<<<<<<<<<<<<
@@ -2591,7 +2606,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->ebgp_multihop);
   __pyx_v_self->ebgp_multihop = __pyx_v_ebgp_multihop;
 
-  /* "horse/router.pyx":48
+  /* "horse/router.pyx":49
  *         self.local_ip = local_ip
  *         self.ebgp_multihop = ebgp_multihop
  *         self.next_hop_self = next_hop_self             # <<<<<<<<<<<<<<
@@ -2604,7 +2619,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->next_hop_self);
   __pyx_v_self->next_hop_self = __pyx_v_next_hop_self;
 
-  /* "horse/router.pyx":49
+  /* "horse/router.pyx":50
  *         self.ebgp_multihop = ebgp_multihop
  *         self.next_hop_self = next_hop_self
  *         self.peer_weight = peer_weight             # <<<<<<<<<<<<<<
@@ -2617,7 +2632,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->peer_weight);
   __pyx_v_self->peer_weight = __pyx_v_peer_weight;
 
-  /* "horse/router.pyx":50
+  /* "horse/router.pyx":51
  *         self.next_hop_self = next_hop_self
  *         self.peer_weight = peer_weight
  *         self.maximum_prefix = maximum_prefix             # <<<<<<<<<<<<<<
@@ -2630,7 +2645,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->maximum_prefix);
   __pyx_v_self->maximum_prefix = __pyx_v_maximum_prefix;
 
-  /* "horse/router.pyx":51
+  /* "horse/router.pyx":52
  *         self.peer_weight = peer_weight
  *         self.maximum_prefix = maximum_prefix
  *         self.distribute_list = distribute_list             # <<<<<<<<<<<<<<
@@ -2643,7 +2658,7 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->distribute_list);
   __pyx_v_self->distribute_list = __pyx_v_distribute_list;
 
-  /* "horse/router.pyx":52
+  /* "horse/router.pyx":53
  *         self.maximum_prefix = maximum_prefix
  *         self.distribute_list = distribute_list
  *         self.prefix_list = filter_list             # <<<<<<<<<<<<<<
@@ -2656,12 +2671,12 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->prefix_list);
   __pyx_v_self->prefix_list = __pyx_v_filter_list;
 
-  /* "horse/router.pyx":53
+  /* "horse/router.pyx":54
  *         self.distribute_list = distribute_list
  *         self.prefix_list = filter_list
  *         self.route_map = route_map             # <<<<<<<<<<<<<<
  *         self.route_reflector_client = route_reflector_client
- * 
+ *         self.port = port
  */
   __Pyx_INCREF(__pyx_v_route_map);
   __Pyx_GIVEREF(__pyx_v_route_map);
@@ -2669,12 +2684,12 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->route_map);
   __pyx_v_self->route_map = __pyx_v_route_map;
 
-  /* "horse/router.pyx":54
+  /* "horse/router.pyx":55
  *         self.prefix_list = filter_list
  *         self.route_map = route_map
  *         self.route_reflector_client = route_reflector_client             # <<<<<<<<<<<<<<
+ *         self.port = port
  * 
- *     def neighbor_to_dict(self):
  */
   __Pyx_INCREF(__pyx_v_route_reflector_client);
   __Pyx_GIVEREF(__pyx_v_route_reflector_client);
@@ -2682,7 +2697,20 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   __Pyx_DECREF(__pyx_v_self->route_reflector_client);
   __pyx_v_self->route_reflector_client = __pyx_v_route_reflector_client;
 
-  /* "horse/router.pyx":40
+  /* "horse/router.pyx":56
+ *         self.route_map = route_map
+ *         self.route_reflector_client = route_reflector_client
+ *         self.port = port             # <<<<<<<<<<<<<<
+ * 
+ *     def neighbor_to_dict(self):
+ */
+  __Pyx_INCREF(__pyx_v_port);
+  __Pyx_GIVEREF(__pyx_v_port);
+  __Pyx_GOTREF(__pyx_v_self->port);
+  __Pyx_DECREF(__pyx_v_self->port);
+  __pyx_v_self->port = __pyx_v_port;
+
+  /* "horse/router.pyx":41
  * 
  * 
  *     def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,             # <<<<<<<<<<<<<<
@@ -2696,8 +2724,8 @@ static int __pyx_pf_5horse_6router_11BGPNeighbor___cinit__(struct __pyx_obj_5hor
   return __pyx_r;
 }
 
-/* "horse/router.pyx":56
- *         self.route_reflector_client = route_reflector_client
+/* "horse/router.pyx":58
+ *         self.port = port
  * 
  *     def neighbor_to_dict(self):             # <<<<<<<<<<<<<<
  *         d = {}
@@ -2724,19 +2752,19 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct 
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("neighbor_to_dict", 0);
 
-  /* "horse/router.pyx":57
+  /* "horse/router.pyx":59
  * 
  *     def neighbor_to_dict(self):
  *         d = {}             # <<<<<<<<<<<<<<
  *         d["asn"] = self.asn
  *         d["ip"] = self.ip
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_d = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":58
+  /* "horse/router.pyx":60
  *     def neighbor_to_dict(self):
  *         d = {}
  *         d["asn"] = self.asn             # <<<<<<<<<<<<<<
@@ -2745,10 +2773,10 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct 
  */
   __pyx_t_1 = __pyx_v_self->asn;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_asn, __pyx_t_1) < 0)) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_asn, __pyx_t_1) < 0)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":59
+  /* "horse/router.pyx":61
  *         d = {}
  *         d["asn"] = self.asn
  *         d["ip"] = self.ip             # <<<<<<<<<<<<<<
@@ -2757,10 +2785,10 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct 
  */
   __pyx_t_1 = __pyx_v_self->ip;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_ip, __pyx_t_1) < 0)) __PYX_ERR(0, 59, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_ip, __pyx_t_1) < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":60
+  /* "horse/router.pyx":62
  *         d["asn"] = self.asn
  *         d["ip"] = self.ip
  *         d["local_ip"] = self.local_ip             # <<<<<<<<<<<<<<
@@ -2769,10 +2797,10 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct 
  */
   __pyx_t_1 = __pyx_v_self->local_ip;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_local_ip, __pyx_t_1) < 0)) __PYX_ERR(0, 60, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_local_ip, __pyx_t_1) < 0)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":61
+  /* "horse/router.pyx":63
  *         d["ip"] = self.ip
  *         d["local_ip"] = self.local_ip
  *         return d             # <<<<<<<<<<<<<<
@@ -2784,8 +2812,8 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct 
   __pyx_r = __pyx_v_d;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":56
- *         self.route_reflector_client = route_reflector_client
+  /* "horse/router.pyx":58
+ *         self.port = port
  * 
  *     def neighbor_to_dict(self):             # <<<<<<<<<<<<<<
  *         d = {}
@@ -2804,7 +2832,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2neighbor_to_dict(struct 
   return __pyx_r;
 }
 
-/* "horse/router.pyx":64
+/* "horse/router.pyx":66
  * 
  *     property asn:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -2830,7 +2858,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_3asn___get__(struct __pyx
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":65
+  /* "horse/router.pyx":67
  *     property asn:
  *         def __get__(self):
  *             return self.asn             # <<<<<<<<<<<<<<
@@ -2842,7 +2870,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_3asn___get__(struct __pyx
   __pyx_r = __pyx_v_self->asn;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":64
+  /* "horse/router.pyx":66
  * 
  *     property asn:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -2857,7 +2885,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_3asn___get__(struct __pyx
   return __pyx_r;
 }
 
-/* "horse/router.pyx":68
+/* "horse/router.pyx":70
  * 
  *     property ip:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -2883,7 +2911,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2ip___get__(struct __pyx_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":69
+  /* "horse/router.pyx":71
  *     property ip:
  *         def __get__(self):
  *             return self.ip             # <<<<<<<<<<<<<<
@@ -2895,7 +2923,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2ip___get__(struct __pyx_
   __pyx_r = __pyx_v_self->ip;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":68
+  /* "horse/router.pyx":70
  * 
  *     property ip:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -2910,7 +2938,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_2ip___get__(struct __pyx_
   return __pyx_r;
 }
 
-/* "horse/router.pyx":72
+/* "horse/router.pyx":74
  * 
  *     property local_ip:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -2936,23 +2964,76 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_8local_ip___get__(struct 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":73
+  /* "horse/router.pyx":75
  *     property local_ip:
  *         def __get__(self):
  *             return self.local_ip             # <<<<<<<<<<<<<<
  * 
- * 
+ *     property port:
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_self->local_ip);
   __pyx_r = __pyx_v_self->local_ip;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":72
+  /* "horse/router.pyx":74
  * 
  *     property local_ip:
  *         def __get__(self):             # <<<<<<<<<<<<<<
  *             return self.local_ip
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "horse/router.pyx":78
+ * 
+ *     property port:
+ *         def __get__(self):             # <<<<<<<<<<<<<<
+ *             return self.port
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5horse_6router_11BGPNeighbor_4port_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_5horse_6router_11BGPNeighbor_4port_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_5horse_6router_11BGPNeighbor_4port___get__(((struct __pyx_obj_5horse_6router_BGPNeighbor *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_4port___get__(struct __pyx_obj_5horse_6router_BGPNeighbor *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__", 0);
+
+  /* "horse/router.pyx":79
+ *     property port:
+ *         def __get__(self):
+ *             return self.port             # <<<<<<<<<<<<<<
+ * 
+ *         # def __set__(self, asn):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_self->port);
+  __pyx_r = __pyx_v_self->port;
+  goto __pyx_L0;
+
+  /* "horse/router.pyx":78
+ * 
+ *     property port:
+ *         def __get__(self):             # <<<<<<<<<<<<<<
+ *             return self.port
  * 
  */
 
@@ -3070,7 +3151,7 @@ static PyObject *__pyx_pf_5horse_6router_11BGPNeighbor_6__setstate_cython__(CYTH
   return __pyx_r;
 }
 
-/* "horse/router.pyx":101
+/* "horse/router.pyx":105
  *     cdef allowas_in
  * 
  *     def __cinit__(self, asn = None, router_id = None, neighbors = None, networks=None,             # <<<<<<<<<<<<<<
@@ -3103,7 +3184,7 @@ static int __pyx_pw_5horse_6router_3BGP_1__cinit__(PyObject *__pyx_v_self, PyObj
     values[2] = ((PyObject *)Py_None);
     values[3] = ((PyObject *)Py_None);
 
-    /* "horse/router.pyx":102
+    /* "horse/router.pyx":106
  * 
  *     def __cinit__(self, asn = None, router_id = None, neighbors = None, networks=None,
  *                   med = None, always_compare_med = False, redistribute = None,             # <<<<<<<<<<<<<<
@@ -3114,7 +3195,7 @@ static int __pyx_pw_5horse_6router_3BGP_1__cinit__(PyObject *__pyx_v_self, PyObj
     values[5] = ((PyObject *)Py_False);
     values[6] = ((PyObject *)Py_None);
 
-    /* "horse/router.pyx":103
+    /* "horse/router.pyx":107
  *     def __cinit__(self, asn = None, router_id = None, neighbors = None, networks=None,
  *                   med = None, always_compare_med = False, redistribute = None,
  *                   multiple_instances = None, maximum_paths = None,             # <<<<<<<<<<<<<<
@@ -3124,7 +3205,7 @@ static int __pyx_pw_5horse_6router_3BGP_1__cinit__(PyObject *__pyx_v_self, PyObj
     values[7] = ((PyObject *)Py_None);
     values[8] = ((PyObject *)Py_None);
 
-    /* "horse/router.pyx":104
+    /* "horse/router.pyx":108
  *                   med = None, always_compare_med = False, redistribute = None,
  *                   multiple_instances = None, maximum_paths = None,
  *                   relax = False, allowas_in = False):             # <<<<<<<<<<<<<<
@@ -3231,7 +3312,7 @@ static int __pyx_pw_5horse_6router_3BGP_1__cinit__(PyObject *__pyx_v_self, PyObj
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 101, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 105, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3275,7 +3356,7 @@ static int __pyx_pw_5horse_6router_3BGP_1__cinit__(PyObject *__pyx_v_self, PyObj
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 0, 11, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 101, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 0, 11, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 105, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGP.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3283,7 +3364,7 @@ static int __pyx_pw_5horse_6router_3BGP_1__cinit__(PyObject *__pyx_v_self, PyObj
   __pyx_L4_argument_unpacking_done:;
   __pyx_r = __pyx_pf_5horse_6router_3BGP___cinit__(((struct __pyx_obj_5horse_6router_BGP *)__pyx_v_self), __pyx_v_asn, __pyx_v_router_id, __pyx_v_neighbors, __pyx_v_networks, __pyx_v_med, __pyx_v_always_compare_med, __pyx_v_redistribute, __pyx_v_multiple_instances, __pyx_v_maximum_paths, __pyx_v_relax, __pyx_v_allowas_in);
 
-  /* "horse/router.pyx":101
+  /* "horse/router.pyx":105
  *     cdef allowas_in
  * 
  *     def __cinit__(self, asn = None, router_id = None, neighbors = None, networks=None,             # <<<<<<<<<<<<<<
@@ -3301,7 +3382,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "horse/router.pyx":105
+  /* "horse/router.pyx":109
  *                   multiple_instances = None, maximum_paths = None,
  *                   relax = False, allowas_in = False):
  *         self.asn = asn             # <<<<<<<<<<<<<<
@@ -3314,7 +3395,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->asn);
   __pyx_v_self->asn = __pyx_v_asn;
 
-  /* "horse/router.pyx":106
+  /* "horse/router.pyx":110
  *                   relax = False, allowas_in = False):
  *         self.asn = asn
  *         self.router_id = router_id             # <<<<<<<<<<<<<<
@@ -3327,7 +3408,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->router_id);
   __pyx_v_self->router_id = __pyx_v_router_id;
 
-  /* "horse/router.pyx":107
+  /* "horse/router.pyx":111
  *         self.asn = asn
  *         self.router_id = router_id
  *         self.networks = networks             # <<<<<<<<<<<<<<
@@ -3340,7 +3421,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->networks);
   __pyx_v_self->networks = __pyx_v_networks;
 
-  /* "horse/router.pyx":108
+  /* "horse/router.pyx":112
  *         self.router_id = router_id
  *         self.networks = networks
  *         self.neighbors = neighbors             # <<<<<<<<<<<<<<
@@ -3353,7 +3434,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->neighbors);
   __pyx_v_self->neighbors = __pyx_v_neighbors;
 
-  /* "horse/router.pyx":109
+  /* "horse/router.pyx":113
  *         self.networks = networks
  *         self.neighbors = neighbors
  *         self.med = med             # <<<<<<<<<<<<<<
@@ -3366,7 +3447,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->med);
   __pyx_v_self->med = __pyx_v_med;
 
-  /* "horse/router.pyx":110
+  /* "horse/router.pyx":114
  *         self.neighbors = neighbors
  *         self.med = med
  *         self.cmp_med = always_compare_med             # <<<<<<<<<<<<<<
@@ -3379,7 +3460,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->cmp_med);
   __pyx_v_self->cmp_med = __pyx_v_always_compare_med;
 
-  /* "horse/router.pyx":111
+  /* "horse/router.pyx":115
  *         self.med = med
  *         self.cmp_med = always_compare_med
  *         self.redistribute = redistribute             # <<<<<<<<<<<<<<
@@ -3392,7 +3473,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->redistribute);
   __pyx_v_self->redistribute = __pyx_v_redistribute;
 
-  /* "horse/router.pyx":112
+  /* "horse/router.pyx":116
  *         self.cmp_med = always_compare_med
  *         self.redistribute = redistribute
  *         self.multiple_instances = multiple_instances             # <<<<<<<<<<<<<<
@@ -3405,7 +3486,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->multiple_instances);
   __pyx_v_self->multiple_instances = __pyx_v_multiple_instances;
 
-  /* "horse/router.pyx":113
+  /* "horse/router.pyx":117
  *         self.redistribute = redistribute
  *         self.multiple_instances = multiple_instances
  *         self.maximum_paths = 1             # <<<<<<<<<<<<<<
@@ -3418,7 +3499,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->maximum_paths);
   __pyx_v_self->maximum_paths = __pyx_int_1;
 
-  /* "horse/router.pyx":114
+  /* "horse/router.pyx":118
  *         self.multiple_instances = multiple_instances
  *         self.maximum_paths = 1
  *         self.relax = relax             # <<<<<<<<<<<<<<
@@ -3431,7 +3512,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->relax);
   __pyx_v_self->relax = __pyx_v_relax;
 
-  /* "horse/router.pyx":115
+  /* "horse/router.pyx":119
  *         self.maximum_paths = 1
  *         self.relax = relax
  *         self.allowas_in = allowas_in             # <<<<<<<<<<<<<<
@@ -3444,7 +3525,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   __Pyx_DECREF(__pyx_v_self->allowas_in);
   __pyx_v_self->allowas_in = __pyx_v_allowas_in;
 
-  /* "horse/router.pyx":101
+  /* "horse/router.pyx":105
  *     cdef allowas_in
  * 
  *     def __cinit__(self, asn = None, router_id = None, neighbors = None, networks=None,             # <<<<<<<<<<<<<<
@@ -3458,7 +3539,7 @@ static int __pyx_pf_5horse_6router_3BGP___cinit__(struct __pyx_obj_5horse_6route
   return __pyx_r;
 }
 
-/* "horse/router.pyx":117
+/* "horse/router.pyx":121
  *         self.allowas_in = allowas_in
  * 
  *     def add_neighbor(self, neighbor):             # <<<<<<<<<<<<<<
@@ -3488,25 +3569,25 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_2add_neighbor(struct __pyx_obj_5ho
   int __pyx_t_4;
   __Pyx_RefNannySetupContext("add_neighbor", 0);
 
-  /* "horse/router.pyx":118
+  /* "horse/router.pyx":122
  * 
  *     def add_neighbor(self, neighbor):
  *         if not self.neighbors:             # <<<<<<<<<<<<<<
  *             self.neighbors = []
  *         self.neighbors.append(neighbor)
  */
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_self->neighbors); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_self->neighbors); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 122, __pyx_L1_error)
   __pyx_t_2 = ((!__pyx_t_1) != 0);
   if (__pyx_t_2) {
 
-    /* "horse/router.pyx":119
+    /* "horse/router.pyx":123
  *     def add_neighbor(self, neighbor):
  *         if not self.neighbors:
  *             self.neighbors = []             # <<<<<<<<<<<<<<
  *         self.neighbors.append(neighbor)
  * 
  */
-    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_3);
     __Pyx_GOTREF(__pyx_v_self->neighbors);
@@ -3514,7 +3595,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_2add_neighbor(struct __pyx_obj_5ho
     __pyx_v_self->neighbors = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "horse/router.pyx":118
+    /* "horse/router.pyx":122
  * 
  *     def add_neighbor(self, neighbor):
  *         if not self.neighbors:             # <<<<<<<<<<<<<<
@@ -3523,16 +3604,16 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_2add_neighbor(struct __pyx_obj_5ho
  */
   }
 
-  /* "horse/router.pyx":120
+  /* "horse/router.pyx":124
  *         if not self.neighbors:
  *             self.neighbors = []
  *         self.neighbors.append(neighbor)             # <<<<<<<<<<<<<<
  * 
  *     # def set_router_id(self, router_id):
  */
-  __pyx_t_4 = __Pyx_PyObject_Append(__pyx_v_self->neighbors, __pyx_v_neighbor); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Append(__pyx_v_self->neighbors, __pyx_v_neighbor); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(0, 124, __pyx_L1_error)
 
-  /* "horse/router.pyx":117
+  /* "horse/router.pyx":121
  *         self.allowas_in = allowas_in
  * 
  *     def add_neighbor(self, neighbor):             # <<<<<<<<<<<<<<
@@ -3553,7 +3634,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_2add_neighbor(struct __pyx_obj_5ho
   return __pyx_r;
 }
 
-/* "horse/router.pyx":128
+/* "horse/router.pyx":132
  *     #         bgp_set_router_id(self._bgp_ptr, router_id)
  * 
  *     def set_allowas_in(self, value):             # <<<<<<<<<<<<<<
@@ -3579,7 +3660,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_4set_allowas_in(struct __pyx_obj_5
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("set_allowas_in", 0);
 
-  /* "horse/router.pyx":129
+  /* "horse/router.pyx":133
  * 
  *     def set_allowas_in(self, value):
  *         self.allowas_in = value             # <<<<<<<<<<<<<<
@@ -3592,7 +3673,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_4set_allowas_in(struct __pyx_obj_5
   __Pyx_DECREF(__pyx_v_self->allowas_in);
   __pyx_v_self->allowas_in = __pyx_v_value;
 
-  /* "horse/router.pyx":128
+  /* "horse/router.pyx":132
  *     #         bgp_set_router_id(self._bgp_ptr, router_id)
  * 
  *     def set_allowas_in(self, value):             # <<<<<<<<<<<<<<
@@ -3607,7 +3688,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_4set_allowas_in(struct __pyx_obj_5
   return __pyx_r;
 }
 
-/* "horse/router.pyx":131
+/* "horse/router.pyx":135
  *         self.allowas_in = value
  * 
  *     def add_advertised_prefix(self, prefix,             # <<<<<<<<<<<<<<
@@ -3628,7 +3709,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_7add_advertised_prefix(PyObject *_
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_prefix,&__pyx_n_s_as_path,&__pyx_n_s_communities,0};
     PyObject* values[3] = {0,0,0};
 
-    /* "horse/router.pyx":132
+    /* "horse/router.pyx":136
  * 
  *     def add_advertised_prefix(self, prefix,
  *                               as_path = None, communities = None):             # <<<<<<<<<<<<<<
@@ -3669,7 +3750,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_7add_advertised_prefix(PyObject *_
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "add_advertised_prefix") < 0)) __PYX_ERR(0, 131, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "add_advertised_prefix") < 0)) __PYX_ERR(0, 135, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3688,7 +3769,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_7add_advertised_prefix(PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("add_advertised_prefix", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 131, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("add_advertised_prefix", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 135, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGP.add_advertised_prefix", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3696,7 +3777,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_7add_advertised_prefix(PyObject *_
   __pyx_L4_argument_unpacking_done:;
   __pyx_r = __pyx_pf_5horse_6router_3BGP_6add_advertised_prefix(((struct __pyx_obj_5horse_6router_BGP *)__pyx_v_self), __pyx_v_prefix, __pyx_v_as_path, __pyx_v_communities);
 
-  /* "horse/router.pyx":131
+  /* "horse/router.pyx":135
  *         self.allowas_in = value
  * 
  *     def add_advertised_prefix(self, prefix,             # <<<<<<<<<<<<<<
@@ -3716,41 +3797,41 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_6add_advertised_prefix(struct __py
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("add_advertised_prefix", 0);
 
-  /* "horse/router.pyx":133
+  /* "horse/router.pyx":137
  *     def add_advertised_prefix(self, prefix,
  *                               as_path = None, communities = None):
  *         self.networks[prefix] = {}             # <<<<<<<<<<<<<<
  *         if communities:
  *             self.networks[prefix]["COMM"] = communities
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyObject_SetItem(__pyx_v_self->networks, __pyx_v_prefix, __pyx_t_1) < 0)) __PYX_ERR(0, 133, __pyx_L1_error)
+  if (unlikely(PyObject_SetItem(__pyx_v_self->networks, __pyx_v_prefix, __pyx_t_1) < 0)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":134
+  /* "horse/router.pyx":138
  *                               as_path = None, communities = None):
  *         self.networks[prefix] = {}
  *         if communities:             # <<<<<<<<<<<<<<
  *             self.networks[prefix]["COMM"] = communities
  *         if as_path:
  */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_communities); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 134, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_communities); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 138, __pyx_L1_error)
   if (__pyx_t_2) {
 
-    /* "horse/router.pyx":135
+    /* "horse/router.pyx":139
  *         self.networks[prefix] = {}
  *         if communities:
  *             self.networks[prefix]["COMM"] = communities             # <<<<<<<<<<<<<<
  *         if as_path:
  *             self.networks[prefix]["AS-PATH"] = as_path
  */
-    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_self->networks, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_self->networks, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (unlikely(PyObject_SetItem(__pyx_t_1, __pyx_n_s_COMM, __pyx_v_communities) < 0)) __PYX_ERR(0, 135, __pyx_L1_error)
+    if (unlikely(PyObject_SetItem(__pyx_t_1, __pyx_n_s_COMM, __pyx_v_communities) < 0)) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":134
+    /* "horse/router.pyx":138
  *                               as_path = None, communities = None):
  *         self.networks[prefix] = {}
  *         if communities:             # <<<<<<<<<<<<<<
@@ -3759,29 +3840,29 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_6add_advertised_prefix(struct __py
  */
   }
 
-  /* "horse/router.pyx":136
+  /* "horse/router.pyx":140
  *         if communities:
  *             self.networks[prefix]["COMM"] = communities
  *         if as_path:             # <<<<<<<<<<<<<<
  *             self.networks[prefix]["AS-PATH"] = as_path
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_as_path); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_as_path); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 140, __pyx_L1_error)
   if (__pyx_t_2) {
 
-    /* "horse/router.pyx":137
+    /* "horse/router.pyx":141
  *             self.networks[prefix]["COMM"] = communities
  *         if as_path:
  *             self.networks[prefix]["AS-PATH"] = as_path             # <<<<<<<<<<<<<<
  * 
  *     def add_advertised_prefixes(self, prefixes, as_path = None,
  */
-    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_self->networks, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_self->networks, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (unlikely(PyObject_SetItem(__pyx_t_1, __pyx_kp_s_AS_PATH, __pyx_v_as_path) < 0)) __PYX_ERR(0, 137, __pyx_L1_error)
+    if (unlikely(PyObject_SetItem(__pyx_t_1, __pyx_kp_s_AS_PATH, __pyx_v_as_path) < 0)) __PYX_ERR(0, 141, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":136
+    /* "horse/router.pyx":140
  *         if communities:
  *             self.networks[prefix]["COMM"] = communities
  *         if as_path:             # <<<<<<<<<<<<<<
@@ -3790,7 +3871,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_6add_advertised_prefix(struct __py
  */
   }
 
-  /* "horse/router.pyx":131
+  /* "horse/router.pyx":135
  *         self.allowas_in = value
  * 
  *     def add_advertised_prefix(self, prefix,             # <<<<<<<<<<<<<<
@@ -3811,7 +3892,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_6add_advertised_prefix(struct __py
   return __pyx_r;
 }
 
-/* "horse/router.pyx":139
+/* "horse/router.pyx":143
  *             self.networks[prefix]["AS-PATH"] = as_path
  * 
  *     def add_advertised_prefixes(self, prefixes, as_path = None,             # <<<<<<<<<<<<<<
@@ -3833,7 +3914,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_9add_advertised_prefixes(PyObject 
     PyObject* values[3] = {0,0,0};
     values[1] = ((PyObject *)Py_None);
 
-    /* "horse/router.pyx":140
+    /* "horse/router.pyx":144
  * 
  *     def add_advertised_prefixes(self, prefixes, as_path = None,
  *                                 communities = None):             # <<<<<<<<<<<<<<
@@ -3873,7 +3954,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_9add_advertised_prefixes(PyObject 
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "add_advertised_prefixes") < 0)) __PYX_ERR(0, 139, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "add_advertised_prefixes") < 0)) __PYX_ERR(0, 143, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3892,7 +3973,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_9add_advertised_prefixes(PyObject 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("add_advertised_prefixes", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 139, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("add_advertised_prefixes", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 143, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGP.add_advertised_prefixes", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3900,7 +3981,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_9add_advertised_prefixes(PyObject 
   __pyx_L4_argument_unpacking_done:;
   __pyx_r = __pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(((struct __pyx_obj_5horse_6router_BGP *)__pyx_v_self), __pyx_v_prefixes, __pyx_v_as_path, __pyx_v_communities);
 
-  /* "horse/router.pyx":139
+  /* "horse/router.pyx":143
  *             self.networks[prefix]["AS-PATH"] = as_path
  * 
  *     def add_advertised_prefixes(self, prefixes, as_path = None,             # <<<<<<<<<<<<<<
@@ -3927,7 +4008,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("add_advertised_prefixes", 0);
 
-  /* "horse/router.pyx":141
+  /* "horse/router.pyx":145
  *     def add_advertised_prefixes(self, prefixes, as_path = None,
  *                                 communities = None):
  *         for prefix in prefixes:             # <<<<<<<<<<<<<<
@@ -3938,26 +4019,26 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
     __pyx_t_1 = __pyx_v_prefixes; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_prefixes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_prefixes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 141, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 141, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -3967,7 +4048,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 141, __pyx_L1_error)
+          else __PYX_ERR(0, 145, __pyx_L1_error)
         }
         break;
       }
@@ -3976,14 +4057,14 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
     __Pyx_XDECREF_SET(__pyx_v_prefix, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "horse/router.pyx":142
+    /* "horse/router.pyx":146
  *                                 communities = None):
  *         for prefix in prefixes:
  *             self.add_advertised_prefix(prefix, as_path, communities)             # <<<<<<<<<<<<<<
  * 
  *     def set_maximum_paths(self, value):
  */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_advertised_prefix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_advertised_prefix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     __pyx_t_7 = 0;
@@ -4000,7 +4081,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_5)) {
       PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_prefix, __pyx_v_as_path, __pyx_v_communities};
-      __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_4);
     } else
@@ -4008,13 +4089,13 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
       PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_prefix, __pyx_v_as_path, __pyx_v_communities};
-      __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_4);
     } else
     #endif
     {
-      __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -4028,14 +4109,14 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
       __Pyx_INCREF(__pyx_v_communities);
       __Pyx_GIVEREF(__pyx_v_communities);
       PyTuple_SET_ITEM(__pyx_t_8, 2+__pyx_t_7, __pyx_v_communities);
-      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "horse/router.pyx":141
+    /* "horse/router.pyx":145
  *     def add_advertised_prefixes(self, prefixes, as_path = None,
  *                                 communities = None):
  *         for prefix in prefixes:             # <<<<<<<<<<<<<<
@@ -4045,7 +4126,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":139
+  /* "horse/router.pyx":143
  *             self.networks[prefix]["AS-PATH"] = as_path
  * 
  *     def add_advertised_prefixes(self, prefixes, as_path = None,             # <<<<<<<<<<<<<<
@@ -4071,7 +4152,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_8add_advertised_prefixes(struct __
   return __pyx_r;
 }
 
-/* "horse/router.pyx":144
+/* "horse/router.pyx":148
  *             self.add_advertised_prefix(prefix, as_path, communities)
  * 
  *     def set_maximum_paths(self, value):             # <<<<<<<<<<<<<<
@@ -4097,7 +4178,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_10set_maximum_paths(struct __pyx_o
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("set_maximum_paths", 0);
 
-  /* "horse/router.pyx":145
+  /* "horse/router.pyx":149
  * 
  *     def set_maximum_paths(self, value):
  *         self.maximum_paths = value             # <<<<<<<<<<<<<<
@@ -4110,7 +4191,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_10set_maximum_paths(struct __pyx_o
   __Pyx_DECREF(__pyx_v_self->maximum_paths);
   __pyx_v_self->maximum_paths = __pyx_v_value;
 
-  /* "horse/router.pyx":144
+  /* "horse/router.pyx":148
  *             self.add_advertised_prefix(prefix, as_path, communities)
  * 
  *     def set_maximum_paths(self, value):             # <<<<<<<<<<<<<<
@@ -4125,7 +4206,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_10set_maximum_paths(struct __pyx_o
   return __pyx_r;
 }
 
-/* "horse/router.pyx":147
+/* "horse/router.pyx":151
  *         self.maximum_paths = value
  * 
  *     def set_relaxed_maximum_paths(self, value = True):             # <<<<<<<<<<<<<<
@@ -4162,7 +4243,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_13set_relaxed_maximum_paths(PyObje
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "set_relaxed_maximum_paths") < 0)) __PYX_ERR(0, 147, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "set_relaxed_maximum_paths") < 0)) __PYX_ERR(0, 151, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4176,7 +4257,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_13set_relaxed_maximum_paths(PyObje
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_relaxed_maximum_paths", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 147, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_relaxed_maximum_paths", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 151, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGP.set_relaxed_maximum_paths", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4194,7 +4275,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_12set_relaxed_maximum_paths(struct
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("set_relaxed_maximum_paths", 0);
 
-  /* "horse/router.pyx":148
+  /* "horse/router.pyx":152
  * 
  *     def set_relaxed_maximum_paths(self, value = True):
  *         self.relax = value             # <<<<<<<<<<<<<<
@@ -4207,7 +4288,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_12set_relaxed_maximum_paths(struct
   __Pyx_DECREF(__pyx_v_self->relax);
   __pyx_v_self->relax = __pyx_v_value;
 
-  /* "horse/router.pyx":147
+  /* "horse/router.pyx":151
  *         self.maximum_paths = value
  * 
  *     def set_relaxed_maximum_paths(self, value = True):             # <<<<<<<<<<<<<<
@@ -4222,7 +4303,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_12set_relaxed_maximum_paths(struct
   return __pyx_r;
 }
 
-/* "horse/router.pyx":150
+/* "horse/router.pyx":154
  *         self.relax = value
  * 
  *     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):             # <<<<<<<<<<<<<<
@@ -4286,7 +4367,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_15add_advertised_prefix_list(PyObj
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "add_advertised_prefix_list") < 0)) __PYX_ERR(0, 150, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "add_advertised_prefix_list") < 0)) __PYX_ERR(0, 154, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4308,7 +4389,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_15add_advertised_prefix_list(PyObj
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("add_advertised_prefix_list", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 150, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("add_advertised_prefix_list", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 154, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGP.add_advertised_prefix_list", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4335,7 +4416,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("add_advertised_prefix_list", 0);
 
-  /* "horse/router.pyx":151
+  /* "horse/router.pyx":155
  * 
  *     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
  *         for prefix in prefixes:             # <<<<<<<<<<<<<<
@@ -4346,26 +4427,26 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
     __pyx_t_1 = __pyx_v_prefixes; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_prefixes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_prefixes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 155, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 155, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 155, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -4375,7 +4456,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 151, __pyx_L1_error)
+          else __PYX_ERR(0, 155, __pyx_L1_error)
         }
         break;
       }
@@ -4384,14 +4465,14 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
     __Pyx_XDECREF_SET(__pyx_v_prefix, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "horse/router.pyx":152
+    /* "horse/router.pyx":156
  *     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
  *         for prefix in prefixes:
  *             self.add_advertised_prefix(prefix, next_hop, as_path, communities)             # <<<<<<<<<<<<<<
  * 
  *     # This file is needed by the simulated side of the routers.
  */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_advertised_prefix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_advertised_prefix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     __pyx_t_7 = 0;
@@ -4408,7 +4489,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_5)) {
       PyObject *__pyx_temp[5] = {__pyx_t_6, __pyx_v_prefix, __pyx_v_next_hop, __pyx_v_as_path, __pyx_v_communities};
-      __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 4+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 4+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_4);
     } else
@@ -4416,13 +4497,13 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
       PyObject *__pyx_temp[5] = {__pyx_t_6, __pyx_v_prefix, __pyx_v_next_hop, __pyx_v_as_path, __pyx_v_communities};
-      __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 4+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 4+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_4);
     } else
     #endif
     {
-      __pyx_t_8 = PyTuple_New(4+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 152, __pyx_L1_error)
+      __pyx_t_8 = PyTuple_New(4+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 156, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -4439,14 +4520,14 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
       __Pyx_INCREF(__pyx_v_communities);
       __Pyx_GIVEREF(__pyx_v_communities);
       PyTuple_SET_ITEM(__pyx_t_8, 3+__pyx_t_7, __pyx_v_communities);
-      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "horse/router.pyx":151
+    /* "horse/router.pyx":155
  * 
  *     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
  *         for prefix in prefixes:             # <<<<<<<<<<<<<<
@@ -4456,7 +4537,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":150
+  /* "horse/router.pyx":154
  *         self.relax = value
  * 
  *     def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):             # <<<<<<<<<<<<<<
@@ -4482,7 +4563,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_14add_advertised_prefix_list(struc
   return __pyx_r;
 }
 
-/* "horse/router.pyx":155
+/* "horse/router.pyx":159
  * 
  *     # This file is needed by the simulated side of the routers.
  *     def write_auxiliary_config_file(self, runDir, rname):             # <<<<<<<<<<<<<<
@@ -4521,11 +4602,11 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_17write_auxiliary_config_file(PyOb
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_rname)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("write_auxiliary_config_file", 1, 2, 2, 1); __PYX_ERR(0, 155, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("write_auxiliary_config_file", 1, 2, 2, 1); __PYX_ERR(0, 159, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "write_auxiliary_config_file") < 0)) __PYX_ERR(0, 155, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "write_auxiliary_config_file") < 0)) __PYX_ERR(0, 159, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -4538,7 +4619,7 @@ static PyObject *__pyx_pw_5horse_6router_3BGP_17write_auxiliary_config_file(PyOb
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("write_auxiliary_config_file", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 155, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("write_auxiliary_config_file", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 159, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.BGP.write_auxiliary_config_file", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4574,31 +4655,31 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
   int __pyx_t_14;
   __Pyx_RefNannySetupContext("write_auxiliary_config_file", 0);
 
-  /* "horse/router.pyx":156
+  /* "horse/router.pyx":160
  *     # This file is needed by the simulated side of the routers.
  *     def write_auxiliary_config_file(self, runDir, rname):
  *         conf = {}             # <<<<<<<<<<<<<<
  *         neighbors = {}
  *         conf["prefixes"] = self.networks
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 160, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_conf = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":157
+  /* "horse/router.pyx":161
  *     def write_auxiliary_config_file(self, runDir, rname):
  *         conf = {}
  *         neighbors = {}             # <<<<<<<<<<<<<<
  *         conf["prefixes"] = self.networks
  *         for n in self.neighbors:
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 161, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_neighbors = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":158
+  /* "horse/router.pyx":162
  *         conf = {}
  *         neighbors = {}
  *         conf["prefixes"] = self.networks             # <<<<<<<<<<<<<<
@@ -4607,10 +4688,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  */
   __pyx_t_1 = __pyx_v_self->networks;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_prefixes, __pyx_t_1) < 0)) __PYX_ERR(0, 158, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_prefixes, __pyx_t_1) < 0)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":159
+  /* "horse/router.pyx":163
  *         neighbors = {}
  *         conf["prefixes"] = self.networks
  *         for n in self.neighbors:             # <<<<<<<<<<<<<<
@@ -4621,26 +4702,26 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
     __pyx_t_1 = __pyx_v_self->neighbors; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_self->neighbors); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_self->neighbors); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 163, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 163, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -4650,7 +4731,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 159, __pyx_L1_error)
+          else __PYX_ERR(0, 163, __pyx_L1_error)
         }
         break;
       }
@@ -4659,14 +4740,14 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
     __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "horse/router.pyx":160
+    /* "horse/router.pyx":164
  *         conf["prefixes"] = self.networks
  *         for n in self.neighbors:
  *             neighbors[n.ip] = n.neighbor_to_dict()             # <<<<<<<<<<<<<<
  *         conf["neighbors"] = neighbors
  *         conf["asn"] = self.asn
  */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_neighbor_to_dict); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 160, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_neighbor_to_dict); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -4679,20 +4760,20 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
       }
     }
     if (__pyx_t_6) {
-      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 160, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 164, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     } else {
-      __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 160, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 164, __pyx_L1_error)
     }
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_ip); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 160, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_ip); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (unlikely(PyDict_SetItem(__pyx_v_neighbors, __pyx_t_5, __pyx_t_4) < 0)) __PYX_ERR(0, 160, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_neighbors, __pyx_t_5, __pyx_t_4) < 0)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "horse/router.pyx":159
+    /* "horse/router.pyx":163
  *         neighbors = {}
  *         conf["prefixes"] = self.networks
  *         for n in self.neighbors:             # <<<<<<<<<<<<<<
@@ -4702,16 +4783,16 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":161
+  /* "horse/router.pyx":165
  *         for n in self.neighbors:
  *             neighbors[n.ip] = n.neighbor_to_dict()
  *         conf["neighbors"] = neighbors             # <<<<<<<<<<<<<<
  *         conf["asn"] = self.asn
  *         conf["router_id"] = self.router_id
  */
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_neighbors, __pyx_v_neighbors) < 0)) __PYX_ERR(0, 161, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_neighbors, __pyx_v_neighbors) < 0)) __PYX_ERR(0, 165, __pyx_L1_error)
 
-  /* "horse/router.pyx":162
+  /* "horse/router.pyx":166
  *             neighbors[n.ip] = n.neighbor_to_dict()
  *         conf["neighbors"] = neighbors
  *         conf["asn"] = self.asn             # <<<<<<<<<<<<<<
@@ -4720,10 +4801,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  */
   __pyx_t_1 = __pyx_v_self->asn;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_asn, __pyx_t_1) < 0)) __PYX_ERR(0, 162, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_asn, __pyx_t_1) < 0)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":163
+  /* "horse/router.pyx":167
  *         conf["neighbors"] = neighbors
  *         conf["asn"] = self.asn
  *         conf["router_id"] = self.router_id             # <<<<<<<<<<<<<<
@@ -4732,10 +4813,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  */
   __pyx_t_1 = __pyx_v_self->router_id;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_router_id, __pyx_t_1) < 0)) __PYX_ERR(0, 163, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_router_id, __pyx_t_1) < 0)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":164
+  /* "horse/router.pyx":168
  *         conf["asn"] = self.asn
  *         conf["router_id"] = self.router_id
  *         conf["max_paths"] = self.maximum_paths             # <<<<<<<<<<<<<<
@@ -4744,10 +4825,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  */
   __pyx_t_1 = __pyx_v_self->maximum_paths;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_max_paths, __pyx_t_1) < 0)) __PYX_ERR(0, 164, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_max_paths, __pyx_t_1) < 0)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":165
+  /* "horse/router.pyx":169
  *         conf["router_id"] = self.router_id
  *         conf["max_paths"] = self.maximum_paths
  *         conf["relax"] = self.relax             # <<<<<<<<<<<<<<
@@ -4756,10 +4837,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  */
   __pyx_t_1 = __pyx_v_self->relax;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_relax, __pyx_t_1) < 0)) __PYX_ERR(0, 165, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_relax, __pyx_t_1) < 0)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":166
+  /* "horse/router.pyx":170
  *         conf["max_paths"] = self.maximum_paths
  *         conf["relax"] = self.relax
  *         conf["allowas_in"] = self.allowas_in             # <<<<<<<<<<<<<<
@@ -4768,10 +4849,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  */
   __pyx_t_1 = __pyx_v_self->allowas_in;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_allowas_in, __pyx_t_1) < 0)) __PYX_ERR(0, 166, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_conf, __pyx_n_s_allowas_in, __pyx_t_1) < 0)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":167
+  /* "horse/router.pyx":171
  *         conf["relax"] = self.relax
  *         conf["allowas_in"] = self.allowas_in
  *         with file("%s/conf-bgp.%s" % (runDir, rname), "w") as f:             # <<<<<<<<<<<<<<
@@ -4779,7 +4860,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
  * 
  */
   /*with:*/ {
-    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_INCREF(__pyx_v_runDir);
     __Pyx_GIVEREF(__pyx_v_runDir);
@@ -4787,10 +4868,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
     __Pyx_INCREF(__pyx_v_rname);
     __Pyx_GIVEREF(__pyx_v_rname);
     PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_rname);
-    __pyx_t_4 = __Pyx_PyString_Format(__pyx_kp_s_s_conf_bgp_s, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyString_Format(__pyx_kp_s_s_conf_bgp_s, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_4);
     PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_4);
@@ -4798,12 +4879,12 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
     __Pyx_GIVEREF(__pyx_n_s_w);
     PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_n_s_w);
     __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_file, __pyx_t_1, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_file, __pyx_t_1, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_7 = __Pyx_PyObject_LookupSpecial(__pyx_t_4, __pyx_n_s_exit); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_LookupSpecial(__pyx_t_4, __pyx_n_s_exit); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_5 = __Pyx_PyObject_LookupSpecial(__pyx_t_4, __pyx_n_s_enter); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 167, __pyx_L5_error)
+    __pyx_t_5 = __Pyx_PyObject_LookupSpecial(__pyx_t_4, __pyx_n_s_enter); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 171, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -4816,10 +4897,10 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
       }
     }
     if (__pyx_t_6) {
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L5_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L5_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     } else {
-      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L5_error)
+      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L5_error)
     }
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -4838,16 +4919,16 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
           __pyx_v_f = __pyx_t_5;
           __pyx_t_5 = 0;
 
-          /* "horse/router.pyx":168
+          /* "horse/router.pyx":172
  *         conf["allowas_in"] = self.allowas_in
  *         with file("%s/conf-bgp.%s" % (runDir, rname), "w") as f:
  *             json.dump(conf, f)             # <<<<<<<<<<<<<<
  * 
  *     property router_id:
  */
-          __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_json); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 168, __pyx_L9_error)
+          __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_json); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 172, __pyx_L9_error)
           __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_dump); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L9_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_dump); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L9_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __pyx_t_4 = NULL;
@@ -4865,7 +4946,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_conf, __pyx_v_f};
-            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 168, __pyx_L9_error)
+            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 172, __pyx_L9_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
@@ -4873,13 +4954,13 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_conf, __pyx_v_f};
-            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 168, __pyx_L9_error)
+            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 172, __pyx_L9_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
           #endif
           {
-            __pyx_t_6 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 168, __pyx_L9_error)
+            __pyx_t_6 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 172, __pyx_L9_error)
             __Pyx_GOTREF(__pyx_t_6);
             if (__pyx_t_4) {
               __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -4890,14 +4971,14 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
             __Pyx_INCREF(__pyx_v_f);
             __Pyx_GIVEREF(__pyx_v_f);
             PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_11, __pyx_v_f);
-            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 168, __pyx_L9_error)
+            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 172, __pyx_L9_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
           }
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-          /* "horse/router.pyx":167
+          /* "horse/router.pyx":171
  *         conf["relax"] = self.relax
  *         conf["allowas_in"] = self.allowas_in
  *         with file("%s/conf-bgp.%s" % (runDir, rname), "w") as f:             # <<<<<<<<<<<<<<
@@ -4916,20 +4997,20 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("horse.router.BGP.write_auxiliary_config_file", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_1, &__pyx_t_6) < 0) __PYX_ERR(0, 167, __pyx_L11_except_error)
+          if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_1, &__pyx_t_6) < 0) __PYX_ERR(0, 171, __pyx_L11_except_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_4 = PyTuple_Pack(3, __pyx_t_5, __pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L11_except_error)
+          __pyx_t_4 = PyTuple_Pack(3, __pyx_t_5, __pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L11_except_error)
           __Pyx_GOTREF(__pyx_t_4);
           __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_4, NULL);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 167, __pyx_L11_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 171, __pyx_L11_except_error)
           __Pyx_GOTREF(__pyx_t_12);
           __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (__pyx_t_13 < 0) __PYX_ERR(0, 167, __pyx_L11_except_error)
+          if (__pyx_t_13 < 0) __PYX_ERR(0, 171, __pyx_L11_except_error)
           __pyx_t_14 = ((!(__pyx_t_13 != 0)) != 0);
           if (__pyx_t_14) {
             __Pyx_GIVEREF(__pyx_t_5);
@@ -4937,7 +5018,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
             __Pyx_XGIVEREF(__pyx_t_6);
             __Pyx_ErrRestoreWithState(__pyx_t_5, __pyx_t_1, __pyx_t_6);
             __pyx_t_5 = 0; __pyx_t_1 = 0; __pyx_t_6 = 0; 
-            __PYX_ERR(0, 167, __pyx_L11_except_error)
+            __PYX_ERR(0, 171, __pyx_L11_except_error)
           }
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4963,7 +5044,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
         if (__pyx_t_7) {
           __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__7, NULL);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 167, __pyx_L1_error)
+          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 171, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_10);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
         }
@@ -4978,7 +5059,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
     __pyx_L18:;
   }
 
-  /* "horse/router.pyx":155
+  /* "horse/router.pyx":159
  * 
  *     # This file is needed by the simulated side of the routers.
  *     def write_auxiliary_config_file(self, runDir, rname):             # <<<<<<<<<<<<<<
@@ -5006,7 +5087,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_16write_auxiliary_config_file(stru
   return __pyx_r;
 }
 
-/* "horse/router.pyx":171
+/* "horse/router.pyx":175
  * 
  *     property router_id:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5032,7 +5113,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_9router_id___get__(struct __pyx_ob
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":172
+  /* "horse/router.pyx":176
  *     property router_id:
  *         def __get__(self):
  *             return self.router_id             # <<<<<<<<<<<<<<
@@ -5044,7 +5125,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_9router_id___get__(struct __pyx_ob
   __pyx_r = __pyx_v_self->router_id;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":171
+  /* "horse/router.pyx":175
  * 
  *     property router_id:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5059,7 +5140,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_9router_id___get__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "horse/router.pyx":174
+/* "horse/router.pyx":178
  *             return self.router_id
  * 
  *         def __set__(self, router_id):             # <<<<<<<<<<<<<<
@@ -5085,7 +5166,7 @@ static int __pyx_pf_5horse_6router_3BGP_9router_id_2__set__(struct __pyx_obj_5ho
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "horse/router.pyx":175
+  /* "horse/router.pyx":179
  * 
  *         def __set__(self, router_id):
  *             self.router_id = router_id             # <<<<<<<<<<<<<<
@@ -5098,7 +5179,7 @@ static int __pyx_pf_5horse_6router_3BGP_9router_id_2__set__(struct __pyx_obj_5ho
   __Pyx_DECREF(__pyx_v_self->router_id);
   __pyx_v_self->router_id = __pyx_v_router_id;
 
-  /* "horse/router.pyx":174
+  /* "horse/router.pyx":178
  *             return self.router_id
  * 
  *         def __set__(self, router_id):             # <<<<<<<<<<<<<<
@@ -5112,7 +5193,7 @@ static int __pyx_pf_5horse_6router_3BGP_9router_id_2__set__(struct __pyx_obj_5ho
   return __pyx_r;
 }
 
-/* "horse/router.pyx":178
+/* "horse/router.pyx":182
  * 
  *     property neighbors:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5138,7 +5219,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_9neighbors___get__(struct __pyx_ob
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":179
+  /* "horse/router.pyx":183
  *     property neighbors:
  *         def __get__(self):
  *             return self.neighbors             # <<<<<<<<<<<<<<
@@ -5150,7 +5231,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_9neighbors___get__(struct __pyx_ob
   __pyx_r = __pyx_v_self->neighbors;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":178
+  /* "horse/router.pyx":182
  * 
  *     property neighbors:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5165,7 +5246,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_9neighbors___get__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "horse/router.pyx":181
+/* "horse/router.pyx":185
  *             return self.neighbors
  * 
  *         def __set__(self, neighbors):             # <<<<<<<<<<<<<<
@@ -5191,7 +5272,7 @@ static int __pyx_pf_5horse_6router_3BGP_9neighbors_2__set__(struct __pyx_obj_5ho
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "horse/router.pyx":182
+  /* "horse/router.pyx":186
  * 
  *         def __set__(self, neighbors):
  *             self.neighbors = neighbors             # <<<<<<<<<<<<<<
@@ -5204,7 +5285,7 @@ static int __pyx_pf_5horse_6router_3BGP_9neighbors_2__set__(struct __pyx_obj_5ho
   __Pyx_DECREF(__pyx_v_self->neighbors);
   __pyx_v_self->neighbors = __pyx_v_neighbors;
 
-  /* "horse/router.pyx":181
+  /* "horse/router.pyx":185
  *             return self.neighbors
  * 
  *         def __set__(self, neighbors):             # <<<<<<<<<<<<<<
@@ -5218,7 +5299,7 @@ static int __pyx_pf_5horse_6router_3BGP_9neighbors_2__set__(struct __pyx_obj_5ho
   return __pyx_r;
 }
 
-/* "horse/router.pyx":185
+/* "horse/router.pyx":189
  * 
  *     property maximum_paths:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5244,7 +5325,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_13maximum_paths___get__(struct __p
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":186
+  /* "horse/router.pyx":190
  *     property maximum_paths:
  *         def __get__(self):
  *             return self.maximum_paths             # <<<<<<<<<<<<<<
@@ -5256,7 +5337,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_13maximum_paths___get__(struct __p
   __pyx_r = __pyx_v_self->maximum_paths;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":185
+  /* "horse/router.pyx":189
  * 
  *     property maximum_paths:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5271,7 +5352,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_13maximum_paths___get__(struct __p
   return __pyx_r;
 }
 
-/* "horse/router.pyx":188
+/* "horse/router.pyx":192
  *             return self.maximum_paths
  * 
  *         def __set__(self, maximum_paths):             # <<<<<<<<<<<<<<
@@ -5297,7 +5378,7 @@ static int __pyx_pf_5horse_6router_3BGP_13maximum_paths_2__set__(struct __pyx_ob
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "horse/router.pyx":189
+  /* "horse/router.pyx":193
  * 
  *         def __set__(self, maximum_paths):
  *             self.maximum_paths = maximum_paths             # <<<<<<<<<<<<<<
@@ -5310,7 +5391,7 @@ static int __pyx_pf_5horse_6router_3BGP_13maximum_paths_2__set__(struct __pyx_ob
   __Pyx_DECREF(__pyx_v_self->maximum_paths);
   __pyx_v_self->maximum_paths = __pyx_v_maximum_paths;
 
-  /* "horse/router.pyx":188
+  /* "horse/router.pyx":192
  *             return self.maximum_paths
  * 
  *         def __set__(self, maximum_paths):             # <<<<<<<<<<<<<<
@@ -5431,7 +5512,7 @@ static PyObject *__pyx_pf_5horse_6router_3BGP_20__setstate_cython__(CYTHON_UNUSE
   return __pyx_r;
 }
 
-/* "horse/router.pyx":197
+/* "horse/router.pyx":201
  *     # cdef ecmp_enabled
  * 
  *     def __init__(self, namespace, runDir, *protocols, **kwargs):             # <<<<<<<<<<<<<<
@@ -5485,12 +5566,12 @@ static int __pyx_pw_5horse_6router_6Daemon_1__init__(PyObject *__pyx_v_self, PyO
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_runDir)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 2, 1); __PYX_ERR(0, 197, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 2, 1); __PYX_ERR(0, 201, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 2) ? pos_args : 2;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__init__") < 0)) __PYX_ERR(0, 197, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__init__") < 0)) __PYX_ERR(0, 201, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 2) {
       goto __pyx_L5_argtuple_error;
@@ -5503,7 +5584,7 @@ static int __pyx_pw_5horse_6router_6Daemon_1__init__(PyObject *__pyx_v_self, PyO
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 197, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 201, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_protocols); __pyx_v_protocols = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -5525,7 +5606,7 @@ static int __pyx_pf_5horse_6router_6Daemon___init__(struct __pyx_obj_5horse_6rou
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "horse/router.pyx":198
+  /* "horse/router.pyx":202
  * 
  *     def __init__(self, namespace, runDir, *protocols, **kwargs):
  *         self.namespace = namespace             # <<<<<<<<<<<<<<
@@ -5538,7 +5619,7 @@ static int __pyx_pf_5horse_6router_6Daemon___init__(struct __pyx_obj_5horse_6rou
   __Pyx_DECREF(__pyx_v_self->namespace);
   __pyx_v_self->namespace = __pyx_v_namespace;
 
-  /* "horse/router.pyx":199
+  /* "horse/router.pyx":203
  *     def __init__(self, namespace, runDir, *protocols, **kwargs):
  *         self.namespace = namespace
  *         self.runDir = runDir             # <<<<<<<<<<<<<<
@@ -5551,7 +5632,7 @@ static int __pyx_pf_5horse_6router_6Daemon___init__(struct __pyx_obj_5horse_6rou
   __Pyx_DECREF(__pyx_v_self->runDir);
   __pyx_v_self->runDir = __pyx_v_runDir;
 
-  /* "horse/router.pyx":197
+  /* "horse/router.pyx":201
  *     # cdef ecmp_enabled
  * 
  *     def __init__(self, namespace, runDir, *protocols, **kwargs):             # <<<<<<<<<<<<<<
@@ -5565,7 +5646,7 @@ static int __pyx_pf_5horse_6router_6Daemon___init__(struct __pyx_obj_5horse_6rou
   return __pyx_r;
 }
 
-/* "horse/router.pyx":201
+/* "horse/router.pyx":205
  *         self.runDir = runDir
  * 
  *     def __cinit__(self, namespace, runDir, *protocols, **kwargs):             # <<<<<<<<<<<<<<
@@ -5619,12 +5700,12 @@ static int __pyx_pw_5horse_6router_6Daemon_3__cinit__(PyObject *__pyx_v_self, Py
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_runDir)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 2, 1); __PYX_ERR(0, 201, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 2, 1); __PYX_ERR(0, 205, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 2) ? pos_args : 2;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__cinit__") < 0)) __PYX_ERR(0, 201, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__cinit__") < 0)) __PYX_ERR(0, 205, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 2) {
       goto __pyx_L5_argtuple_error;
@@ -5637,7 +5718,7 @@ static int __pyx_pw_5horse_6router_6Daemon_3__cinit__(PyObject *__pyx_v_self, Py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 201, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 205, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_protocols); __pyx_v_protocols = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -5659,7 +5740,7 @@ static int __pyx_pf_5horse_6router_6Daemon_2__cinit__(struct __pyx_obj_5horse_6r
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "horse/router.pyx":202
+  /* "horse/router.pyx":206
  * 
  *     def __cinit__(self, namespace, runDir, *protocols, **kwargs):
  *         self.namespace = None             # <<<<<<<<<<<<<<
@@ -5672,7 +5753,7 @@ static int __pyx_pf_5horse_6router_6Daemon_2__cinit__(struct __pyx_obj_5horse_6r
   __Pyx_DECREF(__pyx_v_self->namespace);
   __pyx_v_self->namespace = Py_None;
 
-  /* "horse/router.pyx":203
+  /* "horse/router.pyx":207
  *     def __cinit__(self, namespace, runDir, *protocols, **kwargs):
  *         self.namespace = None
  *         self.runDir = None             # <<<<<<<<<<<<<<
@@ -5685,7 +5766,7 @@ static int __pyx_pf_5horse_6router_6Daemon_2__cinit__(struct __pyx_obj_5horse_6r
   __Pyx_DECREF(__pyx_v_self->runDir);
   __pyx_v_self->runDir = Py_None;
 
-  /* "horse/router.pyx":204
+  /* "horse/router.pyx":208
  *         self.namespace = None
  *         self.runDir = None
  *         self.router_id = None             # <<<<<<<<<<<<<<
@@ -5698,7 +5779,7 @@ static int __pyx_pf_5horse_6router_6Daemon_2__cinit__(struct __pyx_obj_5horse_6r
   __Pyx_DECREF(__pyx_v_self->router_id);
   __pyx_v_self->router_id = Py_None;
 
-  /* "horse/router.pyx":201
+  /* "horse/router.pyx":205
  *         self.runDir = runDir
  * 
  *     def __cinit__(self, namespace, runDir, *protocols, **kwargs):             # <<<<<<<<<<<<<<
@@ -5712,7 +5793,7 @@ static int __pyx_pf_5horse_6router_6Daemon_2__cinit__(struct __pyx_obj_5horse_6r
   return __pyx_r;
 }
 
-/* "horse/router.pyx":206
+/* "horse/router.pyx":210
  *         self.router_id = None
  * 
  *     def check_ecmp(self, proto):             # <<<<<<<<<<<<<<
@@ -5741,22 +5822,22 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_4check_ecmp(struct __pyx_obj_5h
   int __pyx_t_3;
   __Pyx_RefNannySetupContext("check_ecmp", 0);
 
-  /* "horse/router.pyx":207
+  /* "horse/router.pyx":211
  * 
  *     def check_ecmp(self, proto):
  *         if proto.maximum_paths > 1:             # <<<<<<<<<<<<<<
  *             self.ecmp_enabled =  True
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_proto, __pyx_n_s_maximum_paths); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_proto, __pyx_n_s_maximum_paths); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_t_1, __pyx_int_1, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_t_1, __pyx_int_1, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "horse/router.pyx":208
+    /* "horse/router.pyx":212
  *     def check_ecmp(self, proto):
  *         if proto.maximum_paths > 1:
  *             self.ecmp_enabled =  True             # <<<<<<<<<<<<<<
@@ -5769,7 +5850,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_4check_ecmp(struct __pyx_obj_5h
     __Pyx_DECREF(__pyx_v_self->ecmp_enabled);
     __pyx_v_self->ecmp_enabled = Py_True;
 
-    /* "horse/router.pyx":207
+    /* "horse/router.pyx":211
  * 
  *     def check_ecmp(self, proto):
  *         if proto.maximum_paths > 1:             # <<<<<<<<<<<<<<
@@ -5778,7 +5859,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_4check_ecmp(struct __pyx_obj_5h
  */
   }
 
-  /* "horse/router.pyx":206
+  /* "horse/router.pyx":210
  *         self.router_id = None
  * 
  *     def check_ecmp(self, proto):             # <<<<<<<<<<<<<<
@@ -5800,7 +5881,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_4check_ecmp(struct __pyx_obj_5h
   return __pyx_r;
 }
 
-/* "horse/router.pyx":210
+/* "horse/router.pyx":214
  *             self.ecmp_enabled =  True
  * 
  *     def get_ecmp_enabled(self):             # <<<<<<<<<<<<<<
@@ -5826,7 +5907,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_6get_ecmp_enabled(struct __pyx_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_ecmp_enabled", 0);
 
-  /* "horse/router.pyx":211
+  /* "horse/router.pyx":215
  * 
  *     def get_ecmp_enabled(self):
  *         return self.ecmp_enabled             # <<<<<<<<<<<<<<
@@ -5838,7 +5919,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_6get_ecmp_enabled(struct __pyx_
   __pyx_r = __pyx_v_self->ecmp_enabled;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":210
+  /* "horse/router.pyx":214
  *             self.ecmp_enabled =  True
  * 
  *     def get_ecmp_enabled(self):             # <<<<<<<<<<<<<<
@@ -5853,7 +5934,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_6get_ecmp_enabled(struct __pyx_
   return __pyx_r;
 }
 
-/* "horse/router.pyx":214
+/* "horse/router.pyx":218
  * 
  *     property router_id:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5879,7 +5960,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_9router_id___get__(struct __pyx
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "horse/router.pyx":215
+  /* "horse/router.pyx":219
  *     property router_id:
  *         def __get__(self):
  *             return self.router_id             # <<<<<<<<<<<<<<
@@ -5891,7 +5972,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_9router_id___get__(struct __pyx
   __pyx_r = __pyx_v_self->router_id;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":214
+  /* "horse/router.pyx":218
  * 
  *     property router_id:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -5906,7 +5987,7 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_9router_id___get__(struct __pyx
   return __pyx_r;
 }
 
-/* "horse/router.pyx":217
+/* "horse/router.pyx":221
  *             return self.router_id
  * 
  *         def __set__(self, router_id):             # <<<<<<<<<<<<<<
@@ -5932,7 +6013,7 @@ static int __pyx_pf_5horse_6router_6Daemon_9router_id_2__set__(struct __pyx_obj_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "horse/router.pyx":218
+  /* "horse/router.pyx":222
  * 
  *         def __set__(self, router_id):
  *             self.router_id = router_id             # <<<<<<<<<<<<<<
@@ -5945,7 +6026,7 @@ static int __pyx_pf_5horse_6router_6Daemon_9router_id_2__set__(struct __pyx_obj_
   __Pyx_DECREF(__pyx_v_self->router_id);
   __pyx_v_self->router_id = __pyx_v_router_id;
 
-  /* "horse/router.pyx":217
+  /* "horse/router.pyx":221
  *             return self.router_id
  * 
  *         def __set__(self, router_id):             # <<<<<<<<<<<<<<
@@ -6066,10 +6147,10 @@ static PyObject *__pyx_pf_5horse_6router_6Daemon_10__setstate_cython__(CYTHON_UN
   return __pyx_r;
 }
 
-/* "horse/router.pyx":226
+/* "horse/router.pyx":230
  * 
  *     # Can receive either a configuration file or a protocol object
- *     def __cinit__(self, namespace, runDir = "/tmp", *protocols, **kwargs):             # <<<<<<<<<<<<<<
+ *     def __cinit__(self, namespace, runDir, protocols, kwargs):             # <<<<<<<<<<<<<<
  * 
  *         super(QuaggaDaemon, self).__init__(namespace, runDir)
  */
@@ -6084,33 +6165,23 @@ static int __pyx_pw_5horse_6router_12QuaggaDaemon_1__cinit__(PyObject *__pyx_v_s
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
-  __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return -1;
-  __Pyx_GOTREF(__pyx_v_kwargs);
-  if (PyTuple_GET_SIZE(__pyx_args) > 2) {
-    __pyx_v_protocols = PyTuple_GetSlice(__pyx_args, 2, PyTuple_GET_SIZE(__pyx_args));
-    if (unlikely(!__pyx_v_protocols)) {
-      __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
-      __Pyx_RefNannyFinishContext();
-      return -1;
-    }
-    __Pyx_GOTREF(__pyx_v_protocols);
-  } else {
-    __pyx_v_protocols = __pyx_empty_tuple; __Pyx_INCREF(__pyx_empty_tuple);
-  }
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_namespace,&__pyx_n_s_runDir,0};
-    PyObject* values[2] = {0,0};
-    values[1] = ((PyObject *)__pyx_kp_s_tmp);
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_namespace,&__pyx_n_s_runDir,&__pyx_n_s_protocols,&__pyx_n_s_kwargs,0};
+    PyObject* values[4] = {0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
-        default:
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        CYTHON_FALLTHROUGH;
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
         CYTHON_FALLTHROUGH;
         case  0: break;
+        default: goto __pyx_L5_argtuple_error;
       }
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
@@ -6119,35 +6190,43 @@ static int __pyx_pw_5horse_6router_12QuaggaDaemon_1__cinit__(PyObject *__pyx_v_s
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
-        if (kw_args > 0) {
-          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_runDir);
-          if (value) { values[1] = value; kw_args--; }
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_runDir)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 1); __PYX_ERR(0, 230, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_protocols)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 2); __PYX_ERR(0, 230, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  3:
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kwargs)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 3); __PYX_ERR(0, 230, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        const Py_ssize_t used_pos_args = (pos_args < 2) ? pos_args : 2;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__cinit__") < 0)) __PYX_ERR(0, 226, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 230, __pyx_L3_error)
       }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
+      goto __pyx_L5_argtuple_error;
     } else {
-      switch (PyTuple_GET_SIZE(__pyx_args)) {
-        default:
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        break;
-        case  0:
-        goto __pyx_L5_argtuple_error;
-      }
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+      values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
     __pyx_v_namespace = values[0];
     __pyx_v_runDir = values[1];
+    __pyx_v_protocols = values[2];
+    __pyx_v_kwargs = values[3];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 226, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 230, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_DECREF(__pyx_v_protocols); __pyx_v_protocols = 0;
-  __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
   __Pyx_AddTraceback("horse.router.QuaggaDaemon.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
@@ -6155,8 +6234,6 @@ static int __pyx_pw_5horse_6router_12QuaggaDaemon_1__cinit__(PyObject *__pyx_v_s
   __pyx_r = __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(((struct __pyx_obj_5horse_6router_QuaggaDaemon *)__pyx_v_self), __pyx_v_namespace, __pyx_v_runDir, __pyx_v_protocols, __pyx_v_kwargs);
 
   /* function exit code */
-  __Pyx_XDECREF(__pyx_v_protocols);
-  __Pyx_XDECREF(__pyx_v_kwargs);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6175,17 +6252,18 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
   int __pyx_t_7;
   int __pyx_t_8;
   Py_ssize_t __pyx_t_9;
-  PyObject *__pyx_t_10 = NULL;
+  PyObject *(*__pyx_t_10)(PyObject *);
+  PyObject *__pyx_t_11 = NULL;
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "horse/router.pyx":228
- *     def __cinit__(self, namespace, runDir = "/tmp", *protocols, **kwargs):
+  /* "horse/router.pyx":232
+ *     def __cinit__(self, namespace, runDir, protocols, kwargs):
  * 
  *         super(QuaggaDaemon, self).__init__(namespace, runDir)             # <<<<<<<<<<<<<<
  *         self._qd_ptr = quagga_daemon_new(namespace)
  *         if not "zebra_conf" in kwargs:
  */
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 232, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(((PyObject *)__pyx_ptype_5horse_6router_QuaggaDaemon));
   __Pyx_GIVEREF(((PyObject *)__pyx_ptype_5horse_6router_QuaggaDaemon));
@@ -6193,10 +6271,10 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_2, 1, ((PyObject *)__pyx_v_self));
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 232, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -6214,7 +6292,7 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_namespace, __pyx_v_runDir};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 232, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -6222,13 +6300,13 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_namespace, __pyx_v_runDir};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 232, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 228, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 232, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -6239,57 +6317,60 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
     __Pyx_INCREF(__pyx_v_runDir);
     __Pyx_GIVEREF(__pyx_v_runDir);
     PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_runDir);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 232, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":229
+  /* "horse/router.pyx":233
  * 
  *         super(QuaggaDaemon, self).__init__(namespace, runDir)
  *         self._qd_ptr = quagga_daemon_new(namespace)             # <<<<<<<<<<<<<<
  *         if not "zebra_conf" in kwargs:
  *             # Generate Basic zebra file.
  */
-  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_namespace); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_namespace); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 233, __pyx_L1_error)
   __pyx_v_self->_qd_ptr = quagga_daemon_new(__pyx_t_6);
 
-  /* "horse/router.pyx":230
+  /* "horse/router.pyx":234
  *         super(QuaggaDaemon, self).__init__(namespace, runDir)
  *         self._qd_ptr = quagga_daemon_new(namespace)
  *         if not "zebra_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             # Generate Basic zebra file.
- *             self.zebraConfFile = runDir + "/zebra%s" % namespace
+ *             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
  */
-  __pyx_t_7 = (__Pyx_PyDict_ContainsTF(__pyx_n_s_zebra_conf, __pyx_v_kwargs, Py_NE)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 230, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_zebra_conf, __pyx_v_kwargs, Py_NE)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 234, __pyx_L1_error)
   __pyx_t_8 = (__pyx_t_7 != 0);
   if (__pyx_t_8) {
 
-    /* "horse/router.pyx":232
+    /* "horse/router.pyx":236
  *         if not "zebra_conf" in kwargs:
  *             # Generate Basic zebra file.
- *             self.zebraConfFile = runDir + "/zebra%s" % namespace             # <<<<<<<<<<<<<<
+ *             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace             # <<<<<<<<<<<<<<
  *             self.generateZebra()
- * 
- */
-    __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_zebra_s, __pyx_v_namespace); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 232, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyNumber_Add(__pyx_v_runDir, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 232, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_zebraConfFile, __pyx_t_2) < 0) __PYX_ERR(0, 232, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-    /* "horse/router.pyx":233
- *             # Generate Basic zebra file.
- *             self.zebraConfFile = runDir + "/zebra%s" % namespace
- *             self.generateZebra()             # <<<<<<<<<<<<<<
- * 
  *         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_generateZebra); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_zebra_s_conf, __pyx_v_namespace); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 236, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = PyNumber_Add(__pyx_v_runDir, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 236, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_GIVEREF(__pyx_t_2);
+    __Pyx_GOTREF(__pyx_v_self->zebraConfFile);
+    __Pyx_DECREF(__pyx_v_self->zebraConfFile);
+    __pyx_v_self->zebraConfFile = __pyx_t_2;
+    __pyx_t_2 = 0;
+
+    /* "horse/router.pyx":237
+ *             # Generate Basic zebra file.
+ *             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
+ *             self.generateZebra()             # <<<<<<<<<<<<<<
+ *         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
+ *         if "bgpd_conf" in kwargs:
+ */
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_generateZebra); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -6302,81 +6383,78 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       }
     }
     if (__pyx_t_5) {
-      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
     }
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":230
+    /* "horse/router.pyx":234
  *         super(QuaggaDaemon, self).__init__(namespace, runDir)
  *         self._qd_ptr = quagga_daemon_new(namespace)
  *         if not "zebra_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             # Generate Basic zebra file.
- *             self.zebraConfFile = runDir + "/zebra%s" % namespace
+ *             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
  */
   }
 
-  /* "horse/router.pyx":235
+  /* "horse/router.pyx":238
+ *             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
  *             self.generateZebra()
- * 
  *         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)             # <<<<<<<<<<<<<<
  *         if "bgpd_conf" in kwargs:
  *             self.bgpd_conf = kwargs["bgpd_conf"]
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_zebraConfFile); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 235, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->zebraConfFile); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 238, __pyx_L1_error)
   set_quagga_daemon_zebra_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":236
- * 
+  /* "horse/router.pyx":239
+ *             self.generateZebra()
  *         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
  *         if "bgpd_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             self.bgpd_conf = kwargs["bgpd_conf"]
  *             set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  */
-  __pyx_t_8 = (__Pyx_PyDict_ContainsTF(__pyx_n_s_bgpd_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_t_8 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_bgpd_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 239, __pyx_L1_error)
   __pyx_t_7 = (__pyx_t_8 != 0);
   if (__pyx_t_7) {
 
-    /* "horse/router.pyx":237
+    /* "horse/router.pyx":240
  *         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
  *         if "bgpd_conf" in kwargs:
  *             self.bgpd_conf = kwargs["bgpd_conf"]             # <<<<<<<<<<<<<<
  *             set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  *             bgp = self.parse_bgpd_file()
  */
-    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_bgpd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_kwargs, __pyx_n_s_bgpd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bgpd_conf, __pyx_t_2) < 0) __PYX_ERR(0, 237, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_GIVEREF(__pyx_t_2);
+    __Pyx_GOTREF(__pyx_v_self->bgpd_conf);
+    __Pyx_DECREF(__pyx_v_self->bgpd_conf);
+    __pyx_v_self->bgpd_conf = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":238
+    /* "horse/router.pyx":241
  *         if "bgpd_conf" in kwargs:
  *             self.bgpd_conf = kwargs["bgpd_conf"]
  *             set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)             # <<<<<<<<<<<<<<
  *             bgp = self.parse_bgpd_file()
  *             if bgp.router_id:
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bgpd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 238, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 238, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->bgpd_conf); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 241, __pyx_L1_error)
     set_quagga_daemon_bgpd_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":239
+    /* "horse/router.pyx":242
  *             self.bgpd_conf = kwargs["bgpd_conf"]
  *             set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  *             bgp = self.parse_bgpd_file()             # <<<<<<<<<<<<<<
  *             if bgp.router_id:
  *                 self.router_id = bgp.router_id
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_parse_bgpd_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_parse_bgpd_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 242, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -6389,37 +6467,37 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       }
     }
     if (__pyx_t_5) {
-      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 239, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 239, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
     }
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_v_bgp = __pyx_t_2;
     __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":240
+    /* "horse/router.pyx":243
  *             set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  *             bgp = self.parse_bgpd_file()
  *             if bgp.router_id:             # <<<<<<<<<<<<<<
  *                 self.router_id = bgp.router_id
- *             # bgp.write_auxiliary_config_file(runDir, self.namespace)
+ *             self.check_ecmp(bgp)
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 240, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 243, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if (__pyx_t_7) {
 
-      /* "horse/router.pyx":241
+      /* "horse/router.pyx":244
  *             bgp = self.parse_bgpd_file()
  *             if bgp.router_id:
  *                 self.router_id = bgp.router_id             # <<<<<<<<<<<<<<
- *             # bgp.write_auxiliary_config_file(runDir, self.namespace)
  *             self.check_ecmp(bgp)
+ *         if "ospfd_conf" in kwargs:
  */
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 241, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 244, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_GIVEREF(__pyx_t_2);
       __Pyx_GOTREF(__pyx_v_self->__pyx_base.router_id);
@@ -6427,23 +6505,23 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       __pyx_v_self->__pyx_base.router_id = __pyx_t_2;
       __pyx_t_2 = 0;
 
-      /* "horse/router.pyx":240
+      /* "horse/router.pyx":243
  *             set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  *             bgp = self.parse_bgpd_file()
  *             if bgp.router_id:             # <<<<<<<<<<<<<<
  *                 self.router_id = bgp.router_id
- *             # bgp.write_auxiliary_config_file(runDir, self.namespace)
+ *             self.check_ecmp(bgp)
  */
     }
 
-    /* "horse/router.pyx":243
+    /* "horse/router.pyx":245
+ *             if bgp.router_id:
  *                 self.router_id = bgp.router_id
- *             # bgp.write_auxiliary_config_file(runDir, self.namespace)
  *             self.check_ecmp(bgp)             # <<<<<<<<<<<<<<
- *         if "ospfd_conf" in kwargs["ospfd_conf"]:
- *             self.ospfd_conf = kwargs["ospf6d_conf"]
+ *         if "ospfd_conf" in kwargs:
+ *             self.ospfd_conf = kwargs["ospfd_conf"]
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 245, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -6456,13 +6534,13 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       }
     }
     if (!__pyx_t_5) {
-      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_bgp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_bgp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_1)) {
         PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
-        __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_GOTREF(__pyx_t_2);
       } else
@@ -6470,19 +6548,19 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
         PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
-        __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_GOTREF(__pyx_t_2);
       } else
       #endif
       {
-        __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 243, __pyx_L1_error)
+        __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 245, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
         __Pyx_INCREF(__pyx_v_bgp);
         __Pyx_GIVEREF(__pyx_v_bgp);
         PyTuple_SET_ITEM(__pyx_t_3, 0+1, __pyx_v_bgp);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       }
@@ -6490,8 +6568,8 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":236
- * 
+    /* "horse/router.pyx":239
+ *             self.generateZebra()
  *         set_quagga_daemon_zebra_file(self._qd_ptr, self.zebraConfFile)
  *         if "bgpd_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             self.bgpd_conf = kwargs["bgpd_conf"]
@@ -6499,92 +6577,89 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
  */
   }
 
-  /* "horse/router.pyx":244
- *             # bgp.write_auxiliary_config_file(runDir, self.namespace)
+  /* "horse/router.pyx":246
+ *                 self.router_id = bgp.router_id
  *             self.check_ecmp(bgp)
- *         if "ospfd_conf" in kwargs["ospfd_conf"]:             # <<<<<<<<<<<<<<
- *             self.ospfd_conf = kwargs["ospf6d_conf"]
+ *         if "ospfd_conf" in kwargs:             # <<<<<<<<<<<<<<
+ *             self.ospfd_conf = kwargs["ospfd_conf"]
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
  */
-  __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_ospfd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 244, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_ospfd_conf, __pyx_t_2, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 244, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_ospfd_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 246, __pyx_L1_error)
   __pyx_t_8 = (__pyx_t_7 != 0);
   if (__pyx_t_8) {
 
-    /* "horse/router.pyx":245
+    /* "horse/router.pyx":247
  *             self.check_ecmp(bgp)
- *         if "ospfd_conf" in kwargs["ospfd_conf"]:
- *             self.ospfd_conf = kwargs["ospf6d_conf"]             # <<<<<<<<<<<<<<
+ *         if "ospfd_conf" in kwargs:
+ *             self.ospfd_conf = kwargs["ospfd_conf"]             # <<<<<<<<<<<<<<
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
  *         if "ospf6d_conf" in kwargs:
  */
-    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_ospf6d_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_kwargs, __pyx_n_s_ospfd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ospfd_conf, __pyx_t_2) < 0) __PYX_ERR(0, 245, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_GIVEREF(__pyx_t_2);
+    __Pyx_GOTREF(__pyx_v_self->ospfd_conf);
+    __Pyx_DECREF(__pyx_v_self->ospfd_conf);
+    __pyx_v_self->ospfd_conf = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":246
- *         if "ospfd_conf" in kwargs["ospfd_conf"]:
- *             self.ospfd_conf = kwargs["ospf6d_conf"]
+    /* "horse/router.pyx":248
+ *         if "ospfd_conf" in kwargs:
+ *             self.ospfd_conf = kwargs["ospfd_conf"]
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)             # <<<<<<<<<<<<<<
  *         if "ospf6d_conf" in kwargs:
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ospfd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 246, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->ospfd_conf); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 248, __pyx_L1_error)
     set_quagga_daemon_ospfd_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":244
- *             # bgp.write_auxiliary_config_file(runDir, self.namespace)
+    /* "horse/router.pyx":246
+ *                 self.router_id = bgp.router_id
  *             self.check_ecmp(bgp)
- *         if "ospfd_conf" in kwargs["ospfd_conf"]:             # <<<<<<<<<<<<<<
- *             self.ospfd_conf = kwargs["ospf6d_conf"]
+ *         if "ospfd_conf" in kwargs:             # <<<<<<<<<<<<<<
+ *             self.ospfd_conf = kwargs["ospfd_conf"]
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
  */
   }
 
-  /* "horse/router.pyx":247
- *             self.ospfd_conf = kwargs["ospf6d_conf"]
+  /* "horse/router.pyx":249
+ *             self.ospfd_conf = kwargs["ospfd_conf"]
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
  *         if "ospf6d_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]
  *             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)
  */
-  __pyx_t_8 = (__Pyx_PyDict_ContainsTF(__pyx_n_s_ospf6d_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_t_8 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_ospf6d_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 249, __pyx_L1_error)
   __pyx_t_7 = (__pyx_t_8 != 0);
   if (__pyx_t_7) {
 
-    /* "horse/router.pyx":248
+    /* "horse/router.pyx":250
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
  *         if "ospf6d_conf" in kwargs:
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]             # <<<<<<<<<<<<<<
  *             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)
- *         if "ripd_conf" in kwargs["ripd_conf"]:
+ *         if "ripd_conf" in kwargs:
  */
-    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_ospf6d_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 248, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_kwargs, __pyx_n_s_ospf6d_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ospf6d_conf, __pyx_t_2) < 0) __PYX_ERR(0, 248, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_GIVEREF(__pyx_t_2);
+    __Pyx_GOTREF(__pyx_v_self->ospf6d_conf);
+    __Pyx_DECREF(__pyx_v_self->ospf6d_conf);
+    __pyx_v_self->ospf6d_conf = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":249
+    /* "horse/router.pyx":251
  *         if "ospf6d_conf" in kwargs:
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]
  *             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)             # <<<<<<<<<<<<<<
- *         if "ripd_conf" in kwargs["ripd_conf"]:
+ *         if "ripd_conf" in kwargs:
  *             self.ripd_conf = kwargs["ripd_conf"]
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ospf6d_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 249, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->ospf6d_conf); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 251, __pyx_L1_error)
     set_quagga_daemon_ospf6d_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":247
- *             self.ospfd_conf = kwargs["ospf6d_conf"]
+    /* "horse/router.pyx":249
+ *             self.ospfd_conf = kwargs["ospfd_conf"]
  *             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
  *         if "ospf6d_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]
@@ -6592,91 +6667,88 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
  */
   }
 
-  /* "horse/router.pyx":250
+  /* "horse/router.pyx":252
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]
  *             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)
- *         if "ripd_conf" in kwargs["ripd_conf"]:             # <<<<<<<<<<<<<<
+ *         if "ripd_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             self.ripd_conf = kwargs["ripd_conf"]
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
  */
-  __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_ripd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_ripd_conf, __pyx_t_2, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 250, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_ripd_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 252, __pyx_L1_error)
   __pyx_t_8 = (__pyx_t_7 != 0);
   if (__pyx_t_8) {
 
-    /* "horse/router.pyx":251
+    /* "horse/router.pyx":253
  *             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)
- *         if "ripd_conf" in kwargs["ripd_conf"]:
+ *         if "ripd_conf" in kwargs:
  *             self.ripd_conf = kwargs["ripd_conf"]             # <<<<<<<<<<<<<<
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
  *         if "ripngd_conf"  in kwargs:
  */
-    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_ripd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_kwargs, __pyx_n_s_ripd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ripd_conf, __pyx_t_2) < 0) __PYX_ERR(0, 251, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_GIVEREF(__pyx_t_2);
+    __Pyx_GOTREF(__pyx_v_self->ripd_conf);
+    __Pyx_DECREF(__pyx_v_self->ripd_conf);
+    __pyx_v_self->ripd_conf = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":252
- *         if "ripd_conf" in kwargs["ripd_conf"]:
+    /* "horse/router.pyx":254
+ *         if "ripd_conf" in kwargs:
  *             self.ripd_conf = kwargs["ripd_conf"]
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)             # <<<<<<<<<<<<<<
  *         if "ripngd_conf"  in kwargs:
  *             self.ripngd_conf = kwargs["ripngd_conf"]
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ripd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->ripd_conf); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 254, __pyx_L1_error)
     set_quagga_daemon_ripd_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":250
+    /* "horse/router.pyx":252
  *             self.ospf6d_conf = kwargs["ospf6d_conf"]
  *             set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf)
- *         if "ripd_conf" in kwargs["ripd_conf"]:             # <<<<<<<<<<<<<<
+ *         if "ripd_conf" in kwargs:             # <<<<<<<<<<<<<<
  *             self.ripd_conf = kwargs["ripd_conf"]
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
  */
   }
 
-  /* "horse/router.pyx":253
+  /* "horse/router.pyx":255
  *             self.ripd_conf = kwargs["ripd_conf"]
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
  *         if "ripngd_conf"  in kwargs:             # <<<<<<<<<<<<<<
  *             self.ripngd_conf = kwargs["ripngd_conf"]
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
  */
-  __pyx_t_8 = (__Pyx_PyDict_ContainsTF(__pyx_n_s_ripngd_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_8 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_ripngd_conf, __pyx_v_kwargs, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 255, __pyx_L1_error)
   __pyx_t_7 = (__pyx_t_8 != 0);
   if (__pyx_t_7) {
 
-    /* "horse/router.pyx":254
+    /* "horse/router.pyx":256
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
  *         if "ripngd_conf"  in kwargs:
  *             self.ripngd_conf = kwargs["ripngd_conf"]             # <<<<<<<<<<<<<<
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
  *         for p in protocols:
  */
-    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_kwargs, __pyx_n_s_ripngd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 254, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_kwargs, __pyx_n_s_ripngd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 256, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ripngd_conf, __pyx_t_2) < 0) __PYX_ERR(0, 254, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_GIVEREF(__pyx_t_2);
+    __Pyx_GOTREF(__pyx_v_self->ripngd_conf);
+    __Pyx_DECREF(__pyx_v_self->ripngd_conf);
+    __pyx_v_self->ripngd_conf = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":255
+    /* "horse/router.pyx":257
  *         if "ripngd_conf"  in kwargs:
  *             self.ripngd_conf = kwargs["ripngd_conf"]
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)             # <<<<<<<<<<<<<<
  *         for p in protocols:
  *             if isinstance(p, BGP):
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ripngd_conf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 255, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->ripngd_conf); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 257, __pyx_L1_error)
     set_quagga_daemon_ripngd_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":253
+    /* "horse/router.pyx":255
  *             self.ripd_conf = kwargs["ripd_conf"]
  *             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf)
  *         if "ripngd_conf"  in kwargs:             # <<<<<<<<<<<<<<
@@ -6685,44 +6757,86 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
  */
   }
 
-  /* "horse/router.pyx":256
+  /* "horse/router.pyx":258
  *             self.ripngd_conf = kwargs["ripngd_conf"]
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
  *         for p in protocols:             # <<<<<<<<<<<<<<
  *             if isinstance(p, BGP):
- *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
+ *                 bgp = <BGP> p
  */
-  __pyx_t_2 = __pyx_v_protocols; __Pyx_INCREF(__pyx_t_2); __pyx_t_9 = 0;
+  if (likely(PyList_CheckExact(__pyx_v_protocols)) || PyTuple_CheckExact(__pyx_v_protocols)) {
+    __pyx_t_2 = __pyx_v_protocols; __Pyx_INCREF(__pyx_t_2); __pyx_t_9 = 0;
+    __pyx_t_10 = NULL;
+  } else {
+    __pyx_t_9 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_protocols); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_10 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 258, __pyx_L1_error)
+  }
   for (;;) {
-    if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
-    #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_1); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 256, __pyx_L1_error)
-    #else
-    __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    #endif
+    if (likely(!__pyx_t_10)) {
+      if (likely(PyList_CheckExact(__pyx_t_2))) {
+        if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_2)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_1); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 258, __pyx_L1_error)
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        #endif
+      } else {
+        if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_1); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 258, __pyx_L1_error)
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        #endif
+      }
+    } else {
+      __pyx_t_1 = __pyx_t_10(__pyx_t_2);
+      if (unlikely(!__pyx_t_1)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(0, 258, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_1);
+    }
     __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":257
+    /* "horse/router.pyx":259
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
  *         for p in protocols:
  *             if isinstance(p, BGP):             # <<<<<<<<<<<<<<
+ *                 bgp = <BGP> p
  *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
- *                 self.generateBgpd(p)
  */
     __pyx_t_7 = __Pyx_TypeCheck(__pyx_v_p, __pyx_ptype_5horse_6router_BGP); 
     __pyx_t_8 = (__pyx_t_7 != 0);
     if (__pyx_t_8) {
 
-      /* "horse/router.pyx":258
+      /* "horse/router.pyx":260
  *         for p in protocols:
  *             if isinstance(p, BGP):
- *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)             # <<<<<<<<<<<<<<
- *                 self.generateBgpd(p)
- *                 # bgp.write_auxiliary_config_file(runDir, self.namespace)
+ *                 bgp = <BGP> p             # <<<<<<<<<<<<<<
+ *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
+ *                 self.generateBgpd(bgp)
  */
-      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+      __pyx_t_1 = __pyx_v_p;
+      __Pyx_INCREF(__pyx_t_1);
+      __Pyx_XDECREF_SET(__pyx_v_bgp, __pyx_t_1);
+      __pyx_t_1 = 0;
+
+      /* "horse/router.pyx":261
+ *             if isinstance(p, BGP):
+ *                 bgp = <BGP> p
+ *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)             # <<<<<<<<<<<<<<
+ *                 self.generateBgpd(bgp)
+ *                 set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
+ */
+      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_INCREF(__pyx_v_runDir);
       __Pyx_GIVEREF(__pyx_v_runDir);
@@ -6730,20 +6844,23 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       __Pyx_INCREF(__pyx_v_self->__pyx_base.namespace);
       __Pyx_GIVEREF(__pyx_v_self->__pyx_base.namespace);
       PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_self->__pyx_base.namespace);
-      __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_s_bgpd_s_conf, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_s_bgpd_s_conf, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bgpd_conf, __pyx_t_3) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_GIVEREF(__pyx_t_3);
+      __Pyx_GOTREF(__pyx_v_self->bgpd_conf);
+      __Pyx_DECREF(__pyx_v_self->bgpd_conf);
+      __pyx_v_self->bgpd_conf = __pyx_t_3;
+      __pyx_t_3 = 0;
 
-      /* "horse/router.pyx":259
- *             if isinstance(p, BGP):
+      /* "horse/router.pyx":262
+ *                 bgp = <BGP> p
  *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
- *                 self.generateBgpd(p)             # <<<<<<<<<<<<<<
- *                 # bgp.write_auxiliary_config_file(runDir, self.namespace)
+ *                 self.generateBgpd(bgp)             # <<<<<<<<<<<<<<
+ *                 set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  *                 self.check_ecmp(bgp)
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_generateBgpd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_generateBgpd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 262, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_5 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -6756,88 +6873,97 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
         }
       }
       if (!__pyx_t_5) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_p); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 259, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_bgp); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 262, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_1)) {
-          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_p};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 259, __pyx_L1_error)
+          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 262, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_p};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 259, __pyx_L1_error)
+          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 262, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         {
-          __pyx_t_10 = PyTuple_New(1+1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 259, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_10);
-          __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_5); __pyx_t_5 = NULL;
-          __Pyx_INCREF(__pyx_v_p);
-          __Pyx_GIVEREF(__pyx_v_p);
-          PyTuple_SET_ITEM(__pyx_t_10, 0+1, __pyx_v_p);
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_10, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 259, __pyx_L1_error)
+          __pyx_t_11 = PyTuple_New(1+1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 262, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_11);
+          __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_5); __pyx_t_5 = NULL;
+          __Pyx_INCREF(__pyx_v_bgp);
+          __Pyx_GIVEREF(__pyx_v_bgp);
+          PyTuple_SET_ITEM(__pyx_t_11, 0+1, __pyx_v_bgp);
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_11, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 262, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         }
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "horse/router.pyx":261
- *                 self.generateBgpd(p)
- *                 # bgp.write_auxiliary_config_file(runDir, self.namespace)
+      /* "horse/router.pyx":263
+ *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
+ *                 self.generateBgpd(bgp)
+ *                 set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)             # <<<<<<<<<<<<<<
+ *                 self.check_ecmp(bgp)
+ * 
+ */
+      __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->bgpd_conf); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 263, __pyx_L1_error)
+      set_quagga_daemon_bgpd_file(__pyx_v_self->_qd_ptr, __pyx_t_6);
+
+      /* "horse/router.pyx":264
+ *                 self.generateBgpd(bgp)
+ *                 set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)
  *                 self.check_ecmp(bgp)             # <<<<<<<<<<<<<<
  * 
- *     def generateZebra(self):
+ * 
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      if (unlikely(!__pyx_v_bgp)) { __Pyx_RaiseUnboundLocalError("bgp"); __PYX_ERR(0, 261, __pyx_L1_error) }
-      __pyx_t_10 = NULL;
+      __pyx_t_11 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
-        __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_1);
-        if (likely(__pyx_t_10)) {
+        __pyx_t_11 = PyMethod_GET_SELF(__pyx_t_1);
+        if (likely(__pyx_t_11)) {
           PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-          __Pyx_INCREF(__pyx_t_10);
+          __Pyx_INCREF(__pyx_t_11);
           __Pyx_INCREF(function);
           __Pyx_DECREF_SET(__pyx_t_1, function);
         }
       }
-      if (!__pyx_t_10) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_bgp); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
+      if (!__pyx_t_11) {
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_bgp); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_1)) {
-          PyObject *__pyx_temp[2] = {__pyx_t_10, __pyx_v_bgp};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
-          __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+          PyObject *__pyx_temp[2] = {__pyx_t_11, __pyx_v_bgp};
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
+          __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-          PyObject *__pyx_temp[2] = {__pyx_t_10, __pyx_v_bgp};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
-          __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+          PyObject *__pyx_temp[2] = {__pyx_t_11, __pyx_v_bgp};
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
+          __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         {
-          __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 261, __pyx_L1_error)
+          __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 264, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_10); __pyx_t_10 = NULL;
+          __Pyx_GIVEREF(__pyx_t_11); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_11); __pyx_t_11 = NULL;
           __Pyx_INCREF(__pyx_v_bgp);
           __Pyx_GIVEREF(__pyx_v_bgp);
           PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_v_bgp);
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         }
@@ -6845,29 +6971,29 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "horse/router.pyx":257
+      /* "horse/router.pyx":259
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
  *         for p in protocols:
  *             if isinstance(p, BGP):             # <<<<<<<<<<<<<<
+ *                 bgp = <BGP> p
  *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
- *                 self.generateBgpd(p)
  */
     }
 
-    /* "horse/router.pyx":256
+    /* "horse/router.pyx":258
  *             self.ripngd_conf = kwargs["ripngd_conf"]
  *             set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf)
  *         for p in protocols:             # <<<<<<<<<<<<<<
  *             if isinstance(p, BGP):
- *                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
+ *                 bgp = <BGP> p
  */
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":226
+  /* "horse/router.pyx":230
  * 
  *     # Can receive either a configuration file or a protocol object
- *     def __cinit__(self, namespace, runDir = "/tmp", *protocols, **kwargs):             # <<<<<<<<<<<<<<
+ *     def __cinit__(self, namespace, runDir, protocols, kwargs):             # <<<<<<<<<<<<<<
  * 
  *         super(QuaggaDaemon, self).__init__(namespace, runDir)
  */
@@ -6880,7 +7006,7 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_11);
   __Pyx_AddTraceback("horse.router.QuaggaDaemon.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
@@ -6890,8 +7016,45 @@ static int __pyx_pf_5horse_6router_12QuaggaDaemon___cinit__(struct __pyx_obj_5ho
   return __pyx_r;
 }
 
-/* "horse/router.pyx":263
- *                 self.check_ecmp(bgp)
+/* "horse/router.pyx":267
+ * 
+ * 
+ *     cdef quagga_daemon* get_quagga_ptr(self):             # <<<<<<<<<<<<<<
+ *         return self._qd_ptr
+ * 
+ */
+
+static struct quagga_daemon *__pyx_f_5horse_6router_12QuaggaDaemon_get_quagga_ptr(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self) {
+  struct quagga_daemon *__pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_quagga_ptr", 0);
+
+  /* "horse/router.pyx":268
+ * 
+ *     cdef quagga_daemon* get_quagga_ptr(self):
+ *         return self._qd_ptr             # <<<<<<<<<<<<<<
+ * 
+ *     def generateZebra(self):
+ */
+  __pyx_r = __pyx_v_self->_qd_ptr;
+  goto __pyx_L0;
+
+  /* "horse/router.pyx":267
+ * 
+ * 
+ *     cdef quagga_daemon* get_quagga_ptr(self):             # <<<<<<<<<<<<<<
+ *         return self._qd_ptr
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "horse/router.pyx":270
+ *         return self._qd_ptr
  * 
  *     def generateZebra(self):             # <<<<<<<<<<<<<<
  *         configFile = open(self.zebraConfFile, 'w+')
@@ -6922,165 +7085,163 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_2generateZebra(struct __
   PyObject *__pyx_t_5 = NULL;
   __Pyx_RefNannySetupContext("generateZebra", 0);
 
-  /* "horse/router.pyx":264
+  /* "horse/router.pyx":271
  * 
  *     def generateZebra(self):
  *         configFile = open(self.zebraConfFile, 'w+')             # <<<<<<<<<<<<<<
  *         configFile.write('hostname %s\n' % self.namespace)
  *         configFile.write('password %s\n' % "horse")
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_zebraConfFile); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 264, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
+  __Pyx_INCREF(__pyx_v_self->zebraConfFile);
+  __Pyx_GIVEREF(__pyx_v_self->zebraConfFile);
+  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_self->zebraConfFile);
   __Pyx_INCREF(__pyx_kp_s_w_2);
   __Pyx_GIVEREF(__pyx_kp_s_w_2);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_kp_s_w_2);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_v_configFile = __pyx_t_1;
-  __pyx_t_1 = 0;
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_s_w_2);
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 271, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_configFile = __pyx_t_2;
+  __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":265
+  /* "horse/router.pyx":272
  *     def generateZebra(self):
  *         configFile = open(self.zebraConfFile, 'w+')
  *         configFile.write('hostname %s\n' % self.namespace)             # <<<<<<<<<<<<<<
  *         configFile.write('password %s\n' % "horse")
  *         configFile.write('log file %s/z_%s debugging\n' % (self.runDir,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 265, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_hostname_s, __pyx_v_self->__pyx_base.namespace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_write); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_hostname_s, __pyx_v_self->__pyx_base.namespace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_4)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
     }
   }
   if (!__pyx_t_4) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
   } else {
     #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_2)) {
+    if (PyFunction_Check(__pyx_t_1)) {
       PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
       PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     {
-      __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 265, __pyx_L1_error)
+      __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __pyx_t_4 = NULL;
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":266
+  /* "horse/router.pyx":273
  *         configFile = open(self.zebraConfFile, 'w+')
  *         configFile.write('hostname %s\n' % self.namespace)
  *         configFile.write('password %s\n' % "horse")             # <<<<<<<<<<<<<<
  *         configFile.write('log file %s/z_%s debugging\n' % (self.runDir,
  *                                                            self.namespace))
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 266, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_password_s, __pyx_n_s_horse); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 266, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_write); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_password_s, __pyx_n_s_horse); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_3 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
     }
   }
   if (!__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
   } else {
     #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_2)) {
+    if (PyFunction_Check(__pyx_t_1)) {
       PyObject *__pyx_temp[2] = {__pyx_t_3, __pyx_t_5};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
       PyObject *__pyx_temp[2] = {__pyx_t_3, __pyx_t_5};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else
     #endif
     {
-      __pyx_t_4 = PyTuple_New(1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 266, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 273, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3); __pyx_t_3 = NULL;
       __Pyx_GIVEREF(__pyx_t_5);
       PyTuple_SET_ITEM(__pyx_t_4, 0+1, __pyx_t_5);
       __pyx_t_5 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":267
+  /* "horse/router.pyx":274
  *         configFile.write('hostname %s\n' % self.namespace)
  *         configFile.write('password %s\n' % "horse")
  *         configFile.write('log file %s/z_%s debugging\n' % (self.runDir,             # <<<<<<<<<<<<<<
  *                                                            self.namespace))
  *         configFile.close()
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_write); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
 
-  /* "horse/router.pyx":268
+  /* "horse/router.pyx":275
  *         configFile.write('password %s\n' % "horse")
  *         configFile.write('log file %s/z_%s debugging\n' % (self.runDir,
  *                                                            self.namespace))             # <<<<<<<<<<<<<<
  *         configFile.close()
  * 
  */
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_self->__pyx_base.runDir);
   __Pyx_GIVEREF(__pyx_v_self->__pyx_base.runDir);
@@ -7089,95 +7250,95 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_2generateZebra(struct __
   __Pyx_GIVEREF(__pyx_v_self->__pyx_base.namespace);
   PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_self->__pyx_base.namespace);
 
-  /* "horse/router.pyx":267
+  /* "horse/router.pyx":274
  *         configFile.write('hostname %s\n' % self.namespace)
  *         configFile.write('password %s\n' % "horse")
  *         configFile.write('log file %s/z_%s debugging\n' % (self.runDir,             # <<<<<<<<<<<<<<
  *                                                            self.namespace))
  *         configFile.close()
  */
-  __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_log_file_s_z__s_debugging, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_log_file_s_z__s_debugging, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_4)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
     }
   }
   if (!__pyx_t_4) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
   } else {
     #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_2)) {
+    if (PyFunction_Check(__pyx_t_1)) {
       PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_t_5};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
       PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_t_5};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else
     #endif
     {
-      __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 267, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 274, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4); __pyx_t_4 = NULL;
       __Pyx_GIVEREF(__pyx_t_5);
       PyTuple_SET_ITEM(__pyx_t_3, 0+1, __pyx_t_5);
       __pyx_t_5 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":269
+  /* "horse/router.pyx":276
  *         configFile.write('log file %s/z_%s debugging\n' % (self.runDir,
  *                                                            self.namespace))
  *         configFile.close()             # <<<<<<<<<<<<<<
  * 
- *     def generateBgpd(self, bgp):
+ *     def generateBgpd(self, BGP bgp):
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_close); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_close); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_3 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
   }
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":263
- *                 self.check_ecmp(bgp)
+  /* "horse/router.pyx":270
+ *         return self._qd_ptr
  * 
  *     def generateZebra(self):             # <<<<<<<<<<<<<<
  *         configFile = open(self.zebraConfFile, 'w+')
@@ -7202,12 +7363,12 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_2generateZebra(struct __
   return __pyx_r;
 }
 
-/* "horse/router.pyx":271
+/* "horse/router.pyx":278
  *         configFile.close()
  * 
- *     def generateBgpd(self, bgp):             # <<<<<<<<<<<<<<
+ *     def generateBgpd(self, BGP bgp):             # <<<<<<<<<<<<<<
  *         configFile = open(self.bgpd_conf, 'w+')
- *         writeLine(0, 'hostname %s' % self.namespace);
+ *         writeLine(configFile, 0, 'hostname %s' % self.namespace);
  */
 
 /* Python wrapper */
@@ -7216,14 +7377,19 @@ static PyObject *__pyx_pw_5horse_6router_12QuaggaDaemon_5generateBgpd(PyObject *
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("generateBgpd (wrapper)", 0);
-  __pyx_r = __pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(((struct __pyx_obj_5horse_6router_QuaggaDaemon *)__pyx_v_self), ((PyObject *)__pyx_v_bgp));
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_bgp), __pyx_ptype_5horse_6router_BGP, 1, "bgp", 0))) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_r = __pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(((struct __pyx_obj_5horse_6router_QuaggaDaemon *)__pyx_v_self), ((struct __pyx_obj_5horse_6router_BGP *)__pyx_v_bgp));
 
   /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self, PyObject *__pyx_v_bgp) {
+static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __pyx_obj_5horse_6router_QuaggaDaemon *__pyx_v_self, struct __pyx_obj_5horse_6router_BGP *__pyx_v_bgp) {
   PyObject *__pyx_v_configFile = NULL;
   PyObject *__pyx_v_neighbor = NULL;
   PyObject *__pyx_v_route = NULL;
@@ -7239,162 +7405,165 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
   Py_ssize_t __pyx_t_8;
   PyObject *(*__pyx_t_9)(PyObject *);
   PyObject *__pyx_t_10 = NULL;
-  int __pyx_t_11;
   __Pyx_RefNannySetupContext("generateBgpd", 0);
 
-  /* "horse/router.pyx":272
+  /* "horse/router.pyx":279
  * 
- *     def generateBgpd(self, bgp):
+ *     def generateBgpd(self, BGP bgp):
  *         configFile = open(self.bgpd_conf, 'w+')             # <<<<<<<<<<<<<<
- *         writeLine(0, 'hostname %s' % self.namespace);
- *         writeLine(0, 'password %s' % 'horse')
+ *         writeLine(configFile, 0, 'hostname %s' % self.namespace);
+ *         writeLine(configFile, 0, 'password %s' % 'horse')
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bgpd_conf); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
+  __Pyx_INCREF(__pyx_v_self->bgpd_conf);
+  __Pyx_GIVEREF(__pyx_v_self->bgpd_conf);
+  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_self->bgpd_conf);
   __Pyx_INCREF(__pyx_kp_s_w_2);
   __Pyx_GIVEREF(__pyx_kp_s_w_2);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_kp_s_w_2);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_v_configFile = __pyx_t_1;
-  __pyx_t_1 = 0;
-
-  /* "horse/router.pyx":273
- *     def generateBgpd(self, bgp):
- *         configFile = open(self.bgpd_conf, 'w+')
- *         writeLine(0, 'hostname %s' % self.namespace);             # <<<<<<<<<<<<<<
- *         writeLine(0, 'password %s' % 'horse')
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
- */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_s_w_2);
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_hostname_s_2, __pyx_v_self->__pyx_base.namespace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_configFile = __pyx_t_2;
+  __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":280
+ *     def generateBgpd(self, BGP bgp):
+ *         configFile = open(self.bgpd_conf, 'w+')
+ *         writeLine(configFile, 0, 'hostname %s' % self.namespace);             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 0, 'password %s' % 'horse')
+ *         writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_hostname_s_2, __pyx_v_self->__pyx_base.namespace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_4)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
       __pyx_t_5 = 1;
     }
   }
   #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_int_0, __pyx_t_3};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_4, __pyx_v_configFile, __pyx_int_0, __pyx_t_3};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else
   #endif
   #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_int_0, __pyx_t_3};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_4, __pyx_v_configFile, __pyx_int_0, __pyx_t_3};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else
   #endif
   {
-    __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 273, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 280, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
     }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_configFile);
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_GIVEREF(__pyx_int_0);
-    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_int_0);
     __Pyx_GIVEREF(__pyx_t_3);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_5, __pyx_t_3);
     __pyx_t_3 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":274
+  /* "horse/router.pyx":281
  *         configFile = open(self.bgpd_conf, 'w+')
- *         writeLine(0, 'hostname %s' % self.namespace);
- *         writeLine(0, 'password %s' % 'horse')             # <<<<<<<<<<<<<<
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
- *         writeLine(0, 'debug bgp')
+ *         writeLine(configFile, 0, 'hostname %s' % self.namespace);
+ *         writeLine(configFile, 0, 'password %s' % 'horse')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))
+ *         writeLine(configFile, 0, 'debug bgp')
  */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_password_s_2, __pyx_n_s_horse); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_password_s_2, __pyx_n_s_horse); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 281, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_3 = NULL;
   __pyx_t_5 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
       __pyx_t_5 = 1;
     }
   }
   #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_0, __pyx_t_6};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_t_6};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   } else
   #endif
   #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_0, __pyx_t_6};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_t_6};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   } else
   #endif
   {
-    __pyx_t_4 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 274, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 281, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3); __pyx_t_3 = NULL;
     }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_v_configFile);
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_GIVEREF(__pyx_int_0);
-    PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_int_0);
     __Pyx_GIVEREF(__pyx_t_6);
-    PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_t_6);
+    PyTuple_SET_ITEM(__pyx_t_4, 2+__pyx_t_5, __pyx_t_6);
     __pyx_t_6 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":275
- *         writeLine(0, 'hostname %s' % self.namespace);
- *         writeLine(0, 'password %s' % 'horse')
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))             # <<<<<<<<<<<<<<
- *         writeLine(0, 'debug bgp')
- *         writeLine(0, '!')
+  /* "horse/router.pyx":282
+ *         writeLine(configFile, 0, 'hostname %s' % self.namespace);
+ *         writeLine(configFile, 0, 'password %s' % 'horse')
+ *         writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 0, 'debug bgp')
+ *         writeLine(configFile, 0, '!')
  */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_self->__pyx_base.runDir);
   __Pyx_GIVEREF(__pyx_v_self->__pyx_base.runDir);
@@ -7402,297 +7571,263 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
   __Pyx_INCREF(__pyx_v_self->__pyx_base.namespace);
   __Pyx_GIVEREF(__pyx_v_self->__pyx_base.namespace);
   PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_self->__pyx_base.namespace);
-  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_log_file_s_q__s, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_log_file_s_q__s, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_4)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
       __pyx_t_5 = 1;
     }
   }
   #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_int_0, __pyx_t_6};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_4, __pyx_v_configFile, __pyx_int_0, __pyx_t_6};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   } else
   #endif
   #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_int_0, __pyx_t_6};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_4, __pyx_v_configFile, __pyx_int_0, __pyx_t_6};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   } else
   #endif
   {
-    __pyx_t_3 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 275, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 282, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4); __pyx_t_4 = NULL;
     }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_v_configFile);
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_GIVEREF(__pyx_int_0);
-    PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_int_0);
     __Pyx_GIVEREF(__pyx_t_6);
-    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_t_6);
+    PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_5, __pyx_t_6);
     __pyx_t_6 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":276
- *         writeLine(0, 'password %s' % 'horse')
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
- *         writeLine(0, 'debug bgp')             # <<<<<<<<<<<<<<
- *         writeLine(0, '!')
- *         writeLine(0, 'router bgp %s' % bgp.asn)
+  /* "horse/router.pyx":283
+ *         writeLine(configFile, 0, 'password %s' % 'horse')
+ *         writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))
+ *         writeLine(configFile, 0, 'debug bgp')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 0, '!')
+ *         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 283, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":277
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
- *         writeLine(0, 'debug bgp')
- *         writeLine(0, '!')             # <<<<<<<<<<<<<<
- *         writeLine(0, 'router bgp %s' % bgp.asn)
- *         if bgp.router_id:
- */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "horse/router.pyx":278
- *         writeLine(0, 'debug bgp')
- *         writeLine(0, '!')
- *         writeLine(0, 'router bgp %s' % bgp.asn)             # <<<<<<<<<<<<<<
- *         if bgp.router_id:
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_asn); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_router_bgp_s, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
   __pyx_t_5 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
     if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
       __pyx_t_5 = 1;
     }
   }
   #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_0, __pyx_t_6};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 278, __pyx_L1_error)
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_debug_bgp};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-    PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_0, __pyx_t_6};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 278, __pyx_L1_error)
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_debug_bgp};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   {
-    __pyx_t_4 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 278, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 283, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_3) {
-      __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3); __pyx_t_3 = NULL;
+      __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
     }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_configFile);
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_GIVEREF(__pyx_int_0);
-    PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_int_0);
-    __Pyx_GIVEREF(__pyx_t_6);
-    PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_t_6);
-    __pyx_t_6 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 278, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_int_0);
+    __Pyx_INCREF(__pyx_kp_s_debug_bgp);
+    __Pyx_GIVEREF(__pyx_kp_s_debug_bgp);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_5, __pyx_kp_s_debug_bgp);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":279
- *         writeLine(0, '!')
- *         writeLine(0, 'router bgp %s' % bgp.asn)
- *         if bgp.router_id:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- *         if bgp.relax:
+  /* "horse/router.pyx":284
+ *         writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))
+ *         writeLine(configFile, 0, 'debug bgp')
+ *         writeLine(configFile, 0, '!')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
+ *         if bgp.router_id:
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 284, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 279, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__pyx_t_7) {
-
-    /* "horse/router.pyx":280
- *         writeLine(0, 'router bgp %s' % bgp.asn)
- *         if bgp.router_id:
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)             # <<<<<<<<<<<<<<
- *         if bgp.relax:
- *             writeLine(1, 'bgp bestpath as-path multipath-relax')
- */
-    __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 280, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_bgp_router_id_s, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 280, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = NULL;
-    __pyx_t_5 = 0;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
-      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
-      if (likely(__pyx_t_4)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-        __Pyx_INCREF(__pyx_t_4);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_2, function);
-        __pyx_t_5 = 1;
-      }
+  __pyx_t_6 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_6);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_5 = 1;
     }
-    #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_2)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_int_1, __pyx_t_6};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    } else
-    #endif
-    #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_int_1, __pyx_t_6};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    } else
-    #endif
-    {
-      __pyx_t_3 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 280, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      if (__pyx_t_4) {
-        __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4); __pyx_t_4 = NULL;
-      }
-      __Pyx_INCREF(__pyx_int_1);
-      __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_int_1);
-      __Pyx_GIVEREF(__pyx_t_6);
-      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_t_6);
-      __pyx_t_6 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    }
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-    /* "horse/router.pyx":279
- *         writeLine(0, '!')
- *         writeLine(0, 'router bgp %s' % bgp.asn)
- *         if bgp.router_id:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- *         if bgp.relax:
- */
   }
-
-  /* "horse/router.pyx":281
- *         if bgp.router_id:
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- *         if bgp.relax:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'bgp bestpath as-path multipath-relax')
- * 
- */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_relax); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 281, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__pyx_t_7) {
-
-    /* "horse/router.pyx":282
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- *         if bgp.relax:
- *             writeLine(1, 'bgp bestpath as-path multipath-relax')             # <<<<<<<<<<<<<<
- * 
- *         # writeLine(1, 'timers bgp %s' % '3 9')
- */
-    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__12};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-    /* "horse/router.pyx":281
- *         if bgp.router_id:
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- *         if bgp.relax:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'bgp bestpath as-path multipath-relax')
- * 
- */
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__12};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_3 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 284, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__pyx_t_6) {
+      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_6); __pyx_t_6 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_GIVEREF(__pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_int_0);
+    __Pyx_INCREF(__pyx_kp_s__12);
+    __Pyx_GIVEREF(__pyx_kp_s__12);
+    PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_5, __pyx_kp_s__12);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":285
- * 
- *         # writeLine(1, 'timers bgp %s' % '3 9')
- *         if bgp.maximum_paths:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'maximum-paths %s' % bgp.maximum_paths)
- *         writeLine(1, '!')
+ *         writeLine(configFile, 0, 'debug bgp')
+ *         writeLine(configFile, 0, '!')
+ *         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)             # <<<<<<<<<<<<<<
+ *         if bgp.router_id:
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_maximum_paths); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_router_bgp_s, __pyx_v_bgp->asn); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_6 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_6);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_0, __pyx_t_3};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_0, __pyx_t_3};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  } else
+  #endif
+  {
+    __pyx_t_4 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 285, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__pyx_t_6) {
+      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_6); __pyx_t_6 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_GIVEREF(__pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_int_0);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_4, 2+__pyx_t_5, __pyx_t_3);
+    __pyx_t_3 = 0;
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":286
+ *         writeLine(configFile, 0, '!')
+ *         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
+ *         if bgp.router_id:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
+ *         if bgp.relax:
+ */
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_bgp->router_id); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 286, __pyx_L1_error)
   if (__pyx_t_7) {
 
-    /* "horse/router.pyx":286
- *         # writeLine(1, 'timers bgp %s' % '3 9')
- *         if bgp.maximum_paths:
- *             writeLine(1, 'maximum-paths %s' % bgp.maximum_paths)             # <<<<<<<<<<<<<<
- *         writeLine(1, '!')
- * 
+    /* "horse/router.pyx":287
+ *         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
+ *         if bgp.router_id:
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)             # <<<<<<<<<<<<<<
+ *         if bgp.relax:
+ *             writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')
  */
-    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 286, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 287, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_maximum_paths); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 286, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_maximum_paths_s, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 286, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_4 = __Pyx_PyString_Format(__pyx_kp_s_bgp_router_id_s, __pyx_v_bgp->router_id); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 287, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_3 = NULL;
     __pyx_t_5 = 0;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
@@ -7707,98 +7842,303 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
     }
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_1)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_1, __pyx_t_6};
-      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 286, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_1, __pyx_t_4};
+      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 287, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_2);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_1, __pyx_t_6};
-      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 286, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_1, __pyx_t_4};
+      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 287, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_2);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     } else
     #endif
     {
-      __pyx_t_4 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 286, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_6 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 287, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
       if (__pyx_t_3) {
-        __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3); __pyx_t_3 = NULL;
+        __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
       }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_configFile);
       __Pyx_INCREF(__pyx_int_1);
       __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_int_1);
-      __Pyx_GIVEREF(__pyx_t_6);
-      PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_t_6);
-      __pyx_t_6 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 286, __pyx_L1_error)
+      PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_GIVEREF(__pyx_t_4);
+      PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_5, __pyx_t_4);
+      __pyx_t_4 = 0;
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 287, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "horse/router.pyx":286
+ *         writeLine(configFile, 0, '!')
+ *         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
+ *         if bgp.router_id:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
+ *         if bgp.relax:
+ */
+  }
+
+  /* "horse/router.pyx":288
+ *         if bgp.router_id:
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
+ *         if bgp.relax:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')
+ * 
+ */
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_bgp->relax); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 288, __pyx_L1_error)
+  if (__pyx_t_7) {
+
+    /* "horse/router.pyx":289
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
+ *         if bgp.relax:
+ *             writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')             # <<<<<<<<<<<<<<
+ * 
+ *         # writeLine(1, 'timers bgp %s' % '3 9')
+ */
+    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 289, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_6 = NULL;
+    __pyx_t_5 = 0;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+      if (likely(__pyx_t_6)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        __Pyx_INCREF(__pyx_t_6);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_1, function);
+        __pyx_t_5 = 1;
+      }
+    }
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(__pyx_t_1)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_kp_s_bgp_bestpath_as_path_multipath_r};
+      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_GOTREF(__pyx_t_2);
+    } else
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_kp_s_bgp_bestpath_as_path_multipath_r};
+      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_GOTREF(__pyx_t_2);
+    } else
+    #endif
+    {
+      __pyx_t_4 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 289, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      if (__pyx_t_6) {
+        __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_6); __pyx_t_6 = NULL;
+      }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_v_configFile);
+      __Pyx_INCREF(__pyx_int_1);
+      __Pyx_GIVEREF(__pyx_int_1);
+      PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_INCREF(__pyx_kp_s_bgp_bestpath_as_path_multipath_r);
+      __Pyx_GIVEREF(__pyx_kp_s_bgp_bestpath_as_path_multipath_r);
+      PyTuple_SET_ITEM(__pyx_t_4, 2+__pyx_t_5, __pyx_kp_s_bgp_bestpath_as_path_multipath_r);
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":285
+    /* "horse/router.pyx":288
+ *         if bgp.router_id:
+ *             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
+ *         if bgp.relax:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')
+ * 
+ */
+  }
+
+  /* "horse/router.pyx":292
  * 
  *         # writeLine(1, 'timers bgp %s' % '3 9')
  *         if bgp.maximum_paths:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'maximum-paths %s' % bgp.maximum_paths)
- *         writeLine(1, '!')
+ *             writeLine(configFile, 1, 'maximum-paths %s' % bgp.maximum_paths)
+ *         writeLine(configFile, 1, '!')
+ */
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_bgp->maximum_paths); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 292, __pyx_L1_error)
+  if (__pyx_t_7) {
+
+    /* "horse/router.pyx":293
+ *         # writeLine(1, 'timers bgp %s' % '3 9')
+ *         if bgp.maximum_paths:
+ *             writeLine(configFile, 1, 'maximum-paths %s' % bgp.maximum_paths)             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 1, '!')
+ * 
+ */
+    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 293, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_4 = __Pyx_PyString_Format(__pyx_kp_s_maximum_paths_s, __pyx_v_bgp->maximum_paths); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 293, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_6 = NULL;
+    __pyx_t_5 = 0;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+      if (likely(__pyx_t_6)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        __Pyx_INCREF(__pyx_t_6);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_1, function);
+        __pyx_t_5 = 1;
+      }
+    }
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(__pyx_t_1)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_t_4};
+      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 293, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    } else
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_t_4};
+      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 293, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    } else
+    #endif
+    {
+      __pyx_t_3 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 293, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      if (__pyx_t_6) {
+        __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_6); __pyx_t_6 = NULL;
+      }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_v_configFile);
+      __Pyx_INCREF(__pyx_int_1);
+      __Pyx_GIVEREF(__pyx_int_1);
+      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_GIVEREF(__pyx_t_4);
+      PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_5, __pyx_t_4);
+      __pyx_t_4 = 0;
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 293, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "horse/router.pyx":292
+ * 
+ *         # writeLine(1, 'timers bgp %s' % '3 9')
+ *         if bgp.maximum_paths:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'maximum-paths %s' % bgp.maximum_paths)
+ *         writeLine(configFile, 1, '!')
  */
   }
 
-  /* "horse/router.pyx":287
+  /* "horse/router.pyx":294
  *         if bgp.maximum_paths:
- *             writeLine(1, 'maximum-paths %s' % bgp.maximum_paths)
- *         writeLine(1, '!')             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'maximum-paths %s' % bgp.maximum_paths)
+ *         writeLine(configFile, 1, '!')             # <<<<<<<<<<<<<<
  * 
- *         for neighbor in self.neighbors:
+ *         for neighbor in bgp.neighbors:
  */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 287, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 287, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 294, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_1, __pyx_kp_s__12};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 294, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_1, __pyx_kp_s__12};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 294, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_4 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 294, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__pyx_t_3) {
+      __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3); __pyx_t_3 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_1);
+    __Pyx_GIVEREF(__pyx_int_1);
+    PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_int_1);
+    __Pyx_INCREF(__pyx_kp_s__12);
+    __Pyx_GIVEREF(__pyx_kp_s__12);
+    PyTuple_SET_ITEM(__pyx_t_4, 2+__pyx_t_5, __pyx_kp_s__12);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 294, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":289
- *         writeLine(1, '!')
+  /* "horse/router.pyx":296
+ *         writeLine(configFile, 1, '!')
  * 
- *         for neighbor in self.neighbors:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))
- *             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])
+ *         for neighbor in bgp.neighbors:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))
+ *             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_neighbors); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 289, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
-    __pyx_t_2 = __pyx_t_1; __Pyx_INCREF(__pyx_t_2); __pyx_t_8 = 0;
+  if (likely(PyList_CheckExact(__pyx_v_bgp->neighbors)) || PyTuple_CheckExact(__pyx_v_bgp->neighbors)) {
+    __pyx_t_2 = __pyx_v_bgp->neighbors; __Pyx_INCREF(__pyx_t_2); __pyx_t_8 = 0;
     __pyx_t_9 = NULL;
   } else {
-    __pyx_t_8 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
+    __pyx_t_8 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_bgp->neighbors); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 296, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_9 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 289, __pyx_L1_error)
+    __pyx_t_9 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 296, __pyx_L1_error)
   }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
     if (likely(!__pyx_t_9)) {
       if (likely(PyList_CheckExact(__pyx_t_2))) {
         if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_8); __Pyx_INCREF(__pyx_t_1); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 289, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_8); __Pyx_INCREF(__pyx_t_1); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 296, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 289, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 296, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       } else {
         if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_8); __Pyx_INCREF(__pyx_t_1); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 289, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_8); __Pyx_INCREF(__pyx_t_1); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 296, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 289, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 296, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       }
@@ -7808,7 +8148,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 289, __pyx_L1_error)
+          else __PYX_ERR(0, 296, __pyx_L1_error)
         }
         break;
       }
@@ -7817,29 +8157,29 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
     __Pyx_XDECREF_SET(__pyx_v_neighbor, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":290
+    /* "horse/router.pyx":297
  * 
- *         for neighbor in self.neighbors:
- *             writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))             # <<<<<<<<<<<<<<
- *             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])
- *             writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))
+ *         for neighbor in bgp.neighbors:
+ *             writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
+ *             writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 290, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 297, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_address); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 290, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 297, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_asn); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 297, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_as); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 290, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 290, __pyx_L1_error)
+    __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 297, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __Pyx_GIVEREF(__pyx_t_6);
-    PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_3);
-    PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_3);
-    __pyx_t_6 = 0;
+    PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_6);
+    PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_6);
     __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_remote_as_s, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 290, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_6 = 0;
+    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_remote_as_s, __pyx_t_10); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 297, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_10 = NULL;
     __pyx_t_5 = 0;
@@ -7855,125 +8195,57 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
     }
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_10, __pyx_int_1, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 290, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_10, __pyx_v_configFile, __pyx_int_1, __pyx_t_6};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 297, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    } else
-    #endif
-    #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_10, __pyx_int_1, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 290, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    } else
-    #endif
-    {
-      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 290, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      if (__pyx_t_10) {
-        __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_10); __pyx_t_10 = NULL;
-      }
-      __Pyx_INCREF(__pyx_int_1);
-      __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_int_1);
-      __Pyx_GIVEREF(__pyx_t_3);
-      PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_t_3);
-      __pyx_t_3 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 290, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    }
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-    /* "horse/router.pyx":291
- *         for neighbor in self.neighbors:
- *             writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))
- *             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])             # <<<<<<<<<<<<<<
- *             writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))
- *             writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))
- */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_address); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 291, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_ebgp_multihop, __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 291, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = NULL;
-    __pyx_t_5 = 0;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
-      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_4);
-      if (likely(__pyx_t_6)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-        __Pyx_INCREF(__pyx_t_6);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_4, function);
-        __pyx_t_5 = 1;
-      }
-    }
-    #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_int_1, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 291, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_int_1, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 291, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      PyObject *__pyx_temp[4] = {__pyx_t_10, __pyx_v_configFile, __pyx_int_1, __pyx_t_6};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 297, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     } else
     #endif
     {
-      __pyx_t_10 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 291, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_10);
-      if (__pyx_t_6) {
-        __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_6); __pyx_t_6 = NULL;
+      __pyx_t_3 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 297, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      if (__pyx_t_10) {
+        __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_10); __pyx_t_10 = NULL;
       }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_v_configFile);
       __Pyx_INCREF(__pyx_int_1);
       __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_10, 0+__pyx_t_5, __pyx_int_1);
-      __Pyx_GIVEREF(__pyx_t_3);
-      PyTuple_SET_ITEM(__pyx_t_10, 1+__pyx_t_5, __pyx_t_3);
-      __pyx_t_3 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 291, __pyx_L1_error)
+      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_GIVEREF(__pyx_t_6);
+      PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_5, __pyx_t_6);
+      __pyx_t_6 = 0;
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 297, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":292
- *             writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))
- *             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])
- *             writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))             # <<<<<<<<<<<<<<
- *             writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))
- *             if 'port' in neighbor:
+    /* "horse/router.pyx":298
+ *         for neighbor in bgp.neighbors:
+ *             writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))
+ *             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
+ *             writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 298, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_10 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_address); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 292, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 292, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 298, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_GIVEREF(__pyx_t_10);
-    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_10);
-    __Pyx_INCREF(__pyx_kp_s_5);
-    __Pyx_GIVEREF(__pyx_kp_s_5);
-    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_kp_s_5);
-    __pyx_t_10 = 0;
-    __pyx_t_10 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_timers_connect_s, __pyx_t_3); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 292, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_ebgp_multihop, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 298, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
     __pyx_t_5 = 0;
@@ -7989,62 +8261,139 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
     }
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_1, __pyx_t_10};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 292, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_1, __pyx_t_6};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 298, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    } else
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_1, __pyx_t_6};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 298, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    } else
+    #endif
+    {
+      __pyx_t_10 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 298, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
+      if (__pyx_t_3) {
+        __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_3); __pyx_t_3 = NULL;
+      }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_10, 0+__pyx_t_5, __pyx_v_configFile);
+      __Pyx_INCREF(__pyx_int_1);
+      __Pyx_GIVEREF(__pyx_int_1);
+      PyTuple_SET_ITEM(__pyx_t_10, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_GIVEREF(__pyx_t_6);
+      PyTuple_SET_ITEM(__pyx_t_10, 2+__pyx_t_5, __pyx_t_6);
+      __pyx_t_6 = 0;
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 298, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "horse/router.pyx":299
+ *             writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))
+ *             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
+ *             writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
+ *             if neighbor.port:
+ */
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 299, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 299, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 299, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_GIVEREF(__pyx_t_10);
+    PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_10);
+    __Pyx_INCREF(__pyx_kp_s_5);
+    __Pyx_GIVEREF(__pyx_kp_s_5);
+    PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_kp_s_5);
+    __pyx_t_10 = 0;
+    __pyx_t_10 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_timers_connect_s, __pyx_t_6); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 299, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_6 = NULL;
+    __pyx_t_5 = 0;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_4);
+      if (likely(__pyx_t_6)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+        __Pyx_INCREF(__pyx_t_6);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_4, function);
+        __pyx_t_5 = 1;
+      }
+    }
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(__pyx_t_4)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_t_10};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_int_1, __pyx_t_10};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 292, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_t_10};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     } else
     #endif
     {
-      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 292, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      if (__pyx_t_3) {
-        __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
+      __pyx_t_3 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 299, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      if (__pyx_t_6) {
+        __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_6); __pyx_t_6 = NULL;
       }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_v_configFile);
       __Pyx_INCREF(__pyx_int_1);
       __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_int_1);
+      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_int_1);
       __Pyx_GIVEREF(__pyx_t_10);
-      PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_t_10);
+      PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_5, __pyx_t_10);
       __pyx_t_10 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":293
- *             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])
- *             writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))
- *             writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))             # <<<<<<<<<<<<<<
- *             if 'port' in neighbor:
- *                 writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))
+    /* "horse/router.pyx":300
+ *             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
+ *             writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
+ *             writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))             # <<<<<<<<<<<<<<
+ *             if neighbor.port:
+ *                 writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 293, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 300, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_address); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 293, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 293, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 300, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 300, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __Pyx_GIVEREF(__pyx_t_6);
-    PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_6);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_3);
     __Pyx_INCREF(__pyx_kp_s_1);
     __Pyx_GIVEREF(__pyx_kp_s_1);
     PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_kp_s_1);
-    __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_advertisement_interva, __pyx_t_10); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 293, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_advertisement_interva, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 300, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_10 = NULL;
     __pyx_t_5 = 0;
@@ -8060,75 +8409,80 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
     }
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_10, __pyx_int_1, __pyx_t_6};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 293, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_10, __pyx_v_configFile, __pyx_int_1, __pyx_t_3};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 300, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_10, __pyx_int_1, __pyx_t_6};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 293, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_10, __pyx_v_configFile, __pyx_int_1, __pyx_t_3};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 300, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     {
-      __pyx_t_3 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 293, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_6 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 300, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
       if (__pyx_t_10) {
-        __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_10); __pyx_t_10 = NULL;
+        __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_10); __pyx_t_10 = NULL;
       }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_configFile);
       __Pyx_INCREF(__pyx_int_1);
       __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_int_1);
-      __Pyx_GIVEREF(__pyx_t_6);
-      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_t_6);
-      __pyx_t_6 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 293, __pyx_L1_error)
+      PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_GIVEREF(__pyx_t_3);
+      PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_5, __pyx_t_3);
+      __pyx_t_3 = 0;
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 300, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":294
- *             writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))
- *             writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))
- *             if 'port' in neighbor:             # <<<<<<<<<<<<<<
- *                 writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))
- *             writeLine(1, '!')
+    /* "horse/router.pyx":301
+ *             writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
+ *             writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
+ *             if neighbor.port:             # <<<<<<<<<<<<<<
+ *                 writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))
+ *             writeLine(configFile, 1, '!')
  */
-    __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_port, __pyx_v_neighbor, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 294, __pyx_L1_error)
-    __pyx_t_11 = (__pyx_t_7 != 0);
-    if (__pyx_t_11) {
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_port); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 301, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 301, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (__pyx_t_7) {
 
-      /* "horse/router.pyx":295
- *             writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))
- *             if 'port' in neighbor:
- *                 writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))             # <<<<<<<<<<<<<<
- *             writeLine(1, '!')
+      /* "horse/router.pyx":302
+ *             writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
+ *             if neighbor.port:
+ *                 writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, '!')
  * 
  */
-      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 295, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 302, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_address); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 295, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 302, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_port); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 302, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_neighbor, __pyx_n_s_port); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 295, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 295, __pyx_L1_error)
+      __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 302, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
-      __Pyx_GIVEREF(__pyx_t_3);
-      PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_6);
-      PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_6);
-      __pyx_t_3 = 0;
+      PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_6);
+      __Pyx_GIVEREF(__pyx_t_3);
+      PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_3);
       __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_port_s, __pyx_t_10); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 295, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_3 = 0;
+      __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s_port_s, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 302, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __pyx_t_10 = NULL;
       __pyx_t_5 = 0;
@@ -8144,231 +8498,279 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
       }
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_4)) {
-        PyObject *__pyx_temp[3] = {__pyx_t_10, __pyx_int_1, __pyx_t_6};
-        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 295, __pyx_L1_error)
+        PyObject *__pyx_temp[4] = {__pyx_t_10, __pyx_v_configFile, __pyx_int_1, __pyx_t_3};
+        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 302, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
         __Pyx_GOTREF(__pyx_t_1);
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       } else
       #endif
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-        PyObject *__pyx_temp[3] = {__pyx_t_10, __pyx_int_1, __pyx_t_6};
-        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 295, __pyx_L1_error)
+        PyObject *__pyx_temp[4] = {__pyx_t_10, __pyx_v_configFile, __pyx_int_1, __pyx_t_3};
+        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 302, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
         __Pyx_GOTREF(__pyx_t_1);
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       } else
       #endif
       {
-        __pyx_t_3 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 295, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_6 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 302, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
         if (__pyx_t_10) {
-          __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_10); __pyx_t_10 = NULL;
+          __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_10); __pyx_t_10 = NULL;
         }
+        __Pyx_INCREF(__pyx_v_configFile);
+        __Pyx_GIVEREF(__pyx_v_configFile);
+        PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_configFile);
         __Pyx_INCREF(__pyx_int_1);
         __Pyx_GIVEREF(__pyx_int_1);
-        PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_int_1);
-        __Pyx_GIVEREF(__pyx_t_6);
-        PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_t_6);
-        __pyx_t_6 = 0;
-        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 295, __pyx_L1_error)
+        PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_int_1);
+        __Pyx_GIVEREF(__pyx_t_3);
+        PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_5, __pyx_t_3);
+        __pyx_t_3 = 0;
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 302, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       }
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "horse/router.pyx":294
- *             writeLine(1, 'neighbor %s timers connect %s' % (neighbor['address'], '5'))
- *             writeLine(1, 'neighbor %s advertisement-interval %s' % (neighbor['address'], '1'))
- *             if 'port' in neighbor:             # <<<<<<<<<<<<<<
- *                 writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))
- *             writeLine(1, '!')
+      /* "horse/router.pyx":301
+ *             writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
+ *             writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
+ *             if neighbor.port:             # <<<<<<<<<<<<<<
+ *                 writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))
+ *             writeLine(configFile, 1, '!')
  */
     }
 
-    /* "horse/router.pyx":296
- *             if 'port' in neighbor:
- *                 writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))
- *             writeLine(1, '!')             # <<<<<<<<<<<<<<
+    /* "horse/router.pyx":303
+ *             if neighbor.port:
+ *                 writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))
+ *             writeLine(configFile, 1, '!')             # <<<<<<<<<<<<<<
  * 
- *         for route in self.routes:
+ *         for route in bgp.networks:
  */
-    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 296, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 296, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 303, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-
-    /* "horse/router.pyx":289
- *         writeLine(1, '!')
- * 
- *         for neighbor in self.neighbors:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'neighbor %s remote-as %s' % (neighbor['address'], neighbor['as']))
- *             writeLine(1, 'neighbor %s ebgp-multihop' % neighbor['address'])
- */
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":298
- *             writeLine(1, '!')
- * 
- *         for route in self.routes:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'network %s' % route)
- *         configFile.close()
- */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_routes); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 298, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
-    __pyx_t_4 = __pyx_t_2; __Pyx_INCREF(__pyx_t_4); __pyx_t_8 = 0;
-    __pyx_t_9 = NULL;
-  } else {
-    __pyx_t_8 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 298, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_9 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 298, __pyx_L1_error)
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  for (;;) {
-    if (likely(!__pyx_t_9)) {
-      if (likely(PyList_CheckExact(__pyx_t_4))) {
-        if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_4)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_8); __Pyx_INCREF(__pyx_t_2); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 298, __pyx_L1_error)
-        #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_4, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 298, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        #endif
-      } else {
-        if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_8); __Pyx_INCREF(__pyx_t_2); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 298, __pyx_L1_error)
-        #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_4, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 298, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        #endif
-      }
-    } else {
-      __pyx_t_2 = __pyx_t_9(__pyx_t_4);
-      if (unlikely(!__pyx_t_2)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 298, __pyx_L1_error)
-        }
-        break;
-      }
-      __Pyx_GOTREF(__pyx_t_2);
-    }
-    __Pyx_XDECREF_SET(__pyx_v_route, __pyx_t_2);
-    __pyx_t_2 = 0;
-
-    /* "horse/router.pyx":299
- * 
- *         for route in self.routes:
- *             writeLine(1, 'network %s' % route)             # <<<<<<<<<<<<<<
- *         configFile.close()
- * 
- */
-    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_network_s, __pyx_v_route); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 299, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_6 = NULL;
     __pyx_t_5 = 0;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_4);
       if (likely(__pyx_t_6)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
         __Pyx_INCREF(__pyx_t_6);
         __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_1, function);
+        __Pyx_DECREF_SET(__pyx_t_4, function);
         __pyx_t_5 = 1;
       }
     }
     #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_1)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_int_1, __pyx_t_3};
-      __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 299, __pyx_L1_error)
+    if (PyFunction_Check(__pyx_t_4)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_kp_s__12};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 303, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_GOTREF(__pyx_t_1);
+    } else
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_kp_s__12};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 303, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_GOTREF(__pyx_t_1);
+    } else
+    #endif
+    {
+      __pyx_t_3 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 303, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      if (__pyx_t_6) {
+        __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_6); __pyx_t_6 = NULL;
+      }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_5, __pyx_v_configFile);
+      __Pyx_INCREF(__pyx_int_1);
+      __Pyx_GIVEREF(__pyx_int_1);
+      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_5, __pyx_int_1);
+      __Pyx_INCREF(__pyx_kp_s__12);
+      __Pyx_GIVEREF(__pyx_kp_s__12);
+      PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_5, __pyx_kp_s__12);
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 303, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "horse/router.pyx":296
+ *         writeLine(configFile, 1, '!')
+ * 
+ *         for neighbor in bgp.neighbors:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))
+ *             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
+ */
+  }
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":305
+ *             writeLine(configFile, 1, '!')
+ * 
+ *         for route in bgp.networks:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'network %s' % route)
+ *         configFile.close()
+ */
+  if (likely(PyList_CheckExact(__pyx_v_bgp->networks)) || PyTuple_CheckExact(__pyx_v_bgp->networks)) {
+    __pyx_t_2 = __pyx_v_bgp->networks; __Pyx_INCREF(__pyx_t_2); __pyx_t_8 = 0;
+    __pyx_t_9 = NULL;
+  } else {
+    __pyx_t_8 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_bgp->networks); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 305, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_9 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 305, __pyx_L1_error)
+  }
+  for (;;) {
+    if (likely(!__pyx_t_9)) {
+      if (likely(PyList_CheckExact(__pyx_t_2))) {
+        if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_2)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_8); __Pyx_INCREF(__pyx_t_1); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 305, __pyx_L1_error)
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 305, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        #endif
+      } else {
+        if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_8); __Pyx_INCREF(__pyx_t_1); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 305, __pyx_L1_error)
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 305, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        #endif
+      }
+    } else {
+      __pyx_t_1 = __pyx_t_9(__pyx_t_2);
+      if (unlikely(!__pyx_t_1)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(0, 305, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_route, __pyx_t_1);
+    __pyx_t_1 = 0;
+
+    /* "horse/router.pyx":306
+ * 
+ *         for route in bgp.networks:
+ *             writeLine(configFile, 1, 'network %s' % route)             # <<<<<<<<<<<<<<
+ *         configFile.close()
+ * 
+ */
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 306, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_network_s, __pyx_v_route); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 306, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_6 = NULL;
+    __pyx_t_5 = 0;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_4);
+      if (likely(__pyx_t_6)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+        __Pyx_INCREF(__pyx_t_6);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_4, function);
+        __pyx_t_5 = 1;
+      }
+    }
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(__pyx_t_4)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_t_3};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 306, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_int_1, __pyx_t_3};
-      __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 299, __pyx_L1_error)
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
+      PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_1, __pyx_t_3};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 306, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     {
-      __pyx_t_10 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 299, __pyx_L1_error)
+      __pyx_t_10 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 306, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_6); __pyx_t_6 = NULL;
       }
+      __Pyx_INCREF(__pyx_v_configFile);
+      __Pyx_GIVEREF(__pyx_v_configFile);
+      PyTuple_SET_ITEM(__pyx_t_10, 0+__pyx_t_5, __pyx_v_configFile);
       __Pyx_INCREF(__pyx_int_1);
       __Pyx_GIVEREF(__pyx_int_1);
-      PyTuple_SET_ITEM(__pyx_t_10, 0+__pyx_t_5, __pyx_int_1);
+      PyTuple_SET_ITEM(__pyx_t_10, 1+__pyx_t_5, __pyx_int_1);
       __Pyx_GIVEREF(__pyx_t_3);
-      PyTuple_SET_ITEM(__pyx_t_10, 1+__pyx_t_5, __pyx_t_3);
+      PyTuple_SET_ITEM(__pyx_t_10, 2+__pyx_t_5, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_10, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 299, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 306, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     }
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "horse/router.pyx":298
- *             writeLine(1, '!')
+    /* "horse/router.pyx":305
+ *             writeLine(configFile, 1, '!')
  * 
- *         for route in self.routes:             # <<<<<<<<<<<<<<
- *             writeLine(1, 'network %s' % route)
+ *         for route in bgp.networks:             # <<<<<<<<<<<<<<
+ *             writeLine(configFile, 1, 'network %s' % route)
  *         configFile.close()
  */
   }
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":300
- *         for route in self.routes:
- *             writeLine(1, 'network %s' % route)
+  /* "horse/router.pyx":307
+ *         for route in bgp.networks:
+ *             writeLine(configFile, 1, 'network %s' % route)
  *         configFile.close()             # <<<<<<<<<<<<<<
  * 
  *     def parse_bgpd_file(self):
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_close); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 300, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_1)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_1);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_close); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 307, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
     }
   }
-  if (__pyx_t_1) {
-    __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 300, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__pyx_t_4) {
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 307, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   } else {
-    __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 300, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 307, __pyx_L1_error)
   }
-  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "horse/router.pyx":271
+  /* "horse/router.pyx":278
  *         configFile.close()
  * 
- *     def generateBgpd(self, bgp):             # <<<<<<<<<<<<<<
+ *     def generateBgpd(self, BGP bgp):             # <<<<<<<<<<<<<<
  *         configFile = open(self.bgpd_conf, 'w+')
- *         writeLine(0, 'hostname %s' % self.namespace);
+ *         writeLine(configFile, 0, 'hostname %s' % self.namespace);
  */
 
   /* function exit code */
@@ -8392,7 +8794,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_4generateBgpd(struct __p
   return __pyx_r;
 }
 
-/* "horse/router.pyx":302
+/* "horse/router.pyx":309
  *         configFile.close()
  * 
  *     def parse_bgpd_file(self):             # <<<<<<<<<<<<<<
@@ -8444,19 +8846,19 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
   int __pyx_t_16;
   __Pyx_RefNannySetupContext("parse_bgpd_file", 0);
 
-  /* "horse/router.pyx":303
+  /* "horse/router.pyx":310
  * 
  *     def parse_bgpd_file(self):
  *         bgp = BGP()             # <<<<<<<<<<<<<<
  *         with file(self.config_file, "r") as f:
  *             conf = f.read()
  */
-  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_5horse_6router_BGP)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 303, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_5horse_6router_BGP)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 310, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bgp = ((struct __pyx_obj_5horse_6router_BGP *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":304
+  /* "horse/router.pyx":311
  *     def parse_bgpd_file(self):
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:             # <<<<<<<<<<<<<<
@@ -8464,9 +8866,9 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
  */
   /*with:*/ {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_config_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 304, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_config_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 311, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 304, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_1);
     PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -8474,12 +8876,12 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
     __Pyx_GIVEREF(__pyx_n_s_r);
     PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_r);
     __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_file, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 304, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_file, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 311, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_3 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_n_s_exit); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 304, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_n_s_exit); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 311, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_n_s_enter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 304, __pyx_L3_error)
+    __pyx_t_4 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_n_s_enter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 311, __pyx_L3_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -8492,10 +8894,10 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
       }
     }
     if (__pyx_t_5) {
-      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 304, __pyx_L3_error)
+      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L3_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 304, __pyx_L3_error)
+      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L3_error)
     }
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -8514,14 +8916,14 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           __pyx_v_f = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":305
+          /* "horse/router.pyx":312
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:
  *             conf = f.read()             # <<<<<<<<<<<<<<
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
  *             if router_id:
  */
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_read); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 305, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_read); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 312, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
           __pyx_t_2 = NULL;
           if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -8534,26 +8936,26 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             }
           }
           if (__pyx_t_2) {
-            __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 305, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 312, __pyx_L7_error)
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           } else {
-            __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 305, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 312, __pyx_L7_error)
           }
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_v_conf = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":306
+          /* "horse/router.pyx":313
  *         with file(self.config_file, "r") as f:
  *             conf = f.read()
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )             # <<<<<<<<<<<<<<
  *             if router_id:
  *                 bgp.router_id = router_id.split()[2]
  */
-          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 306, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 313, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 306, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 313, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_1 = NULL;
@@ -8571,7 +8973,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_bgp_router_id_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 306, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 313, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
@@ -8579,13 +8981,13 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_bgp_router_id_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 306, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 313, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
           #endif
           {
-            __pyx_t_5 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 306, __pyx_L7_error)
+            __pyx_t_5 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 313, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             if (__pyx_t_1) {
               __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1); __pyx_t_1 = NULL;
@@ -8596,7 +8998,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 306, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 313, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           }
@@ -8604,24 +9006,24 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           __pyx_v_router_id = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":307
+          /* "horse/router.pyx":314
  *             conf = f.read()
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
  *             if router_id:             # <<<<<<<<<<<<<<
  *                 bgp.router_id = router_id.split()[2]
  *             asn =  re.findall( r'router bgp [0-9]*', conf)
  */
-          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_router_id); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 307, __pyx_L7_error)
+          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_router_id); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 314, __pyx_L7_error)
           if (__pyx_t_10) {
 
-            /* "horse/router.pyx":308
+            /* "horse/router.pyx":315
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
  *             if router_id:
  *                 bgp.router_id = router_id.split()[2]             # <<<<<<<<<<<<<<
  *             asn =  re.findall( r'router bgp [0-9]*', conf)
  *             if asn:
  */
-            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_router_id, __pyx_n_s_split); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 308, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_router_id, __pyx_n_s_split); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 315, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             __pyx_t_5 = NULL;
             if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -8634,14 +9036,14 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               }
             }
             if (__pyx_t_5) {
-              __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 308, __pyx_L7_error)
+              __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 315, __pyx_L7_error)
               __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
             } else {
-              __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 308, __pyx_L7_error)
+              __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 315, __pyx_L7_error)
             }
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-            __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_4, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 308, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_4, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 315, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GIVEREF(__pyx_t_2);
@@ -8650,7 +9052,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __pyx_v_bgp->router_id = __pyx_t_2;
             __pyx_t_2 = 0;
 
-            /* "horse/router.pyx":307
+            /* "horse/router.pyx":314
  *             conf = f.read()
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
  *             if router_id:             # <<<<<<<<<<<<<<
@@ -8659,16 +9061,16 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
  */
           }
 
-          /* "horse/router.pyx":309
+          /* "horse/router.pyx":316
  *             if router_id:
  *                 bgp.router_id = router_id.split()[2]
  *             asn =  re.findall( r'router bgp [0-9]*', conf)             # <<<<<<<<<<<<<<
  *             if asn:
  *                 bgp.asn = asn.split()[2]
  */
-          __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 309, __pyx_L7_error)
+          __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 316, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_findall); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 309, __pyx_L7_error)
+          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_findall); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 316, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __pyx_t_4 = NULL;
@@ -8686,7 +9088,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_5)) {
             PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_kp_s_router_bgp_0_9, __pyx_v_conf};
-            __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 309, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 316, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_2);
           } else
@@ -8694,13 +9096,13 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
             PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_kp_s_router_bgp_0_9, __pyx_v_conf};
-            __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 309, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 316, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_2);
           } else
           #endif
           {
-            __pyx_t_1 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 309, __pyx_L7_error)
+            __pyx_t_1 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 316, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_1);
             if (__pyx_t_4) {
               __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -8711,7 +9113,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_1, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 309, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 316, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           }
@@ -8719,24 +9121,24 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           __pyx_v_asn = __pyx_t_2;
           __pyx_t_2 = 0;
 
-          /* "horse/router.pyx":310
+          /* "horse/router.pyx":317
  *                 bgp.router_id = router_id.split()[2]
  *             asn =  re.findall( r'router bgp [0-9]*', conf)
  *             if asn:             # <<<<<<<<<<<<<<
  *                 bgp.asn = asn.split()[2]
  *             neighbors = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf )
  */
-          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_asn); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 310, __pyx_L7_error)
+          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_asn); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 317, __pyx_L7_error)
           if (__pyx_t_10) {
 
-            /* "horse/router.pyx":311
+            /* "horse/router.pyx":318
  *             asn =  re.findall( r'router bgp [0-9]*', conf)
  *             if asn:
  *                 bgp.asn = asn.split()[2]             # <<<<<<<<<<<<<<
  *             neighbors = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf )
  *             if neighbors:
  */
-            __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_asn, __pyx_n_s_split); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 311, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_asn, __pyx_n_s_split); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             __pyx_t_1 = NULL;
             if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -8749,14 +9151,14 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               }
             }
             if (__pyx_t_1) {
-              __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L7_error)
+              __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 318, __pyx_L7_error)
               __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
             } else {
-              __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L7_error)
+              __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 318, __pyx_L7_error)
             }
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-            __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_2, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 311, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_2, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GIVEREF(__pyx_t_5);
@@ -8765,7 +9167,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __pyx_v_bgp->asn = __pyx_t_5;
             __pyx_t_5 = 0;
 
-            /* "horse/router.pyx":310
+            /* "horse/router.pyx":317
  *                 bgp.router_id = router_id.split()[2]
  *             asn =  re.findall( r'router bgp [0-9]*', conf)
  *             if asn:             # <<<<<<<<<<<<<<
@@ -8774,16 +9176,16 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
  */
           }
 
-          /* "horse/router.pyx":312
+          /* "horse/router.pyx":319
  *             if asn:
  *                 bgp.asn = asn.split()[2]
  *             neighbors = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf )             # <<<<<<<<<<<<<<
  *             if neighbors:
  *                 # TODO parse other neighbor fields
  */
-          __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 312, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 319, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_findall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 312, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_findall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 319, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_t_2 = NULL;
@@ -8801,7 +9203,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_kp_s_neighbor_0_9_0_9_3_remote_as_0_9, __pyx_v_conf};
-            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 312, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 319, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
@@ -8809,13 +9211,13 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_kp_s_neighbor_0_9_0_9_3_remote_as_0_9, __pyx_v_conf};
-            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 312, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 319, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
           #endif
           {
-            __pyx_t_4 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 312, __pyx_L7_error)
+            __pyx_t_4 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 319, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             if (__pyx_t_2) {
               __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2); __pyx_t_2 = NULL;
@@ -8826,7 +9228,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 312, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 319, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           }
@@ -8834,17 +9236,17 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           __pyx_v_neighbors = __pyx_t_5;
           __pyx_t_5 = 0;
 
-          /* "horse/router.pyx":313
+          /* "horse/router.pyx":320
  *                 bgp.asn = asn.split()[2]
  *             neighbors = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf )
  *             if neighbors:             # <<<<<<<<<<<<<<
  *                 # TODO parse other neighbor fields
  *                 for n in neighbors:
  */
-          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_neighbors); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 313, __pyx_L7_error)
+          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_neighbors); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 320, __pyx_L7_error)
           if (__pyx_t_10) {
 
-            /* "horse/router.pyx":315
+            /* "horse/router.pyx":322
  *             if neighbors:
  *                 # TODO parse other neighbor fields
  *                 for n in neighbors:             # <<<<<<<<<<<<<<
@@ -8855,26 +9257,26 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               __pyx_t_5 = __pyx_v_neighbors; __Pyx_INCREF(__pyx_t_5); __pyx_t_11 = 0;
               __pyx_t_12 = NULL;
             } else {
-              __pyx_t_11 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_neighbors); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 315, __pyx_L7_error)
+              __pyx_t_11 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_neighbors); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 322, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_5);
-              __pyx_t_12 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 315, __pyx_L7_error)
+              __pyx_t_12 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 322, __pyx_L7_error)
             }
             for (;;) {
               if (likely(!__pyx_t_12)) {
                 if (likely(PyList_CheckExact(__pyx_t_5))) {
                   if (__pyx_t_11 >= PyList_GET_SIZE(__pyx_t_5)) break;
                   #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                  __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_11); __Pyx_INCREF(__pyx_t_1); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 315, __pyx_L7_error)
+                  __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_11); __Pyx_INCREF(__pyx_t_1); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 322, __pyx_L7_error)
                   #else
-                  __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 315, __pyx_L7_error)
+                  __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 322, __pyx_L7_error)
                   __Pyx_GOTREF(__pyx_t_1);
                   #endif
                 } else {
                   if (__pyx_t_11 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
                   #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                  __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_11); __Pyx_INCREF(__pyx_t_1); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 315, __pyx_L7_error)
+                  __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_11); __Pyx_INCREF(__pyx_t_1); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 322, __pyx_L7_error)
                   #else
-                  __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 315, __pyx_L7_error)
+                  __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 322, __pyx_L7_error)
                   __Pyx_GOTREF(__pyx_t_1);
                   #endif
                 }
@@ -8884,7 +9286,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
                   PyObject* exc_type = PyErr_Occurred();
                   if (exc_type) {
                     if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                    else __PYX_ERR(0, 315, __pyx_L7_error)
+                    else __PYX_ERR(0, 322, __pyx_L7_error)
                   }
                   break;
                 }
@@ -8893,14 +9295,14 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_1);
               __pyx_t_1 = 0;
 
-              /* "horse/router.pyx":316
+              /* "horse/router.pyx":323
  *                 # TODO parse other neighbor fields
  *                 for n in neighbors:
  *                     nfields = n.split()             # <<<<<<<<<<<<<<
  *                     bgp.add_neighbor(BGPNeighbor(nfields[1], nfields[3]))
  *             relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)
  */
-              __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 316, __pyx_L7_error)
+              __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 323, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_4);
               __pyx_t_2 = NULL;
               if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -8913,30 +9315,30 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
                 }
               }
               if (__pyx_t_2) {
-                __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 316, __pyx_L7_error)
+                __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 323, __pyx_L7_error)
                 __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
               } else {
-                __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 316, __pyx_L7_error)
+                __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 323, __pyx_L7_error)
               }
               __Pyx_GOTREF(__pyx_t_1);
               __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
               __Pyx_XDECREF_SET(__pyx_v_nfields, __pyx_t_1);
               __pyx_t_1 = 0;
 
-              /* "horse/router.pyx":317
+              /* "horse/router.pyx":324
  *                 for n in neighbors:
  *                     nfields = n.split()
  *                     bgp.add_neighbor(BGPNeighbor(nfields[1], nfields[3]))             # <<<<<<<<<<<<<<
  *             relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)
  *             if relax:
  */
-              __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_bgp), __pyx_n_s_add_neighbor); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 317, __pyx_L7_error)
+              __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_bgp), __pyx_n_s_add_neighbor); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 324, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_4);
-              __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_nfields, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 317, __pyx_L7_error)
+              __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_nfields, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 324, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_2);
-              __pyx_t_13 = __Pyx_GetItemInt(__pyx_v_nfields, 3, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 317, __pyx_L7_error)
+              __pyx_t_13 = __Pyx_GetItemInt(__pyx_v_nfields, 3, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 324, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_13);
-              __pyx_t_14 = PyTuple_New(2); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 317, __pyx_L7_error)
+              __pyx_t_14 = PyTuple_New(2); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 324, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_14);
               __Pyx_GIVEREF(__pyx_t_2);
               PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_t_2);
@@ -8944,7 +9346,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               PyTuple_SET_ITEM(__pyx_t_14, 1, __pyx_t_13);
               __pyx_t_2 = 0;
               __pyx_t_13 = 0;
-              __pyx_t_13 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_5horse_6router_BGPNeighbor), __pyx_t_14, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 317, __pyx_L7_error)
+              __pyx_t_13 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_5horse_6router_BGPNeighbor), __pyx_t_14, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 324, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_13);
               __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
               __pyx_t_14 = NULL;
@@ -8958,14 +9360,14 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
                 }
               }
               if (!__pyx_t_14) {
-                __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_13); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 317, __pyx_L7_error)
+                __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_13); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 324, __pyx_L7_error)
                 __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
                 __Pyx_GOTREF(__pyx_t_1);
               } else {
                 #if CYTHON_FAST_PYCALL
                 if (PyFunction_Check(__pyx_t_4)) {
                   PyObject *__pyx_temp[2] = {__pyx_t_14, __pyx_t_13};
-                  __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 317, __pyx_L7_error)
+                  __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 324, __pyx_L7_error)
                   __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
                   __Pyx_GOTREF(__pyx_t_1);
                   __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
@@ -8974,20 +9376,20 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
                 #if CYTHON_FAST_PYCCALL
                 if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
                   PyObject *__pyx_temp[2] = {__pyx_t_14, __pyx_t_13};
-                  __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 317, __pyx_L7_error)
+                  __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 324, __pyx_L7_error)
                   __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
                   __Pyx_GOTREF(__pyx_t_1);
                   __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
                 } else
                 #endif
                 {
-                  __pyx_t_2 = PyTuple_New(1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 317, __pyx_L7_error)
+                  __pyx_t_2 = PyTuple_New(1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 324, __pyx_L7_error)
                   __Pyx_GOTREF(__pyx_t_2);
                   __Pyx_GIVEREF(__pyx_t_14); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_14); __pyx_t_14 = NULL;
                   __Pyx_GIVEREF(__pyx_t_13);
                   PyTuple_SET_ITEM(__pyx_t_2, 0+1, __pyx_t_13);
                   __pyx_t_13 = 0;
-                  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 317, __pyx_L7_error)
+                  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 324, __pyx_L7_error)
                   __Pyx_GOTREF(__pyx_t_1);
                   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
                 }
@@ -8995,7 +9397,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
               __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-              /* "horse/router.pyx":315
+              /* "horse/router.pyx":322
  *             if neighbors:
  *                 # TODO parse other neighbor fields
  *                 for n in neighbors:             # <<<<<<<<<<<<<<
@@ -9005,7 +9407,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             }
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-            /* "horse/router.pyx":313
+            /* "horse/router.pyx":320
  *                 bgp.asn = asn.split()[2]
  *             neighbors = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf )
  *             if neighbors:             # <<<<<<<<<<<<<<
@@ -9014,16 +9416,16 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
  */
           }
 
-          /* "horse/router.pyx":318
+          /* "horse/router.pyx":325
  *                     nfields = n.split()
  *                     bgp.add_neighbor(BGPNeighbor(nfields[1], nfields[3]))
  *             relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)             # <<<<<<<<<<<<<<
  *             if relax:
  *                 bgp.relax =  True
  */
-          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 318, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 325, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 318, __pyx_L7_error)
+          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 325, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_1 = NULL;
@@ -9041,7 +9443,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_4)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_bgp_bestpath_as_path_multipath, __pyx_v_conf};
-            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 325, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
@@ -9049,13 +9451,13 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_bgp_bestpath_as_path_multipath, __pyx_v_conf};
-            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 325, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
           #endif
           {
-            __pyx_t_2 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 318, __pyx_L7_error)
+            __pyx_t_2 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 325, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             if (__pyx_t_1) {
               __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1); __pyx_t_1 = NULL;
@@ -9066,7 +9468,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_2, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_2, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 325, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           }
@@ -9074,17 +9476,17 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           __pyx_v_relax = __pyx_t_5;
           __pyx_t_5 = 0;
 
-          /* "horse/router.pyx":319
+          /* "horse/router.pyx":326
  *                     bgp.add_neighbor(BGPNeighbor(nfields[1], nfields[3]))
  *             relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)
  *             if relax:             # <<<<<<<<<<<<<<
  *                 bgp.relax =  True
  *             maximum_paths = re.findall( r'maximum-paths [0-9]*', conf)
  */
-          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_relax); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 319, __pyx_L7_error)
+          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_relax); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 326, __pyx_L7_error)
           if (__pyx_t_10) {
 
-            /* "horse/router.pyx":320
+            /* "horse/router.pyx":327
  *             relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)
  *             if relax:
  *                 bgp.relax =  True             # <<<<<<<<<<<<<<
@@ -9097,7 +9499,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_DECREF(__pyx_v_bgp->relax);
             __pyx_v_bgp->relax = Py_True;
 
-            /* "horse/router.pyx":319
+            /* "horse/router.pyx":326
  *                     bgp.add_neighbor(BGPNeighbor(nfields[1], nfields[3]))
  *             relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)
  *             if relax:             # <<<<<<<<<<<<<<
@@ -9106,16 +9508,16 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
  */
           }
 
-          /* "horse/router.pyx":321
+          /* "horse/router.pyx":328
  *             if relax:
  *                 bgp.relax =  True
  *             maximum_paths = re.findall( r'maximum-paths [0-9]*', conf)             # <<<<<<<<<<<<<<
  *             if maximum_paths:
  *                 bgp.maximum_paths = maximum_paths.split()[1]
  */
-          __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 321, __pyx_L7_error)
+          __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 328, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_findall); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 321, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_findall); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 328, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __pyx_t_4 = NULL;
@@ -9133,7 +9535,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_kp_s_maximum_paths_0_9, __pyx_v_conf};
-            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 321, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 328, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
@@ -9141,13 +9543,13 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_kp_s_maximum_paths_0_9, __pyx_v_conf};
-            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 321, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 328, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_5);
           } else
           #endif
           {
-            __pyx_t_1 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 321, __pyx_L7_error)
+            __pyx_t_1 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 328, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_1);
             if (__pyx_t_4) {
               __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -9158,7 +9560,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_1, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 321, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 328, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           }
@@ -9166,24 +9568,24 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
           __pyx_v_maximum_paths = __pyx_t_5;
           __pyx_t_5 = 0;
 
-          /* "horse/router.pyx":322
+          /* "horse/router.pyx":329
  *                 bgp.relax =  True
  *             maximum_paths = re.findall( r'maximum-paths [0-9]*', conf)
  *             if maximum_paths:             # <<<<<<<<<<<<<<
  *                 bgp.maximum_paths = maximum_paths.split()[1]
  *         return bgp
  */
-          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_maximum_paths); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 322, __pyx_L7_error)
+          __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_maximum_paths); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 329, __pyx_L7_error)
           if (__pyx_t_10) {
 
-            /* "horse/router.pyx":323
+            /* "horse/router.pyx":330
  *             maximum_paths = re.findall( r'maximum-paths [0-9]*', conf)
  *             if maximum_paths:
  *                 bgp.maximum_paths = maximum_paths.split()[1]             # <<<<<<<<<<<<<<
  *         return bgp
  * 
  */
-            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_maximum_paths, __pyx_n_s_split); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 323, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_maximum_paths, __pyx_n_s_split); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 330, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             __pyx_t_1 = NULL;
             if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -9196,14 +9598,14 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
               }
             }
             if (__pyx_t_1) {
-              __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 323, __pyx_L7_error)
+              __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 330, __pyx_L7_error)
               __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
             } else {
-              __pyx_t_5 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 323, __pyx_L7_error)
+              __pyx_t_5 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 330, __pyx_L7_error)
             }
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-            __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 323, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 330, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
             __Pyx_GIVEREF(__pyx_t_2);
@@ -9212,7 +9614,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __pyx_v_bgp->maximum_paths = __pyx_t_2;
             __pyx_t_2 = 0;
 
-            /* "horse/router.pyx":322
+            /* "horse/router.pyx":329
  *                 bgp.relax =  True
  *             maximum_paths = re.findall( r'maximum-paths [0-9]*', conf)
  *             if maximum_paths:             # <<<<<<<<<<<<<<
@@ -9221,7 +9623,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
  */
           }
 
-          /* "horse/router.pyx":304
+          /* "horse/router.pyx":311
  *     def parse_bgpd_file(self):
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:             # <<<<<<<<<<<<<<
@@ -9242,20 +9644,20 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("horse.router.QuaggaDaemon.parse_bgpd_file", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_5, &__pyx_t_1) < 0) __PYX_ERR(0, 304, __pyx_L9_except_error)
+          if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_5, &__pyx_t_1) < 0) __PYX_ERR(0, 311, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_4 = PyTuple_Pack(3, __pyx_t_2, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 304, __pyx_L9_except_error)
+          __pyx_t_4 = PyTuple_Pack(3, __pyx_t_2, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 311, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_4);
           __pyx_t_15 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_4, NULL);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 304, __pyx_L9_except_error)
+          if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 311, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_15);
           __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_15);
           __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-          if (__pyx_t_10 < 0) __PYX_ERR(0, 304, __pyx_L9_except_error)
+          if (__pyx_t_10 < 0) __PYX_ERR(0, 311, __pyx_L9_except_error)
           __pyx_t_16 = ((!(__pyx_t_10 != 0)) != 0);
           if (__pyx_t_16) {
             __Pyx_GIVEREF(__pyx_t_2);
@@ -9263,7 +9665,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
             __Pyx_XGIVEREF(__pyx_t_1);
             __Pyx_ErrRestoreWithState(__pyx_t_2, __pyx_t_5, __pyx_t_1);
             __pyx_t_2 = 0; __pyx_t_5 = 0; __pyx_t_1 = 0; 
-            __PYX_ERR(0, 304, __pyx_L9_except_error)
+            __PYX_ERR(0, 311, __pyx_L9_except_error)
           }
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -9287,9 +9689,9 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
     /*finally:*/ {
       /*normal exit:*/{
         if (__pyx_t_3) {
-          __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__18, NULL);
+          __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__13, NULL);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 304, __pyx_L1_error)
+          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 311, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         }
@@ -9304,7 +9706,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
     __pyx_L23:;
   }
 
-  /* "horse/router.pyx":324
+  /* "horse/router.pyx":331
  *             if maximum_paths:
  *                 bgp.maximum_paths = maximum_paths.split()[1]
  *         return bgp             # <<<<<<<<<<<<<<
@@ -9316,7 +9718,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_6parse_bgpd_file(struct 
   __pyx_r = ((PyObject *)__pyx_v_bgp);
   goto __pyx_L0;
 
-  /* "horse/router.pyx":302
+  /* "horse/router.pyx":309
  *         configFile.close()
  * 
  *     def parse_bgpd_file(self):             # <<<<<<<<<<<<<<
@@ -9381,7 +9783,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_8__reduce_cython__(CYTHO
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__19, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -9434,7 +9836,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_10__setstate_cython__(CY
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__20, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -9457,7 +9859,7 @@ static PyObject *__pyx_pf_5horse_6router_12QuaggaDaemon_10__setstate_cython__(CY
   return __pyx_r;
 }
 
-/* "horse/router.pyx":330
+/* "horse/router.pyx":337
  *     # cdef exabgp_daemon* _exa_ptr
  * 
  *     def __cinit__(self, namespace, runDir, protocols,             # <<<<<<<<<<<<<<
@@ -9502,23 +9904,23 @@ static int __pyx_pw_5horse_6router_12ExaBGPDaemon_1__cinit__(PyObject *__pyx_v_s
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_runDir)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 1); __PYX_ERR(0, 330, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 1); __PYX_ERR(0, 337, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_protocols)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 2); __PYX_ERR(0, 330, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 2); __PYX_ERR(0, 337, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_config_files)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 3); __PYX_ERR(0, 330, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, 3); __PYX_ERR(0, 337, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 330, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 337, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -9535,7 +9937,7 @@ static int __pyx_pw_5horse_6router_12ExaBGPDaemon_1__cinit__(PyObject *__pyx_v_s
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 330, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 337, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("horse.router.ExaBGPDaemon.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -9573,14 +9975,14 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   PyObject *__pyx_t_16 = NULL;
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "horse/router.pyx":333
+  /* "horse/router.pyx":340
  *                   config_files):
  * 
  *         super(ExaBGPDaemon, self).__init__(namespace, runDir)             # <<<<<<<<<<<<<<
  *         self._exa_ptr = exabgp_daemon_new(namespace)
  *         self.local_ips = []
  */
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 333, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(((PyObject *)__pyx_ptype_5horse_6router_ExaBGPDaemon));
   __Pyx_GIVEREF(((PyObject *)__pyx_ptype_5horse_6router_ExaBGPDaemon));
@@ -9588,10 +9990,10 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_2, 1, ((PyObject *)__pyx_v_self));
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 333, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 333, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -9609,7 +10011,7 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_namespace, __pyx_v_runDir};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 333, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -9617,13 +10019,13 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_namespace, __pyx_v_runDir};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 333, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 333, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 340, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -9634,31 +10036,31 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
     __Pyx_INCREF(__pyx_v_runDir);
     __Pyx_GIVEREF(__pyx_v_runDir);
     PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_runDir);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 333, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":334
+  /* "horse/router.pyx":341
  * 
  *         super(ExaBGPDaemon, self).__init__(namespace, runDir)
  *         self._exa_ptr = exabgp_daemon_new(namespace)             # <<<<<<<<<<<<<<
  *         self.local_ips = []
  *         if "exabgp_conf" in config_files:
  */
-  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_namespace); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 334, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_namespace); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 341, __pyx_L1_error)
   __pyx_v_self->_exa_ptr = exabgp_daemon_new(__pyx_t_6);
 
-  /* "horse/router.pyx":335
+  /* "horse/router.pyx":342
  *         super(ExaBGPDaemon, self).__init__(namespace, runDir)
  *         self._exa_ptr = exabgp_daemon_new(namespace)
  *         self.local_ips = []             # <<<<<<<<<<<<<<
  *         if "exabgp_conf" in config_files:
  *             self.config_file = config_files["exabgp_conf"]
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 335, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 342, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->local_ips);
@@ -9666,25 +10068,25 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   __pyx_v_self->local_ips = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":336
+  /* "horse/router.pyx":343
  *         self._exa_ptr = exabgp_daemon_new(namespace)
  *         self.local_ips = []
  *         if "exabgp_conf" in config_files:             # <<<<<<<<<<<<<<
  *             self.config_file = config_files["exabgp_conf"]
  *             if os.path.isfile(self.config_file):
  */
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_exabgp_conf, __pyx_v_config_files, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 336, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_exabgp_conf, __pyx_v_config_files, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 343, __pyx_L1_error)
   __pyx_t_8 = (__pyx_t_7 != 0);
   if (__pyx_t_8) {
 
-    /* "horse/router.pyx":337
+    /* "horse/router.pyx":344
  *         self.local_ips = []
  *         if "exabgp_conf" in config_files:
  *             self.config_file = config_files["exabgp_conf"]             # <<<<<<<<<<<<<<
  *             if os.path.isfile(self.config_file):
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  */
-    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_config_files, __pyx_n_s_exabgp_conf); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 337, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_config_files, __pyx_n_s_exabgp_conf); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_1);
     __Pyx_GOTREF(__pyx_v_self->config_file);
@@ -9692,19 +10094,19 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
     __pyx_v_self->config_file = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":338
+    /* "horse/router.pyx":345
  *         if "exabgp_conf" in config_files:
  *             self.config_file = config_files["exabgp_conf"]
  *             if os.path.isfile(self.config_file):             # <<<<<<<<<<<<<<
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  *                 bgp = self.parse_config_file()
  */
-    __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 338, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 345, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 338, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 345, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_isfile); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 338, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_isfile); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 345, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -9718,13 +10120,13 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       }
     }
     if (!__pyx_t_5) {
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_self->config_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 338, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_self->config_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 345, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_2)) {
         PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_self->config_file};
-        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 338, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 345, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
@@ -9732,46 +10134,46 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
         PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_self->config_file};
-        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 338, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 345, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
       #endif
       {
-        __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 338, __pyx_L1_error)
+        __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 345, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
         __Pyx_INCREF(__pyx_v_self->config_file);
         __Pyx_GIVEREF(__pyx_v_self->config_file);
         PyTuple_SET_ITEM(__pyx_t_3, 0+1, __pyx_v_self->config_file);
-        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 338, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 345, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       }
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 338, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 345, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (__pyx_t_8) {
 
-      /* "horse/router.pyx":339
+      /* "horse/router.pyx":346
  *             self.config_file = config_files["exabgp_conf"]
  *             if os.path.isfile(self.config_file):
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)             # <<<<<<<<<<<<<<
  *                 bgp = self.parse_config_file()
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  */
-      __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->config_file); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 339, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->config_file); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 346, __pyx_L1_error)
       set_exabgp_daemon_config_file(__pyx_v_self->_exa_ptr, __pyx_t_6);
 
-      /* "horse/router.pyx":340
+      /* "horse/router.pyx":347
  *             if os.path.isfile(self.config_file):
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  *                 bgp = self.parse_config_file()             # <<<<<<<<<<<<<<
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  *                 if bgp.router_id:
  */
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_parse_config_file); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 340, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_parse_config_file); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 347, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_3 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -9784,24 +10186,24 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         }
       }
       if (__pyx_t_3) {
-        __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 347, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       } else {
-        __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 347, __pyx_L1_error)
       }
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_v_bgp = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "horse/router.pyx":341
+      /* "horse/router.pyx":348
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  *                 bgp = self.parse_config_file()
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)             # <<<<<<<<<<<<<<
  *                 if bgp.router_id:
  *                     self.router_id = bgp.router_id
  */
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_write_auxiliary_config_file); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 341, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_write_auxiliary_config_file); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 348, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_3 = NULL;
       __pyx_t_4 = 0;
@@ -9818,7 +10220,7 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_2)) {
         PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_runDir, __pyx_v_self->__pyx_base.namespace};
-        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 348, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
@@ -9826,13 +10228,13 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
         PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_runDir, __pyx_v_self->__pyx_base.namespace};
-        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 348, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
       #endif
       {
-        __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 341, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 348, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         if (__pyx_t_3) {
           __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -9843,34 +10245,34 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         __Pyx_INCREF(__pyx_v_self->__pyx_base.namespace);
         __Pyx_GIVEREF(__pyx_v_self->__pyx_base.namespace);
         PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_self->__pyx_base.namespace);
-        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 348, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "horse/router.pyx":342
+      /* "horse/router.pyx":349
  *                 bgp = self.parse_config_file()
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  *                 if bgp.router_id:             # <<<<<<<<<<<<<<
  *                     self.router_id = bgp.router_id
  *                 self.check_ecmp(bgp)
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 342, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 349, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 342, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 349, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       if (__pyx_t_8) {
 
-        /* "horse/router.pyx":343
+        /* "horse/router.pyx":350
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  *                 if bgp.router_id:
  *                     self.router_id = bgp.router_id             # <<<<<<<<<<<<<<
  *                 self.check_ecmp(bgp)
  *         for p in protocols:
  */
-        __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 343, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 350, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_GIVEREF(__pyx_t_1);
         __Pyx_GOTREF(__pyx_v_self->__pyx_base.router_id);
@@ -9878,214 +10280,9 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         __pyx_v_self->__pyx_base.router_id = __pyx_t_1;
         __pyx_t_1 = 0;
 
-        /* "horse/router.pyx":342
+        /* "horse/router.pyx":349
  *                 bgp = self.parse_config_file()
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
- *                 if bgp.router_id:             # <<<<<<<<<<<<<<
- *                     self.router_id = bgp.router_id
- *                 self.check_ecmp(bgp)
- */
-      }
-
-      /* "horse/router.pyx":344
- *                 if bgp.router_id:
- *                     self.router_id = bgp.router_id
- *                 self.check_ecmp(bgp)             # <<<<<<<<<<<<<<
- *         for p in protocols:
- *             if isinstance(p, BGP):
- */
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 344, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_5 = NULL;
-      if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-        __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
-        if (likely(__pyx_t_5)) {
-          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-          __Pyx_INCREF(__pyx_t_5);
-          __Pyx_INCREF(function);
-          __Pyx_DECREF_SET(__pyx_t_2, function);
-        }
-      }
-      if (!__pyx_t_5) {
-        __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_bgp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-      } else {
-        #if CYTHON_FAST_PYCALL
-        if (PyFunction_Check(__pyx_t_2)) {
-          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
-          __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L1_error)
-          __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-          __Pyx_GOTREF(__pyx_t_1);
-        } else
-        #endif
-        #if CYTHON_FAST_PYCCALL
-        if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
-          __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L1_error)
-          __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-          __Pyx_GOTREF(__pyx_t_1);
-        } else
-        #endif
-        {
-          __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 344, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_3);
-          __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
-          __Pyx_INCREF(__pyx_v_bgp);
-          __Pyx_GIVEREF(__pyx_v_bgp);
-          PyTuple_SET_ITEM(__pyx_t_3, 0+1, __pyx_v_bgp);
-          __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        }
-      }
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-      /* "horse/router.pyx":338
- *         if "exabgp_conf" in config_files:
- *             self.config_file = config_files["exabgp_conf"]
- *             if os.path.isfile(self.config_file):             # <<<<<<<<<<<<<<
- *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
- *                 bgp = self.parse_config_file()
- */
-    }
-
-    /* "horse/router.pyx":336
- *         self._exa_ptr = exabgp_daemon_new(namespace)
- *         self.local_ips = []
- *         if "exabgp_conf" in config_files:             # <<<<<<<<<<<<<<
- *             self.config_file = config_files["exabgp_conf"]
- *             if os.path.isfile(self.config_file):
- */
-  }
-
-  /* "horse/router.pyx":345
- *                     self.router_id = bgp.router_id
- *                 self.check_ecmp(bgp)
- *         for p in protocols:             # <<<<<<<<<<<<<<
- *             if isinstance(p, BGP):
- *                 bgp = <BGP> p
- */
-  if (likely(PyList_CheckExact(__pyx_v_protocols)) || PyTuple_CheckExact(__pyx_v_protocols)) {
-    __pyx_t_1 = __pyx_v_protocols; __Pyx_INCREF(__pyx_t_1); __pyx_t_9 = 0;
-    __pyx_t_10 = NULL;
-  } else {
-    __pyx_t_9 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_protocols); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 345, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_10 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 345, __pyx_L1_error)
-  }
-  for (;;) {
-    if (likely(!__pyx_t_10)) {
-      if (likely(PyList_CheckExact(__pyx_t_1))) {
-        if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_1)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_2); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 345, __pyx_L1_error)
-        #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 345, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        #endif
-      } else {
-        if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_2); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 345, __pyx_L1_error)
-        #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 345, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        #endif
-      }
-    } else {
-      __pyx_t_2 = __pyx_t_10(__pyx_t_1);
-      if (unlikely(!__pyx_t_2)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 345, __pyx_L1_error)
-        }
-        break;
-      }
-      __Pyx_GOTREF(__pyx_t_2);
-    }
-    __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_2);
-    __pyx_t_2 = 0;
-
-    /* "horse/router.pyx":346
- *                 self.check_ecmp(bgp)
- *         for p in protocols:
- *             if isinstance(p, BGP):             # <<<<<<<<<<<<<<
- *                 bgp = <BGP> p
- *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
- */
-    __pyx_t_8 = __Pyx_TypeCheck(__pyx_v_p, __pyx_ptype_5horse_6router_BGP); 
-    __pyx_t_7 = (__pyx_t_8 != 0);
-    if (__pyx_t_7) {
-
-      /* "horse/router.pyx":347
- *         for p in protocols:
- *             if isinstance(p, BGP):
- *                 bgp = <BGP> p             # <<<<<<<<<<<<<<
- *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
- *                 if bgp.router_id:
- */
-      __pyx_t_2 = __pyx_v_p;
-      __Pyx_INCREF(__pyx_t_2);
-      __Pyx_XDECREF_SET(__pyx_v_bgp, __pyx_t_2);
-      __pyx_t_2 = 0;
-
-      /* "horse/router.pyx":348
- *             if isinstance(p, BGP):
- *                 bgp = <BGP> p
- *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)             # <<<<<<<<<<<<<<
- *                 if bgp.router_id:
- *                     self.router_id = bgp.router_id
- */
-      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 348, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __Pyx_INCREF(__pyx_v_runDir);
-      __Pyx_GIVEREF(__pyx_v_runDir);
-      PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_runDir);
-      __Pyx_INCREF(__pyx_v_namespace);
-      __Pyx_GIVEREF(__pyx_v_namespace);
-      PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_namespace);
-      __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_s_exabgp_s_conf, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 348, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_GIVEREF(__pyx_t_3);
-      __Pyx_GOTREF(__pyx_v_self->config_file);
-      __Pyx_DECREF(__pyx_v_self->config_file);
-      __pyx_v_self->config_file = __pyx_t_3;
-      __pyx_t_3 = 0;
-
-      /* "horse/router.pyx":349
- *                 bgp = <BGP> p
- *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
- *                 if bgp.router_id:             # <<<<<<<<<<<<<<
- *                     self.router_id = bgp.router_id
- *                 self.check_ecmp(bgp)
- */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 349, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 349, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (__pyx_t_7) {
-
-        /* "horse/router.pyx":350
- *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
- *                 if bgp.router_id:
- *                     self.router_id = bgp.router_id             # <<<<<<<<<<<<<<
- *                 self.check_ecmp(bgp)
- *                 for i in range(0, len(bgp.neighbors)):
- */
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 350, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        __Pyx_GIVEREF(__pyx_t_3);
-        __Pyx_GOTREF(__pyx_v_self->__pyx_base.router_id);
-        __Pyx_DECREF(__pyx_v_self->__pyx_base.router_id);
-        __pyx_v_self->__pyx_base.router_id = __pyx_t_3;
-        __pyx_t_3 = 0;
-
-        /* "horse/router.pyx":349
- *                 bgp = <BGP> p
- *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
  *                 if bgp.router_id:             # <<<<<<<<<<<<<<
  *                     self.router_id = bgp.router_id
  *                 self.check_ecmp(bgp)
@@ -10096,8 +10293,8 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
  *                 if bgp.router_id:
  *                     self.router_id = bgp.router_id
  *                 self.check_ecmp(bgp)             # <<<<<<<<<<<<<<
- *                 for i in range(0, len(bgp.neighbors)):
- *                     neigh = bgp.neighbors[i]
+ *         for p in protocols:
+ *             if isinstance(p, BGP):
  */
       __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 351, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
@@ -10112,13 +10309,218 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         }
       }
       if (!__pyx_t_5) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_bgp); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 351, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_bgp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 351, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+      } else {
+        #if CYTHON_FAST_PYCALL
+        if (PyFunction_Check(__pyx_t_2)) {
+          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
+          __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+          __Pyx_GOTREF(__pyx_t_1);
+        } else
+        #endif
+        #if CYTHON_FAST_PYCCALL
+        if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
+          PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
+          __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+          __Pyx_GOTREF(__pyx_t_1);
+        } else
+        #endif
+        {
+          __pyx_t_3 = PyTuple_New(1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
+          __Pyx_INCREF(__pyx_v_bgp);
+          __Pyx_GIVEREF(__pyx_v_bgp);
+          PyTuple_SET_ITEM(__pyx_t_3, 0+1, __pyx_v_bgp);
+          __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        }
+      }
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+      /* "horse/router.pyx":345
+ *         if "exabgp_conf" in config_files:
+ *             self.config_file = config_files["exabgp_conf"]
+ *             if os.path.isfile(self.config_file):             # <<<<<<<<<<<<<<
+ *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
+ *                 bgp = self.parse_config_file()
+ */
+    }
+
+    /* "horse/router.pyx":343
+ *         self._exa_ptr = exabgp_daemon_new(namespace)
+ *         self.local_ips = []
+ *         if "exabgp_conf" in config_files:             # <<<<<<<<<<<<<<
+ *             self.config_file = config_files["exabgp_conf"]
+ *             if os.path.isfile(self.config_file):
+ */
+  }
+
+  /* "horse/router.pyx":352
+ *                     self.router_id = bgp.router_id
+ *                 self.check_ecmp(bgp)
+ *         for p in protocols:             # <<<<<<<<<<<<<<
+ *             if isinstance(p, BGP):
+ *                 bgp = <BGP> p
+ */
+  if (likely(PyList_CheckExact(__pyx_v_protocols)) || PyTuple_CheckExact(__pyx_v_protocols)) {
+    __pyx_t_1 = __pyx_v_protocols; __Pyx_INCREF(__pyx_t_1); __pyx_t_9 = 0;
+    __pyx_t_10 = NULL;
+  } else {
+    __pyx_t_9 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_protocols); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 352, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_10 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 352, __pyx_L1_error)
+  }
+  for (;;) {
+    if (likely(!__pyx_t_10)) {
+      if (likely(PyList_CheckExact(__pyx_t_1))) {
+        if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_1)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_2); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 352, __pyx_L1_error)
+        #else
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 352, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_2);
+        #endif
+      } else {
+        if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_2); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 352, __pyx_L1_error)
+        #else
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 352, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_2);
+        #endif
+      }
+    } else {
+      __pyx_t_2 = __pyx_t_10(__pyx_t_1);
+      if (unlikely(!__pyx_t_2)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(0, 352, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_2);
+    __pyx_t_2 = 0;
+
+    /* "horse/router.pyx":353
+ *                 self.check_ecmp(bgp)
+ *         for p in protocols:
+ *             if isinstance(p, BGP):             # <<<<<<<<<<<<<<
+ *                 bgp = <BGP> p
+ *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
+ */
+    __pyx_t_8 = __Pyx_TypeCheck(__pyx_v_p, __pyx_ptype_5horse_6router_BGP); 
+    __pyx_t_7 = (__pyx_t_8 != 0);
+    if (__pyx_t_7) {
+
+      /* "horse/router.pyx":354
+ *         for p in protocols:
+ *             if isinstance(p, BGP):
+ *                 bgp = <BGP> p             # <<<<<<<<<<<<<<
+ *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
+ *                 if bgp.router_id:
+ */
+      __pyx_t_2 = __pyx_v_p;
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_XDECREF_SET(__pyx_v_bgp, __pyx_t_2);
+      __pyx_t_2 = 0;
+
+      /* "horse/router.pyx":355
+ *             if isinstance(p, BGP):
+ *                 bgp = <BGP> p
+ *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)             # <<<<<<<<<<<<<<
+ *                 if bgp.router_id:
+ *                     self.router_id = bgp.router_id
+ */
+      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 355, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_INCREF(__pyx_v_runDir);
+      __Pyx_GIVEREF(__pyx_v_runDir);
+      PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_runDir);
+      __Pyx_INCREF(__pyx_v_namespace);
+      __Pyx_GIVEREF(__pyx_v_namespace);
+      PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_namespace);
+      __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_s_exabgp_s_conf, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 355, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_GIVEREF(__pyx_t_3);
+      __Pyx_GOTREF(__pyx_v_self->config_file);
+      __Pyx_DECREF(__pyx_v_self->config_file);
+      __pyx_v_self->config_file = __pyx_t_3;
+      __pyx_t_3 = 0;
+
+      /* "horse/router.pyx":356
+ *                 bgp = <BGP> p
+ *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
+ *                 if bgp.router_id:             # <<<<<<<<<<<<<<
+ *                     self.router_id = bgp.router_id
+ *                 self.check_ecmp(bgp)
+ */
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 356, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 356, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (__pyx_t_7) {
+
+        /* "horse/router.pyx":357
+ *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
+ *                 if bgp.router_id:
+ *                     self.router_id = bgp.router_id             # <<<<<<<<<<<<<<
+ *                 self.check_ecmp(bgp)
+ *                 for i in range(0, len(bgp.neighbors)):
+ */
+        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 357, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_GIVEREF(__pyx_t_3);
+        __Pyx_GOTREF(__pyx_v_self->__pyx_base.router_id);
+        __Pyx_DECREF(__pyx_v_self->__pyx_base.router_id);
+        __pyx_v_self->__pyx_base.router_id = __pyx_t_3;
+        __pyx_t_3 = 0;
+
+        /* "horse/router.pyx":356
+ *                 bgp = <BGP> p
+ *                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
+ *                 if bgp.router_id:             # <<<<<<<<<<<<<<
+ *                     self.router_id = bgp.router_id
+ *                 self.check_ecmp(bgp)
+ */
+      }
+
+      /* "horse/router.pyx":358
+ *                 if bgp.router_id:
+ *                     self.router_id = bgp.router_id
+ *                 self.check_ecmp(bgp)             # <<<<<<<<<<<<<<
+ *                 for i in range(0, len(bgp.neighbors)):
+ *                     neigh = bgp.neighbors[i]
+ */
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_check_ecmp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 358, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_t_5 = NULL;
+      if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+        __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+        if (likely(__pyx_t_5)) {
+          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+          __Pyx_INCREF(__pyx_t_5);
+          __Pyx_INCREF(function);
+          __Pyx_DECREF_SET(__pyx_t_2, function);
+        }
+      }
+      if (!__pyx_t_5) {
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_bgp); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 358, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 358, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
@@ -10126,19 +10528,19 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_v_bgp};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 358, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         {
-          __pyx_t_11 = PyTuple_New(1+1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __pyx_t_11 = PyTuple_New(1+1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 358, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_5); __pyx_t_5 = NULL;
           __Pyx_INCREF(__pyx_v_bgp);
           __Pyx_GIVEREF(__pyx_v_bgp);
           PyTuple_SET_ITEM(__pyx_t_11, 0+1, __pyx_v_bgp);
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_11, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_11, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 358, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         }
@@ -10146,58 +10548,58 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "horse/router.pyx":352
+      /* "horse/router.pyx":359
  *                     self.router_id = bgp.router_id
  *                 self.check_ecmp(bgp)
  *                 for i in range(0, len(bgp.neighbors)):             # <<<<<<<<<<<<<<
  *                     neigh = bgp.neighbors[i]
- *                     # print neigh
+ *                     self.local_ips.append(neigh.local_ip)
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_neighbors); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 352, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_neighbors); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 359, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 352, __pyx_L1_error)
+      __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 359, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_13 = __pyx_t_12;
       for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
         __pyx_v_i = __pyx_t_14;
 
-        /* "horse/router.pyx":353
+        /* "horse/router.pyx":360
  *                 self.check_ecmp(bgp)
  *                 for i in range(0, len(bgp.neighbors)):
  *                     neigh = bgp.neighbors[i]             # <<<<<<<<<<<<<<
- *                     # print neigh
  *                     self.local_ips.append(neigh.local_ip)
+ *                     self.add_ip(neigh.local_ip)
  */
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_neighbors); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 353, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_neighbors); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 360, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_3, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 353, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_3, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 360, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_XDECREF_SET(__pyx_v_neigh, __pyx_t_2);
         __pyx_t_2 = 0;
 
-        /* "horse/router.pyx":355
+        /* "horse/router.pyx":361
+ *                 for i in range(0, len(bgp.neighbors)):
  *                     neigh = bgp.neighbors[i]
- *                     # print neigh
  *                     self.local_ips.append(neigh.local_ip)             # <<<<<<<<<<<<<<
  *                     self.add_ip(neigh.local_ip)
  *                 self.router_id = bgp.router_id = max(self.local_ips)
  */
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_neigh, __pyx_n_s_local_ip); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 355, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_neigh, __pyx_n_s_local_ip); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 361, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_15 = __Pyx_PyObject_Append(__pyx_v_self->local_ips, __pyx_t_2); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 355, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_PyObject_Append(__pyx_v_self->local_ips, __pyx_t_2); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 361, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-        /* "horse/router.pyx":356
- *                     # print neigh
+        /* "horse/router.pyx":362
+ *                     neigh = bgp.neighbors[i]
  *                     self.local_ips.append(neigh.local_ip)
  *                     self.add_ip(neigh.local_ip)             # <<<<<<<<<<<<<<
  *                 self.router_id = bgp.router_id = max(self.local_ips)
  *                 self.generateExaBGPconfig(bgp)
  */
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 356, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 362, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_neigh, __pyx_n_s_local_ip); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 356, __pyx_L1_error)
+        __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_neigh, __pyx_n_s_local_ip); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 362, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_11);
         __pyx_t_5 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -10210,14 +10612,14 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
           }
         }
         if (!__pyx_t_5) {
-          __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 356, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
           __Pyx_GOTREF(__pyx_t_2);
         } else {
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_3)) {
             PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_t_11};
-            __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 356, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
@@ -10226,20 +10628,20 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
             PyObject *__pyx_temp[2] = {__pyx_t_5, __pyx_t_11};
-            __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 356, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
           } else
           #endif
           {
-            __pyx_t_16 = PyTuple_New(1+1); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 356, __pyx_L1_error)
+            __pyx_t_16 = PyTuple_New(1+1); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 362, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_16);
             __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_t_5); __pyx_t_5 = NULL;
             __Pyx_GIVEREF(__pyx_t_11);
             PyTuple_SET_ITEM(__pyx_t_16, 0+1, __pyx_t_11);
             __pyx_t_11 = 0;
-            __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_16, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 356, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_16, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
           }
@@ -10248,31 +10650,31 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       }
 
-      /* "horse/router.pyx":357
+      /* "horse/router.pyx":363
  *                     self.local_ips.append(neigh.local_ip)
  *                     self.add_ip(neigh.local_ip)
  *                 self.router_id = bgp.router_id = max(self.local_ips)             # <<<<<<<<<<<<<<
  *                 self.generateExaBGPconfig(bgp)
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  */
-      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_max, __pyx_v_self->local_ips); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 357, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_max, __pyx_v_self->local_ips); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 363, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_INCREF(__pyx_t_2);
       __Pyx_GIVEREF(__pyx_t_2);
       __Pyx_GOTREF(__pyx_v_self->__pyx_base.router_id);
       __Pyx_DECREF(__pyx_v_self->__pyx_base.router_id);
       __pyx_v_self->__pyx_base.router_id = __pyx_t_2;
-      if (__Pyx_PyObject_SetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id, __pyx_t_2) < 0) __PYX_ERR(0, 357, __pyx_L1_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_v_bgp, __pyx_n_s_router_id, __pyx_t_2) < 0) __PYX_ERR(0, 363, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "horse/router.pyx":358
+      /* "horse/router.pyx":364
  *                     self.add_ip(neigh.local_ip)
  *                 self.router_id = bgp.router_id = max(self.local_ips)
  *                 self.generateExaBGPconfig(bgp)             # <<<<<<<<<<<<<<
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_generateExaBGPconfig); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 358, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_generateExaBGPconfig); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 364, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_16 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -10285,13 +10687,13 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         }
       }
       if (!__pyx_t_16) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_bgp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 358, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_bgp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 364, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_3)) {
           PyObject *__pyx_temp[2] = {__pyx_t_16, __pyx_v_bgp};
-          __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 358, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 364, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
           __Pyx_GOTREF(__pyx_t_2);
         } else
@@ -10299,19 +10701,19 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
           PyObject *__pyx_temp[2] = {__pyx_t_16, __pyx_v_bgp};
-          __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 358, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 364, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
           __Pyx_GOTREF(__pyx_t_2);
         } else
         #endif
         {
-          __pyx_t_11 = PyTuple_New(1+1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 358, __pyx_L1_error)
+          __pyx_t_11 = PyTuple_New(1+1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 364, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_GIVEREF(__pyx_t_16); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_16); __pyx_t_16 = NULL;
           __Pyx_INCREF(__pyx_v_bgp);
           __Pyx_GIVEREF(__pyx_v_bgp);
           PyTuple_SET_ITEM(__pyx_t_11, 0+1, __pyx_v_bgp);
-          __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_11, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 358, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_11, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 364, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         }
@@ -10319,24 +10721,24 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "horse/router.pyx":359
+      /* "horse/router.pyx":365
  *                 self.router_id = bgp.router_id = max(self.local_ips)
  *                 self.generateExaBGPconfig(bgp)
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)             # <<<<<<<<<<<<<<
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  * 
  */
-      __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->config_file); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 359, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_v_self->config_file); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 365, __pyx_L1_error)
       set_exabgp_daemon_config_file(__pyx_v_self->_exa_ptr, __pyx_t_6);
 
-      /* "horse/router.pyx":360
+      /* "horse/router.pyx":366
  *                 self.generateExaBGPconfig(bgp)
  *                 set_exabgp_daemon_config_file(self._exa_ptr, self.config_file)
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)             # <<<<<<<<<<<<<<
  * 
  *     cdef exabgp_daemon* get_exabgp_ptr(self):
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_write_auxiliary_config_file); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 360, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bgp, __pyx_n_s_write_auxiliary_config_file); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 366, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_11 = NULL;
       __pyx_t_4 = 0;
@@ -10353,7 +10755,7 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_3)) {
         PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_runDir, __pyx_v_self->__pyx_base.namespace};
-        __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 360, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 366, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_GOTREF(__pyx_t_2);
       } else
@@ -10361,13 +10763,13 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
         PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_runDir, __pyx_v_self->__pyx_base.namespace};
-        __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 360, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 366, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_GOTREF(__pyx_t_2);
       } else
       #endif
       {
-        __pyx_t_16 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 360, __pyx_L1_error)
+        __pyx_t_16 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 366, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_16);
         if (__pyx_t_11) {
           __Pyx_GIVEREF(__pyx_t_11); PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_t_11); __pyx_t_11 = NULL;
@@ -10378,14 +10780,14 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
         __Pyx_INCREF(__pyx_v_self->__pyx_base.namespace);
         __Pyx_GIVEREF(__pyx_v_self->__pyx_base.namespace);
         PyTuple_SET_ITEM(__pyx_t_16, 1+__pyx_t_4, __pyx_v_self->__pyx_base.namespace);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_16, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 360, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_16, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 366, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "horse/router.pyx":346
+      /* "horse/router.pyx":353
  *                 self.check_ecmp(bgp)
  *         for p in protocols:
  *             if isinstance(p, BGP):             # <<<<<<<<<<<<<<
@@ -10394,7 +10796,7 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
  */
     }
 
-    /* "horse/router.pyx":345
+    /* "horse/router.pyx":352
  *                     self.router_id = bgp.router_id
  *                 self.check_ecmp(bgp)
  *         for p in protocols:             # <<<<<<<<<<<<<<
@@ -10404,7 +10806,7 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":330
+  /* "horse/router.pyx":337
  *     # cdef exabgp_daemon* _exa_ptr
  * 
  *     def __cinit__(self, namespace, runDir, protocols,             # <<<<<<<<<<<<<<
@@ -10432,7 +10834,7 @@ static int __pyx_pf_5horse_6router_12ExaBGPDaemon___cinit__(struct __pyx_obj_5ho
   return __pyx_r;
 }
 
-/* "horse/router.pyx":362
+/* "horse/router.pyx":368
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  * 
  *     cdef exabgp_daemon* get_exabgp_ptr(self):             # <<<<<<<<<<<<<<
@@ -10445,7 +10847,7 @@ static struct exabgp_daemon *__pyx_f_5horse_6router_12ExaBGPDaemon_get_exabgp_pt
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_exabgp_ptr", 0);
 
-  /* "horse/router.pyx":363
+  /* "horse/router.pyx":369
  * 
  *     cdef exabgp_daemon* get_exabgp_ptr(self):
  *         return self._exa_ptr             # <<<<<<<<<<<<<<
@@ -10455,7 +10857,7 @@ static struct exabgp_daemon *__pyx_f_5horse_6router_12ExaBGPDaemon_get_exabgp_pt
   __pyx_r = __pyx_v_self->_exa_ptr;
   goto __pyx_L0;
 
-  /* "horse/router.pyx":362
+  /* "horse/router.pyx":368
  *                 bgp.write_auxiliary_config_file(runDir, self.namespace)
  * 
  *     cdef exabgp_daemon* get_exabgp_ptr(self):             # <<<<<<<<<<<<<<
@@ -10469,7 +10871,7 @@ static struct exabgp_daemon *__pyx_f_5horse_6router_12ExaBGPDaemon_get_exabgp_pt
   return __pyx_r;
 }
 
-/* "horse/router.pyx":365
+/* "horse/router.pyx":371
  *         return self._exa_ptr
  * 
  *     def parse_config_file(self):             # <<<<<<<<<<<<<<
@@ -10524,19 +10926,19 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
   PyObject *__pyx_t_17 = NULL;
   __Pyx_RefNannySetupContext("parse_config_file", 0);
 
-  /* "horse/router.pyx":366
+  /* "horse/router.pyx":372
  * 
  *     def parse_config_file(self):
  *         bgp = BGP()             # <<<<<<<<<<<<<<
  *         with file(self.config_file, "r") as f:
  *             conf = f.read()
  */
-  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_5horse_6router_BGP)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 366, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_5horse_6router_BGP)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bgp = ((struct __pyx_obj_5horse_6router_BGP *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":367
+  /* "horse/router.pyx":373
  *     def parse_config_file(self):
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:             # <<<<<<<<<<<<<<
@@ -10544,7 +10946,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
  *             # neighbor = []
  */
   /*with:*/ {
-    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 367, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_INCREF(__pyx_v_self->config_file);
     __Pyx_GIVEREF(__pyx_v_self->config_file);
@@ -10552,12 +10954,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
     __Pyx_INCREF(__pyx_n_s_r);
     __Pyx_GIVEREF(__pyx_n_s_r);
     PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_n_s_r);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_file, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 367, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_file, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 373, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_3 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_exit); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 367, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_exit); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 373, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_enter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 367, __pyx_L3_error)
+    __pyx_t_4 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_enter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 373, __pyx_L3_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -10570,10 +10972,10 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
       }
     }
     if (__pyx_t_5) {
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 367, __pyx_L3_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L3_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 367, __pyx_L3_error)
+      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L3_error)
     }
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -10592,14 +10994,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_f = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":368
+          /* "horse/router.pyx":374
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:
  *             conf = f.read()             # <<<<<<<<<<<<<<
  *             # neighbor = []
  *             router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
  */
-          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_read); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 368, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_read); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 374, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
           __pyx_t_1 = NULL;
           if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -10612,26 +11014,26 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             }
           }
           if (__pyx_t_1) {
-            __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 368, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L7_error)
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           } else {
-            __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 368, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L7_error)
           }
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_v_conf = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":370
+          /* "horse/router.pyx":376
  *             conf = f.read()
  *             # neighbor = []
  *             router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )             # <<<<<<<<<<<<<<
  *             asn =  re.findall( r'local-as [0-9]*', conf)
  *             ips = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
  */
-          __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 370, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 376, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_findall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 370, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_findall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 376, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_t_2 = NULL;
@@ -10649,7 +11051,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_kp_s_router_id_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 370, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 376, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
@@ -10657,13 +11059,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_kp_s_router_id_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 370, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 376, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
           #endif
           {
-            __pyx_t_5 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 370, __pyx_L7_error)
+            __pyx_t_5 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 376, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             if (__pyx_t_2) {
               __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_2); __pyx_t_2 = NULL;
@@ -10674,7 +11076,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 370, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 376, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           }
@@ -10682,16 +11084,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_router_id = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":371
+          /* "horse/router.pyx":377
  *             # neighbor = []
  *             router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
  *             asn =  re.findall( r'local-as [0-9]*', conf)             # <<<<<<<<<<<<<<
  *             ips = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
  *             asys = re.findall( r'peer-as [0-9]*', conf)
  */
-          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 371, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 377, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 371, __pyx_L7_error)
+          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 377, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_1 = NULL;
@@ -10709,7 +11111,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_5)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_local_as_0_9, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 371, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 377, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
@@ -10717,13 +11119,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_local_as_0_9, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 371, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 377, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
           #endif
           {
-            __pyx_t_2 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 371, __pyx_L7_error)
+            __pyx_t_2 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 377, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             if (__pyx_t_1) {
               __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1); __pyx_t_1 = NULL;
@@ -10734,7 +11136,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 371, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 377, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           }
@@ -10742,16 +11144,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_asn = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":372
+          /* "horse/router.pyx":378
  *             router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
  *             asn =  re.findall( r'local-as [0-9]*', conf)
  *             ips = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )             # <<<<<<<<<<<<<<
  *             asys = re.findall( r'peer-as [0-9]*', conf)
  *             local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
  */
-          __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 372, __pyx_L7_error)
+          __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 378, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_findall); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 372, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_findall); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 378, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           __pyx_t_5 = NULL;
@@ -10769,7 +11171,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_5, __pyx_kp_s_neighbor_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 372, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 378, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
@@ -10777,13 +11179,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_5, __pyx_kp_s_neighbor_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 372, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 378, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
           #endif
           {
-            __pyx_t_1 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 372, __pyx_L7_error)
+            __pyx_t_1 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 378, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_1);
             if (__pyx_t_5) {
               __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -10794,7 +11196,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_1, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 372, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 378, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           }
@@ -10802,16 +11204,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_ips = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":373
+          /* "horse/router.pyx":379
  *             asn =  re.findall( r'local-as [0-9]*', conf)
  *             ips = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
  *             asys = re.findall( r'peer-as [0-9]*', conf)             # <<<<<<<<<<<<<<
  *             local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
  *             self.local_ips = [x[14:] for x in local_ips]
  */
-          __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 373, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 379, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_findall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_findall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 379, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_t_2 = NULL;
@@ -10829,7 +11231,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_kp_s_peer_as_0_9, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 373, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 379, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
@@ -10837,13 +11239,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
             PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_kp_s_peer_as_0_9, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 373, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 379, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
           #endif
           {
-            __pyx_t_5 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 373, __pyx_L7_error)
+            __pyx_t_5 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 379, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             if (__pyx_t_2) {
               __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_2); __pyx_t_2 = NULL;
@@ -10854,7 +11256,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 373, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 379, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           }
@@ -10862,16 +11264,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_asys = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":374
+          /* "horse/router.pyx":380
  *             ips = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
  *             asys = re.findall( r'peer-as [0-9]*', conf)
  *             local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)             # <<<<<<<<<<<<<<
  *             self.local_ips = [x[14:] for x in local_ips]
  *             # Router id is in the configuration
  */
-          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 374, __pyx_L7_error)
+          __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_re); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 380, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 374, __pyx_L7_error)
+          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_findall); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 380, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_1 = NULL;
@@ -10889,7 +11291,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_5)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_local_address_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
@@ -10897,13 +11299,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
             PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_kp_s_local_address_0_9_0_9_3, __pyx_v_conf};
-            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_9, 2+__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_GOTREF(__pyx_t_4);
           } else
           #endif
           {
-            __pyx_t_2 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 374, __pyx_L7_error)
+            __pyx_t_2 = PyTuple_New(2+__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 380, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             if (__pyx_t_1) {
               __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1); __pyx_t_1 = NULL;
@@ -10914,7 +11316,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_INCREF(__pyx_v_conf);
             __Pyx_GIVEREF(__pyx_v_conf);
             PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_9, __pyx_v_conf);
-            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           }
@@ -10922,39 +11324,39 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_local_ips = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":375
+          /* "horse/router.pyx":381
  *             asys = re.findall( r'peer-as [0-9]*', conf)
  *             local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
  *             self.local_ips = [x[14:] for x in local_ips]             # <<<<<<<<<<<<<<
  *             # Router id is in the configuration
  *             if router_id and bgp.router_id == None:
  */
-          __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 375, __pyx_L7_error)
+          __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_4);
           if (likely(PyList_CheckExact(__pyx_v_local_ips)) || PyTuple_CheckExact(__pyx_v_local_ips)) {
             __pyx_t_5 = __pyx_v_local_ips; __Pyx_INCREF(__pyx_t_5); __pyx_t_10 = 0;
             __pyx_t_11 = NULL;
           } else {
-            __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_local_ips); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 375, __pyx_L7_error)
+            __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_local_ips); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 381, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
-            __pyx_t_11 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 375, __pyx_L7_error)
+            __pyx_t_11 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 381, __pyx_L7_error)
           }
           for (;;) {
             if (likely(!__pyx_t_11)) {
               if (likely(PyList_CheckExact(__pyx_t_5))) {
                 if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_5)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_2 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_2); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 375, __pyx_L7_error)
+                __pyx_t_2 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_2); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 381, __pyx_L7_error)
                 #else
-                __pyx_t_2 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 375, __pyx_L7_error)
+                __pyx_t_2 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 381, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_2);
                 #endif
               } else {
                 if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_2); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 375, __pyx_L7_error)
+                __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_2); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 381, __pyx_L7_error)
                 #else
-                __pyx_t_2 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 375, __pyx_L7_error)
+                __pyx_t_2 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 381, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_2);
                 #endif
               }
@@ -10964,7 +11366,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 375, __pyx_L7_error)
+                  else __PYX_ERR(0, 381, __pyx_L7_error)
                 }
                 break;
               }
@@ -10972,9 +11374,9 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             }
             __Pyx_XDECREF_SET(__pyx_v_x, __pyx_t_2);
             __pyx_t_2 = 0;
-            __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_x, 14, 0, NULL, NULL, &__pyx_slice__21, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 375, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_x, 14, 0, NULL, NULL, &__pyx_slice__16, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 381, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_2))) __PYX_ERR(0, 375, __pyx_L7_error)
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_2))) __PYX_ERR(0, 381, __pyx_L7_error)
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           }
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -10984,36 +11386,36 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __pyx_v_self->local_ips = __pyx_t_4;
           __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":377
+          /* "horse/router.pyx":383
  *             self.local_ips = [x[14:] for x in local_ips]
  *             # Router id is in the configuration
  *             if router_id and bgp.router_id == None:             # <<<<<<<<<<<<<<
  *                 bgp.router_id = router_id[0][10:]
  *             for ip in self.local_ips:
  */
-          __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_v_router_id); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 377, __pyx_L7_error)
+          __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_v_router_id); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 383, __pyx_L7_error)
           if (__pyx_t_13) {
           } else {
             __pyx_t_12 = __pyx_t_13;
             goto __pyx_L16_bool_binop_done;
           }
-          __pyx_t_4 = PyObject_RichCompare(__pyx_v_bgp->router_id, Py_None, Py_EQ); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 377, __pyx_L7_error)
-          __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 377, __pyx_L7_error)
+          __pyx_t_4 = PyObject_RichCompare(__pyx_v_bgp->router_id, Py_None, Py_EQ); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 383, __pyx_L7_error)
+          __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 383, __pyx_L7_error)
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __pyx_t_12 = __pyx_t_13;
           __pyx_L16_bool_binop_done:;
           if (__pyx_t_12) {
 
-            /* "horse/router.pyx":378
+            /* "horse/router.pyx":384
  *             # Router id is in the configuration
  *             if router_id and bgp.router_id == None:
  *                 bgp.router_id = router_id[0][10:]             # <<<<<<<<<<<<<<
  *             for ip in self.local_ips:
  *                 self.add_ip(ip)
  */
-            __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_router_id, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 378, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_router_id, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 384, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_5 = __Pyx_PyObject_GetSlice(__pyx_t_4, 10, 0, NULL, NULL, &__pyx_slice__22, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 378, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_PyObject_GetSlice(__pyx_t_4, 10, 0, NULL, NULL, &__pyx_slice__17, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 384, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GIVEREF(__pyx_t_5);
@@ -11022,7 +11424,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __pyx_v_bgp->router_id = __pyx_t_5;
             __pyx_t_5 = 0;
 
-            /* "horse/router.pyx":377
+            /* "horse/router.pyx":383
  *             self.local_ips = [x[14:] for x in local_ips]
  *             # Router id is in the configuration
  *             if router_id and bgp.router_id == None:             # <<<<<<<<<<<<<<
@@ -11031,7 +11433,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
  */
           }
 
-          /* "horse/router.pyx":379
+          /* "horse/router.pyx":385
  *             if router_id and bgp.router_id == None:
  *                 bgp.router_id = router_id[0][10:]
  *             for ip in self.local_ips:             # <<<<<<<<<<<<<<
@@ -11042,26 +11444,26 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __pyx_t_5 = __pyx_v_self->local_ips; __Pyx_INCREF(__pyx_t_5); __pyx_t_10 = 0;
             __pyx_t_11 = NULL;
           } else {
-            __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_self->local_ips); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 379, __pyx_L7_error)
+            __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_self->local_ips); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 385, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
-            __pyx_t_11 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 379, __pyx_L7_error)
+            __pyx_t_11 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 385, __pyx_L7_error)
           }
           for (;;) {
             if (likely(!__pyx_t_11)) {
               if (likely(PyList_CheckExact(__pyx_t_5))) {
                 if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_5)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_4); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 379, __pyx_L7_error)
+                __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_4); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 385, __pyx_L7_error)
                 #else
-                __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 379, __pyx_L7_error)
+                __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 385, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_4);
                 #endif
               } else {
                 if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_4); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 379, __pyx_L7_error)
+                __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_4); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 385, __pyx_L7_error)
                 #else
-                __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 379, __pyx_L7_error)
+                __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 385, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_4);
                 #endif
               }
@@ -11071,7 +11473,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 379, __pyx_L7_error)
+                  else __PYX_ERR(0, 385, __pyx_L7_error)
                 }
                 break;
               }
@@ -11080,14 +11482,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_XDECREF_SET(__pyx_v_ip, __pyx_t_4);
             __pyx_t_4 = 0;
 
-            /* "horse/router.pyx":380
+            /* "horse/router.pyx":386
  *                 bgp.router_id = router_id[0][10:]
  *             for ip in self.local_ips:
  *                 self.add_ip(ip)             # <<<<<<<<<<<<<<
  *             if asn:
  *                 bgp.asn = asn[0][9:]
  */
-            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_ip); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 380, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_add_ip); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 386, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
             __pyx_t_1 = NULL;
             if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -11100,13 +11502,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               }
             }
             if (!__pyx_t_1) {
-              __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_ip); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
+              __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_ip); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 386, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_4);
             } else {
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_2)) {
                 PyObject *__pyx_temp[2] = {__pyx_t_1, __pyx_v_ip};
-                __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
+                __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 386, __pyx_L7_error)
                 __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
                 __Pyx_GOTREF(__pyx_t_4);
               } else
@@ -11114,19 +11516,19 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
                 PyObject *__pyx_temp[2] = {__pyx_t_1, __pyx_v_ip};
-                __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
+                __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 386, __pyx_L7_error)
                 __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
                 __Pyx_GOTREF(__pyx_t_4);
               } else
               #endif
               {
-                __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 380, __pyx_L7_error)
+                __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 386, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_14);
                 __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_t_1); __pyx_t_1 = NULL;
                 __Pyx_INCREF(__pyx_v_ip);
                 __Pyx_GIVEREF(__pyx_v_ip);
                 PyTuple_SET_ITEM(__pyx_t_14, 0+1, __pyx_v_ip);
-                __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_14, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L7_error)
+                __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_14, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 386, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_4);
                 __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
               }
@@ -11134,7 +11536,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-            /* "horse/router.pyx":379
+            /* "horse/router.pyx":385
  *             if router_id and bgp.router_id == None:
  *                 bgp.router_id = router_id[0][10:]
  *             for ip in self.local_ips:             # <<<<<<<<<<<<<<
@@ -11144,26 +11546,26 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           }
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-          /* "horse/router.pyx":381
+          /* "horse/router.pyx":387
  *             for ip in self.local_ips:
  *                 self.add_ip(ip)
  *             if asn:             # <<<<<<<<<<<<<<
  *                 bgp.asn = asn[0][9:]
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  */
-          __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_v_asn); if (unlikely(__pyx_t_12 < 0)) __PYX_ERR(0, 381, __pyx_L7_error)
+          __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_v_asn); if (unlikely(__pyx_t_12 < 0)) __PYX_ERR(0, 387, __pyx_L7_error)
           if (__pyx_t_12) {
 
-            /* "horse/router.pyx":382
+            /* "horse/router.pyx":388
  *                 self.add_ip(ip)
  *             if asn:
  *                 bgp.asn = asn[0][9:]             # <<<<<<<<<<<<<<
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],
  */
-            __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_asn, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 382, __pyx_L7_error)
+            __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_asn, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 388, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_5);
-            __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_5, 9, 0, NULL, NULL, &__pyx_slice__23, 1, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 382, __pyx_L7_error)
+            __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_5, 9, 0, NULL, NULL, &__pyx_slice__18, 1, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 388, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
             __Pyx_GIVEREF(__pyx_t_4);
@@ -11172,7 +11574,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __pyx_v_bgp->asn = __pyx_t_4;
             __pyx_t_4 = 0;
 
-            /* "horse/router.pyx":381
+            /* "horse/router.pyx":387
  *             for ip in self.local_ips:
  *                 self.add_ip(ip)
  *             if asn:             # <<<<<<<<<<<<<<
@@ -11181,14 +11583,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
  */
           }
 
-          /* "horse/router.pyx":383
+          /* "horse/router.pyx":389
  *             if asn:
  *                 bgp.asn = asn[0][9:]
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):             # <<<<<<<<<<<<<<
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],
  *                                              local_ip = local_ip))
  */
-          __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 383, __pyx_L7_error)
+          __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 389, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_INCREF(__pyx_v_ips);
           __Pyx_GIVEREF(__pyx_v_ips);
@@ -11199,16 +11601,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           __Pyx_INCREF(__pyx_v_local_ips);
           __Pyx_GIVEREF(__pyx_v_local_ips);
           PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_v_local_ips);
-          __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 383, __pyx_L7_error)
+          __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 389, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           if (likely(PyList_CheckExact(__pyx_t_5)) || PyTuple_CheckExact(__pyx_t_5)) {
             __pyx_t_4 = __pyx_t_5; __Pyx_INCREF(__pyx_t_4); __pyx_t_10 = 0;
             __pyx_t_11 = NULL;
           } else {
-            __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 383, __pyx_L7_error)
+            __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 389, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_11 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 383, __pyx_L7_error)
+            __pyx_t_11 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 389, __pyx_L7_error)
           }
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           for (;;) {
@@ -11216,17 +11618,17 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               if (likely(PyList_CheckExact(__pyx_t_4))) {
                 if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_4)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_5 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_5); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 383, __pyx_L7_error)
+                __pyx_t_5 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_5); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 389, __pyx_L7_error)
                 #else
-                __pyx_t_5 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 383, __pyx_L7_error)
+                __pyx_t_5 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 389, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_5);
                 #endif
               } else {
                 if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_5); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 383, __pyx_L7_error)
+                __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_5); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 389, __pyx_L7_error)
                 #else
-                __pyx_t_5 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 383, __pyx_L7_error)
+                __pyx_t_5 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 389, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_5);
                 #endif
               }
@@ -11236,7 +11638,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 383, __pyx_L7_error)
+                  else __PYX_ERR(0, 389, __pyx_L7_error)
                 }
                 break;
               }
@@ -11248,7 +11650,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               if (unlikely(size != 3)) {
                 if (size > 3) __Pyx_RaiseTooManyValuesError(3);
                 else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-                __PYX_ERR(0, 383, __pyx_L7_error)
+                __PYX_ERR(0, 389, __pyx_L7_error)
               }
               #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
               if (likely(PyTuple_CheckExact(sequence))) {
@@ -11264,17 +11666,17 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               __Pyx_INCREF(__pyx_t_14);
               __Pyx_INCREF(__pyx_t_1);
               #else
-              __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 383, __pyx_L7_error)
+              __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 389, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_2);
-              __pyx_t_14 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 383, __pyx_L7_error)
+              __pyx_t_14 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 389, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_14);
-              __pyx_t_1 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 383, __pyx_L7_error)
+              __pyx_t_1 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 389, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_1);
               #endif
               __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
             } else {
               Py_ssize_t index = -1;
-              __pyx_t_15 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 383, __pyx_L7_error)
+              __pyx_t_15 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 389, __pyx_L7_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
               __pyx_t_16 = Py_TYPE(__pyx_t_15)->tp_iternext;
@@ -11284,7 +11686,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               __Pyx_GOTREF(__pyx_t_14);
               index = 2; __pyx_t_1 = __pyx_t_16(__pyx_t_15); if (unlikely(!__pyx_t_1)) goto __pyx_L23_unpacking_failed;
               __Pyx_GOTREF(__pyx_t_1);
-              if (__Pyx_IternextUnpackEndCheck(__pyx_t_16(__pyx_t_15), 3) < 0) __PYX_ERR(0, 383, __pyx_L7_error)
+              if (__Pyx_IternextUnpackEndCheck(__pyx_t_16(__pyx_t_15), 3) < 0) __PYX_ERR(0, 389, __pyx_L7_error)
               __pyx_t_16 = NULL;
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
               goto __pyx_L24_unpacking_done;
@@ -11292,7 +11694,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
               __pyx_t_16 = NULL;
               if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-              __PYX_ERR(0, 383, __pyx_L7_error)
+              __PYX_ERR(0, 389, __pyx_L7_error)
               __pyx_L24_unpacking_done:;
             }
             __Pyx_XDECREF_SET(__pyx_v_neigh_ip, __pyx_t_2);
@@ -11302,20 +11704,20 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_XDECREF_SET(__pyx_v_local_ip, __pyx_t_1);
             __pyx_t_1 = 0;
 
-            /* "horse/router.pyx":384
+            /* "horse/router.pyx":390
  *                 bgp.asn = asn[0][9:]
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],             # <<<<<<<<<<<<<<
  *                                              local_ip = local_ip))
  *         return bgp
  */
-            __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_bgp), __pyx_n_s_add_neighbor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 384, __pyx_L7_error)
+            __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_bgp), __pyx_n_s_add_neighbor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 390, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_14 = __Pyx_PyObject_GetSlice(__pyx_v_neigh_ip, 9, 0, NULL, NULL, &__pyx_slice__24, 1, 0, 1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 384, __pyx_L7_error)
+            __pyx_t_14 = __Pyx_PyObject_GetSlice(__pyx_v_neigh_ip, 9, 0, NULL, NULL, &__pyx_slice__19, 1, 0, 1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 390, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_14);
-            __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_asn, 8, 0, NULL, NULL, &__pyx_slice__25, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 384, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_asn, 8, 0, NULL, NULL, &__pyx_slice__20, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 390, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
-            __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 384, __pyx_L7_error)
+            __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 390, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_15);
             __Pyx_GIVEREF(__pyx_t_14);
             PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_14);
@@ -11324,25 +11726,25 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __pyx_t_14 = 0;
             __pyx_t_2 = 0;
 
-            /* "horse/router.pyx":385
+            /* "horse/router.pyx":391
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],
  *                                              local_ip = local_ip))             # <<<<<<<<<<<<<<
  *         return bgp
  * 
  */
-            __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 385, __pyx_L7_error)
+            __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 391, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_2);
-            if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_local_ip, __pyx_v_local_ip) < 0) __PYX_ERR(0, 385, __pyx_L7_error)
+            if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_local_ip, __pyx_v_local_ip) < 0) __PYX_ERR(0, 391, __pyx_L7_error)
 
-            /* "horse/router.pyx":384
+            /* "horse/router.pyx":390
  *                 bgp.asn = asn[0][9:]
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],             # <<<<<<<<<<<<<<
  *                                              local_ip = local_ip))
  *         return bgp
  */
-            __pyx_t_14 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_5horse_6router_BGPNeighbor), __pyx_t_15, __pyx_t_2); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 384, __pyx_L7_error)
+            __pyx_t_14 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_5horse_6router_BGPNeighbor), __pyx_t_15, __pyx_t_2); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 390, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_14);
             __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -11357,14 +11759,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               }
             }
             if (!__pyx_t_2) {
-              __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_14); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 384, __pyx_L7_error)
+              __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_14); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 390, __pyx_L7_error)
               __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
               __Pyx_GOTREF(__pyx_t_5);
             } else {
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_1)) {
                 PyObject *__pyx_temp[2] = {__pyx_t_2, __pyx_t_14};
-                __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 384, __pyx_L7_error)
+                __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 390, __pyx_L7_error)
                 __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
                 __Pyx_GOTREF(__pyx_t_5);
                 __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
@@ -11373,20 +11775,20 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
                 PyObject *__pyx_temp[2] = {__pyx_t_2, __pyx_t_14};
-                __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 384, __pyx_L7_error)
+                __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 390, __pyx_L7_error)
                 __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
                 __Pyx_GOTREF(__pyx_t_5);
                 __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
               } else
               #endif
               {
-                __pyx_t_15 = PyTuple_New(1+1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 384, __pyx_L7_error)
+                __pyx_t_15 = PyTuple_New(1+1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 390, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_15);
                 __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_2); __pyx_t_2 = NULL;
                 __Pyx_GIVEREF(__pyx_t_14);
                 PyTuple_SET_ITEM(__pyx_t_15, 0+1, __pyx_t_14);
                 __pyx_t_14 = 0;
-                __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_15, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 384, __pyx_L7_error)
+                __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_15, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 390, __pyx_L7_error)
                 __Pyx_GOTREF(__pyx_t_5);
                 __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
               }
@@ -11394,7 +11796,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-            /* "horse/router.pyx":383
+            /* "horse/router.pyx":389
  *             if asn:
  *                 bgp.asn = asn[0][9:]
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):             # <<<<<<<<<<<<<<
@@ -11404,7 +11806,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
           }
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-          /* "horse/router.pyx":367
+          /* "horse/router.pyx":373
  *     def parse_config_file(self):
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:             # <<<<<<<<<<<<<<
@@ -11425,20 +11827,20 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("horse.router.ExaBGPDaemon.parse_config_file", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_5, &__pyx_t_1) < 0) __PYX_ERR(0, 367, __pyx_L9_except_error)
+          if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_5, &__pyx_t_1) < 0) __PYX_ERR(0, 373, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_15 = PyTuple_Pack(3, __pyx_t_4, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 367, __pyx_L9_except_error)
+          __pyx_t_15 = PyTuple_Pack(3, __pyx_t_4, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 373, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_15);
           __pyx_t_17 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_15, NULL);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-          if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 367, __pyx_L9_except_error)
+          if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 373, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_17);
           __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_t_17);
           __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-          if (__pyx_t_12 < 0) __PYX_ERR(0, 367, __pyx_L9_except_error)
+          if (__pyx_t_12 < 0) __PYX_ERR(0, 373, __pyx_L9_except_error)
           __pyx_t_13 = ((!(__pyx_t_12 != 0)) != 0);
           if (__pyx_t_13) {
             __Pyx_GIVEREF(__pyx_t_4);
@@ -11446,7 +11848,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
             __Pyx_XGIVEREF(__pyx_t_1);
             __Pyx_ErrRestoreWithState(__pyx_t_4, __pyx_t_5, __pyx_t_1);
             __pyx_t_4 = 0; __pyx_t_5 = 0; __pyx_t_1 = 0; 
-            __PYX_ERR(0, 367, __pyx_L9_except_error)
+            __PYX_ERR(0, 373, __pyx_L9_except_error)
           }
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -11470,9 +11872,9 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
     /*finally:*/ {
       /*normal exit:*/{
         if (__pyx_t_3) {
-          __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__26, NULL);
+          __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__21, NULL);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 367, __pyx_L1_error)
+          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 373, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         }
@@ -11487,7 +11889,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
     __pyx_L28:;
   }
 
-  /* "horse/router.pyx":386
+  /* "horse/router.pyx":392
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],
  *                                              local_ip = local_ip))
  *         return bgp             # <<<<<<<<<<<<<<
@@ -11499,7 +11901,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
   __pyx_r = ((PyObject *)__pyx_v_bgp);
   goto __pyx_L0;
 
-  /* "horse/router.pyx":365
+  /* "horse/router.pyx":371
  *         return self._exa_ptr
  * 
  *     def parse_config_file(self):             # <<<<<<<<<<<<<<
@@ -11535,7 +11937,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_2parse_config_file(struc
   return __pyx_r;
 }
 
-/* "horse/router.pyx":389
+/* "horse/router.pyx":395
  * 
  * 
  *     def generateExaBGPconfig(self, BGP bgp):             # <<<<<<<<<<<<<<
@@ -11549,7 +11951,7 @@ static PyObject *__pyx_pw_5horse_6router_12ExaBGPDaemon_5generateExaBGPconfig(Py
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("generateExaBGPconfig (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_bgp), __pyx_ptype_5horse_6router_BGP, 1, "bgp", 0))) __PYX_ERR(0, 389, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_bgp), __pyx_ptype_5horse_6router_BGP, 1, "bgp", 0))) __PYX_ERR(0, 395, __pyx_L1_error)
   __pyx_r = __pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(((struct __pyx_obj_5horse_6router_ExaBGPDaemon *)__pyx_v_self), ((struct __pyx_obj_5horse_6router_BGP *)__pyx_v_bgp));
 
   /* function exit code */
@@ -11577,14 +11979,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   PyObject *__pyx_t_9 = NULL;
   __Pyx_RefNannySetupContext("generateExaBGPconfig", 0);
 
-  /* "horse/router.pyx":390
+  /* "horse/router.pyx":396
  * 
  *     def generateExaBGPconfig(self, BGP bgp):
  *         configFile = open(self.config_file, 'w+')             # <<<<<<<<<<<<<<
  * 
  *         writeLine(configFile, 0, 'process client{')
  */
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 390, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_self->config_file);
   __Pyx_GIVEREF(__pyx_v_self->config_file);
@@ -11592,20 +11994,20 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_INCREF(__pyx_kp_s_w_2);
   __Pyx_GIVEREF(__pyx_kp_s_w_2);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_s_w_2);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 390, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_configFile = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":392
+  /* "horse/router.pyx":398
  *         configFile = open(self.config_file, 'w+')
  * 
  *         writeLine(configFile, 0, 'process client{')             # <<<<<<<<<<<<<<
  *         writeLine(configFile, 2, 'run /usr/bin/python /home/vagrant/horse/horse/router_client.py %s;' % self.namespace)
  *         writeLine(configFile, 2, 'encoder json;\n}\n')
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 392, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 398, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -11622,7 +12024,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_process_client};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 392, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 398, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
@@ -11630,13 +12032,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_process_client};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 392, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 398, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 392, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 398, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -11650,23 +12052,23 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_kp_s_process_client);
     __Pyx_GIVEREF(__pyx_kp_s_process_client);
     PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_process_client);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 392, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 398, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":393
+  /* "horse/router.pyx":399
  * 
  *         writeLine(configFile, 0, 'process client{')
  *         writeLine(configFile, 2, 'run /usr/bin/python /home/vagrant/horse/horse/router_client.py %s;' % self.namespace)             # <<<<<<<<<<<<<<
  *         writeLine(configFile, 2, 'encoder json;\n}\n')
  * 
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 393, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_run_usr_bin_python_home_vagrant, __pyx_v_self->__pyx_base.namespace); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 393, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_run_usr_bin_python_home_vagrant, __pyx_v_self->__pyx_base.namespace); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -11683,7 +12085,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_2, __pyx_t_5};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 393, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -11692,14 +12094,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_2, __pyx_t_5};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 393, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   } else
   #endif
   {
-    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 393, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 399, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -11713,21 +12115,21 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_GIVEREF(__pyx_t_5);
     PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_t_5);
     __pyx_t_5 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 393, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":394
+  /* "horse/router.pyx":400
  *         writeLine(configFile, 0, 'process client{')
  *         writeLine(configFile, 2, 'run /usr/bin/python /home/vagrant/horse/horse/router_client.py %s;' % self.namespace)
  *         writeLine(configFile, 2, 'encoder json;\n}\n')             # <<<<<<<<<<<<<<
  * 
  *         writeLine(configFile, 0, 'template {')
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 394, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 400, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_6 = NULL;
   __pyx_t_4 = 0;
@@ -11744,7 +12146,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_encoder_json};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 394, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 400, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
@@ -11752,13 +12154,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_encoder_json};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 394, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 400, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 394, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_6) {
       __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -11772,361 +12174,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_kp_s_encoder_json);
     __Pyx_GIVEREF(__pyx_kp_s_encoder_json);
     PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_encoder_json);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 394, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":396
- *         writeLine(configFile, 2, 'encoder json;\n}\n')
- * 
- *         writeLine(configFile, 0, 'template {')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 2, 'neighbor router {')
- *         writeLine(configFile, 4, 'family {')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 396, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_5);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_template};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 396, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_template};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 396, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  {
-    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 396, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    if (__pyx_t_5) {
-      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __pyx_t_5 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_0);
-    __Pyx_GIVEREF(__pyx_int_0);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_0);
-    __Pyx_INCREF(__pyx_kp_s_template);
-    __Pyx_GIVEREF(__pyx_kp_s_template);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_template);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 396, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":397
- * 
- *         writeLine(configFile, 0, 'template {')
- *         writeLine(configFile, 2, 'neighbor router {')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 4, 'family {')
- *         writeLine(configFile, 6, 'ipv4 unicast;')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 397, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_6)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_6);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_neighbor_router};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 397, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_neighbor_router};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 397, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  {
-    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 397, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    if (__pyx_t_6) {
-      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_2);
-    __Pyx_GIVEREF(__pyx_int_2);
-    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_2);
-    __Pyx_INCREF(__pyx_kp_s_neighbor_router);
-    __Pyx_GIVEREF(__pyx_kp_s_neighbor_router);
-    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_neighbor_router);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 397, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":398
- *         writeLine(configFile, 0, 'template {')
- *         writeLine(configFile, 2, 'neighbor router {')
- *         writeLine(configFile, 4, 'family {')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 6, 'ipv4 unicast;')
- *         writeLine(configFile, 4, '}')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 398, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_5);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_family};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 398, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_family};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 398, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  {
-    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 398, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    if (__pyx_t_5) {
-      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __pyx_t_5 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_4);
-    __Pyx_GIVEREF(__pyx_int_4);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
-    __Pyx_INCREF(__pyx_kp_s_family);
-    __Pyx_GIVEREF(__pyx_kp_s_family);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_family);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 398, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":399
- *         writeLine(configFile, 2, 'neighbor router {')
- *         writeLine(configFile, 4, 'family {')
- *         writeLine(configFile, 6, 'ipv4 unicast;')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 4, '}')
- *         writeLine(configFile, 4, 'api speaking {')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 399, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_6)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_6);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_ipv4_unicast};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_ipv4_unicast};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  {
-    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 399, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    if (__pyx_t_6) {
-      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_6);
-    __Pyx_INCREF(__pyx_kp_s_ipv4_unicast);
-    __Pyx_GIVEREF(__pyx_kp_s_ipv4_unicast);
-    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_ipv4_unicast);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":400
- *         writeLine(configFile, 4, 'family {')
- *         writeLine(configFile, 6, 'ipv4 unicast;')
- *         writeLine(configFile, 4, '}')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 4, 'api speaking {')
- *         writeLine(configFile, 6, 'processes [client];')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 400, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_5);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__27};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 400, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__27};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 400, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  {
-    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 400, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    if (__pyx_t_5) {
-      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __pyx_t_5 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_4);
-    __Pyx_GIVEREF(__pyx_int_4);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
-    __Pyx_INCREF(__pyx_kp_s__27);
-    __Pyx_GIVEREF(__pyx_kp_s__27);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s__27);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 400, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":401
- *         writeLine(configFile, 6, 'ipv4 unicast;')
- *         writeLine(configFile, 4, '}')
- *         writeLine(configFile, 4, 'api speaking {')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 6, 'processes [client];')
- *         writeLine(configFile, 6, 'neighbor-changes;')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 401, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_6)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_6);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_api_speaking};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 401, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_api_speaking};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 401, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-  } else
-  #endif
-  {
-    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 401, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    if (__pyx_t_6) {
-      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_4);
-    __Pyx_GIVEREF(__pyx_int_4);
-    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_4);
-    __Pyx_INCREF(__pyx_kp_s_api_speaking);
-    __Pyx_GIVEREF(__pyx_kp_s_api_speaking);
-    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_api_speaking);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 401, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
@@ -12134,11 +12182,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":402
- *         writeLine(configFile, 4, '}')
- *         writeLine(configFile, 4, 'api speaking {')
- *         writeLine(configFile, 6, 'processes [client];')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 6, 'neighbor-changes;')
- *         writeLine(configFile, 6, 'receive {')
+ *         writeLine(configFile, 2, 'encoder json;\n}\n')
+ * 
+ *         writeLine(configFile, 0, 'template {')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 2, 'neighbor router {')
+ *         writeLine(configFile, 4, 'family {')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 402, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12156,7 +12204,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_processes_client};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_template};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 402, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12164,7 +12212,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_processes_client};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s_template};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 402, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12179,12 +12227,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_6);
-    __Pyx_INCREF(__pyx_kp_s_processes_client);
-    __Pyx_GIVEREF(__pyx_kp_s_processes_client);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_processes_client);
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_GIVEREF(__pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_0);
+    __Pyx_INCREF(__pyx_kp_s_template);
+    __Pyx_GIVEREF(__pyx_kp_s_template);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_template);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 402, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -12193,11 +12241,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":403
- *         writeLine(configFile, 4, 'api speaking {')
- *         writeLine(configFile, 6, 'processes [client];')
- *         writeLine(configFile, 6, 'neighbor-changes;')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 6, 'receive {')
- *         writeLine(configFile, 8, 'parsed;')
+ * 
+ *         writeLine(configFile, 0, 'template {')
+ *         writeLine(configFile, 2, 'neighbor router {')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 4, 'family {')
+ *         writeLine(configFile, 6, 'ipv4 unicast;')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 403, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12215,7 +12263,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_neighbor_changes};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_neighbor_router};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 403, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12223,7 +12271,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_neighbor_changes};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_neighbor_router};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 403, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12238,12 +12286,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_6);
-    __Pyx_INCREF(__pyx_kp_s_neighbor_changes);
-    __Pyx_GIVEREF(__pyx_kp_s_neighbor_changes);
-    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_neighbor_changes);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_2);
+    __Pyx_INCREF(__pyx_kp_s_neighbor_router);
+    __Pyx_GIVEREF(__pyx_kp_s_neighbor_router);
+    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_neighbor_router);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 403, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -12252,11 +12300,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":404
- *         writeLine(configFile, 6, 'processes [client];')
- *         writeLine(configFile, 6, 'neighbor-changes;')
- *         writeLine(configFile, 6, 'receive {')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 8, 'parsed;')
- *         writeLine(configFile, 8, 'update;')
+ *         writeLine(configFile, 0, 'template {')
+ *         writeLine(configFile, 2, 'neighbor router {')
+ *         writeLine(configFile, 4, 'family {')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 6, 'ipv4 unicast;')
+ *         writeLine(configFile, 4, '}')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 404, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12274,7 +12322,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_receive};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_family};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 404, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12282,7 +12330,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_receive};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_family};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 404, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12297,12 +12345,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_6);
-    __Pyx_INCREF(__pyx_kp_s_receive);
-    __Pyx_GIVEREF(__pyx_kp_s_receive);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_receive);
+    __Pyx_INCREF(__pyx_int_4);
+    __Pyx_GIVEREF(__pyx_int_4);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
+    __Pyx_INCREF(__pyx_kp_s_family);
+    __Pyx_GIVEREF(__pyx_kp_s_family);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_family);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 404, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -12311,11 +12359,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":405
- *         writeLine(configFile, 6, 'neighbor-changes;')
- *         writeLine(configFile, 6, 'receive {')
- *         writeLine(configFile, 8, 'parsed;')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 8, 'update;')
- *         writeLine(configFile, 6, '}')
+ *         writeLine(configFile, 2, 'neighbor router {')
+ *         writeLine(configFile, 4, 'family {')
+ *         writeLine(configFile, 6, 'ipv4 unicast;')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 4, '}')
+ *         writeLine(configFile, 4, 'api speaking {')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 405, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12333,7 +12381,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_parsed};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_ipv4_unicast};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 405, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12341,7 +12389,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_parsed};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_ipv4_unicast};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 405, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12356,12 +12404,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_8);
-    __Pyx_GIVEREF(__pyx_int_8);
-    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_8);
-    __Pyx_INCREF(__pyx_kp_s_parsed);
-    __Pyx_GIVEREF(__pyx_kp_s_parsed);
-    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_parsed);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_6);
+    __Pyx_INCREF(__pyx_kp_s_ipv4_unicast);
+    __Pyx_GIVEREF(__pyx_kp_s_ipv4_unicast);
+    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_ipv4_unicast);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 405, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -12370,11 +12418,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":406
- *         writeLine(configFile, 6, 'receive {')
- *         writeLine(configFile, 8, 'parsed;')
- *         writeLine(configFile, 8, 'update;')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 6, '}')
- *         writeLine(configFile, 4, '}')
+ *         writeLine(configFile, 4, 'family {')
+ *         writeLine(configFile, 6, 'ipv4 unicast;')
+ *         writeLine(configFile, 4, '}')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 4, 'api speaking {')
+ *         writeLine(configFile, 6, 'processes [client];')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 406, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12392,7 +12440,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_update};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__22};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 406, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12400,7 +12448,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_update};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__22};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 406, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12415,12 +12463,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_8);
-    __Pyx_GIVEREF(__pyx_int_8);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_8);
-    __Pyx_INCREF(__pyx_kp_s_update);
-    __Pyx_GIVEREF(__pyx_kp_s_update);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_update);
+    __Pyx_INCREF(__pyx_int_4);
+    __Pyx_GIVEREF(__pyx_int_4);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
+    __Pyx_INCREF(__pyx_kp_s__22);
+    __Pyx_GIVEREF(__pyx_kp_s__22);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s__22);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 406, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -12429,11 +12477,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":407
- *         writeLine(configFile, 8, 'parsed;')
- *         writeLine(configFile, 8, 'update;')
- *         writeLine(configFile, 6, '}')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 6, 'ipv4 unicast;')
  *         writeLine(configFile, 4, '}')
- *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
+ *         writeLine(configFile, 4, 'api speaking {')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 6, 'processes [client];')
+ *         writeLine(configFile, 6, 'neighbor-changes;')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 407, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12451,7 +12499,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s__27};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_api_speaking};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 407, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12459,7 +12507,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s__27};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_api_speaking};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 407, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12474,12 +12522,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_6);
-    __Pyx_INCREF(__pyx_kp_s__27);
-    __Pyx_GIVEREF(__pyx_kp_s__27);
-    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s__27);
+    __Pyx_INCREF(__pyx_int_4);
+    __Pyx_GIVEREF(__pyx_int_4);
+    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_4);
+    __Pyx_INCREF(__pyx_kp_s_api_speaking);
+    __Pyx_GIVEREF(__pyx_kp_s_api_speaking);
+    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_api_speaking);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 407, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -12488,11 +12536,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":408
- *         writeLine(configFile, 8, 'update;')
- *         writeLine(configFile, 6, '}')
- *         writeLine(configFile, 4, '}')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
- *         writeLine(configFile, 4, 'manual-eor true;')
+ *         writeLine(configFile, 4, '}')
+ *         writeLine(configFile, 4, 'api speaking {')
+ *         writeLine(configFile, 6, 'processes [client];')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 6, 'neighbor-changes;')
+ *         writeLine(configFile, 6, 'receive {')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 408, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12510,7 +12558,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__27};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_processes_client};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 408, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12518,7 +12566,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__27};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_processes_client};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 408, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12533,12 +12581,12 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_4);
-    __Pyx_GIVEREF(__pyx_int_4);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
-    __Pyx_INCREF(__pyx_kp_s__27);
-    __Pyx_GIVEREF(__pyx_kp_s__27);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s__27);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_6);
+    __Pyx_INCREF(__pyx_kp_s_processes_client);
+    __Pyx_GIVEREF(__pyx_kp_s_processes_client);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_processes_client);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 408, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -12547,16 +12595,73 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":409
- *         writeLine(configFile, 6, '}')
- *         writeLine(configFile, 4, '}')
- *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 4, 'manual-eor true;')
- *         writeLine(configFile, 2, '}')
+ *         writeLine(configFile, 4, 'api speaking {')
+ *         writeLine(configFile, 6, 'processes [client];')
+ *         writeLine(configFile, 6, 'neighbor-changes;')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 6, 'receive {')
+ *         writeLine(configFile, 8, 'parsed;')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 409, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_local_as_s, __pyx_v_bgp->asn); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 409, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_6 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_6);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_neighbor_changes};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_neighbor_changes};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 409, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    if (__pyx_t_6) {
+      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_6);
+    __Pyx_INCREF(__pyx_kp_s_neighbor_changes);
+    __Pyx_GIVEREF(__pyx_kp_s_neighbor_changes);
+    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_neighbor_changes);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":410
+ *         writeLine(configFile, 6, 'processes [client];')
+ *         writeLine(configFile, 6, 'neighbor-changes;')
+ *         writeLine(configFile, 6, 'receive {')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 8, 'parsed;')
+ *         writeLine(configFile, 8, 'update;')
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 410, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_5 = NULL;
   __pyx_t_4 = 0;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
@@ -12571,96 +12676,35 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_t_6};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  } else
-  #endif
-  #if CYTHON_FAST_PYCCALL
-  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_t_6};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  } else
-  #endif
-  {
-    __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 409, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (__pyx_t_5) {
-      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
-    }
-    __Pyx_INCREF(__pyx_v_configFile);
-    __Pyx_GIVEREF(__pyx_v_configFile);
-    PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_4);
-    __Pyx_GIVEREF(__pyx_int_4);
-    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_4, __pyx_int_4);
-    __Pyx_GIVEREF(__pyx_t_6);
-    PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_4, __pyx_t_6);
-    __pyx_t_6 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "horse/router.pyx":410
- *         writeLine(configFile, 4, '}')
- *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
- *         writeLine(configFile, 4, 'manual-eor true;')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 2, '}')
- *         writeLine(configFile, 0, '}\n')
- */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = NULL;
-  __pyx_t_4 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_3);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #if CYTHON_FAST_PYCALL
-  if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_manual_eor_true};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_receive};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 410, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_manual_eor_true};
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s_receive};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 410, __pyx_L1_error)
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   {
     __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 410, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    if (__pyx_t_3) {
-      __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
+    if (__pyx_t_5) {
+      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __pyx_t_5 = NULL;
     }
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_4);
-    __Pyx_GIVEREF(__pyx_int_4);
-    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
-    __Pyx_INCREF(__pyx_kp_s_manual_eor_true);
-    __Pyx_GIVEREF(__pyx_kp_s_manual_eor_true);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_manual_eor_true);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_6);
+    __Pyx_INCREF(__pyx_kp_s_receive);
+    __Pyx_GIVEREF(__pyx_kp_s_receive);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_receive);
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 410, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -12669,11 +12713,11 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "horse/router.pyx":411
- *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
- *         writeLine(configFile, 4, 'manual-eor true;')
- *         writeLine(configFile, 2, '}')             # <<<<<<<<<<<<<<
- *         writeLine(configFile, 0, '}\n')
- * 
+ *         writeLine(configFile, 6, 'neighbor-changes;')
+ *         writeLine(configFile, 6, 'receive {')
+ *         writeLine(configFile, 8, 'parsed;')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 8, 'update;')
+ *         writeLine(configFile, 6, '}')
  */
   __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 411, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -12691,7 +12735,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s__27};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_parsed};
     __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 411, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
@@ -12699,42 +12743,282 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s__27};
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_parsed};
     __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 411, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   {
-    __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 411, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_6) {
-      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_6); __pyx_t_6 = NULL;
+      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_8);
+    __Pyx_GIVEREF(__pyx_int_8);
+    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_8);
+    __Pyx_INCREF(__pyx_kp_s_parsed);
+    __Pyx_GIVEREF(__pyx_kp_s_parsed);
+    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_parsed);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 411, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":412
+ *         writeLine(configFile, 6, 'receive {')
+ *         writeLine(configFile, 8, 'parsed;')
+ *         writeLine(configFile, 8, 'update;')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 6, '}')
+ *         writeLine(configFile, 4, '}')
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 412, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_5 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_update};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_8, __pyx_kp_s_update};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 412, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    if (__pyx_t_5) {
+      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __pyx_t_5 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_8);
+    __Pyx_GIVEREF(__pyx_int_8);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_8);
+    __Pyx_INCREF(__pyx_kp_s_update);
+    __Pyx_GIVEREF(__pyx_kp_s_update);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_update);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":413
+ *         writeLine(configFile, 8, 'parsed;')
+ *         writeLine(configFile, 8, 'update;')
+ *         writeLine(configFile, 6, '}')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 4, '}')
+ *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 413, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_6 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_6);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s__22};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 413, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_6, __pyx_kp_s__22};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 413, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 413, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    if (__pyx_t_6) {
+      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6); __pyx_t_6 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_5, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_int_6);
+    __Pyx_INCREF(__pyx_kp_s__22);
+    __Pyx_GIVEREF(__pyx_kp_s__22);
+    PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s__22);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 413, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":414
+ *         writeLine(configFile, 8, 'update;')
+ *         writeLine(configFile, 6, '}')
+ *         writeLine(configFile, 4, '}')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
+ *         writeLine(configFile, 4, 'manual-eor true;')
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 414, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_5 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__22};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s__22};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 414, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    if (__pyx_t_5) {
+      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __pyx_t_5 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_4);
+    __Pyx_GIVEREF(__pyx_int_4);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
+    __Pyx_INCREF(__pyx_kp_s__22);
+    __Pyx_GIVEREF(__pyx_kp_s__22);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s__22);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":415
+ *         writeLine(configFile, 6, '}')
+ *         writeLine(configFile, 4, '}')
+ *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 4, 'manual-eor true;')
+ *         writeLine(configFile, 2, '}')
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 415, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_local_as_s, __pyx_v_bgp->asn); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 415, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_5 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_t_6};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 415, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_4, __pyx_t_6};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 415, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  } else
+  #endif
+  {
+    __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 415, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__pyx_t_5) {
+      __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
     }
     __Pyx_INCREF(__pyx_v_configFile);
     __Pyx_GIVEREF(__pyx_v_configFile);
     PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_4, __pyx_v_configFile);
-    __Pyx_INCREF(__pyx_int_2);
-    __Pyx_GIVEREF(__pyx_int_2);
-    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_4, __pyx_int_2);
-    __Pyx_INCREF(__pyx_kp_s__27);
-    __Pyx_GIVEREF(__pyx_kp_s__27);
-    PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_4, __pyx_kp_s__27);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 411, __pyx_L1_error)
+    __Pyx_INCREF(__pyx_int_4);
+    __Pyx_GIVEREF(__pyx_int_4);
+    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_4, __pyx_int_4);
+    __Pyx_GIVEREF(__pyx_t_6);
+    PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_4, __pyx_t_6);
+    __pyx_t_6 = 0;
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 415, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":412
- *         writeLine(configFile, 4, 'manual-eor true;')
+  /* "horse/router.pyx":416
+ *         writeLine(configFile, 4, '}')
+ *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
+ *         writeLine(configFile, 4, 'manual-eor true;')             # <<<<<<<<<<<<<<
  *         writeLine(configFile, 2, '}')
- *         writeLine(configFile, 0, '}\n')             # <<<<<<<<<<<<<<
- * 
- *         for neighbor in bgp.neighbors:
+ *         writeLine(configFile, 0, '}\n')
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 412, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 416, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -12750,22 +13034,140 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__28};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_manual_eor_true};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 416, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__28};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_4, __pyx_kp_s_manual_eor_true};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 416, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_2);
   } else
   #endif
   {
-    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 412, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 416, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    if (__pyx_t_3) {
+      __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_4);
+    __Pyx_GIVEREF(__pyx_int_4);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_4);
+    __Pyx_INCREF(__pyx_kp_s_manual_eor_true);
+    __Pyx_GIVEREF(__pyx_kp_s_manual_eor_true);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s_manual_eor_true);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 416, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":417
+ *         writeLine(configFile, 4, 'local-as %s;' % bgp.asn)
+ *         writeLine(configFile, 4, 'manual-eor true;')
+ *         writeLine(configFile, 2, '}')             # <<<<<<<<<<<<<<
+ *         writeLine(configFile, 0, '}\n')
+ * 
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_6 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_6);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s__22};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s__22};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__pyx_t_6) {
+      __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_6); __pyx_t_6 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_configFile);
+    __Pyx_GIVEREF(__pyx_v_configFile);
+    PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_4, __pyx_v_configFile);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_4, __pyx_int_2);
+    __Pyx_INCREF(__pyx_kp_s__22);
+    __Pyx_GIVEREF(__pyx_kp_s__22);
+    PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_4, __pyx_kp_s__22);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "horse/router.pyx":418
+ *         writeLine(configFile, 4, 'manual-eor true;')
+ *         writeLine(configFile, 2, '}')
+ *         writeLine(configFile, 0, '}\n')             # <<<<<<<<<<<<<<
+ * 
+ *         for neighbor in bgp.neighbors:
+ */
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = NULL;
+  __pyx_t_4 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__23};
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 418, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
+    PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__23};
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 418, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_GOTREF(__pyx_t_2);
+  } else
+  #endif
+  {
+    __pyx_t_6 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 418, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -12776,17 +13178,17 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_GIVEREF(__pyx_int_0);
     PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_4, __pyx_int_0);
-    __Pyx_INCREF(__pyx_kp_s__28);
-    __Pyx_GIVEREF(__pyx_kp_s__28);
-    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s__28);
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+    __Pyx_INCREF(__pyx_kp_s__23);
+    __Pyx_GIVEREF(__pyx_kp_s__23);
+    PyTuple_SET_ITEM(__pyx_t_6, 2+__pyx_t_4, __pyx_kp_s__23);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 418, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":414
+  /* "horse/router.pyx":420
  *         writeLine(configFile, 0, '}\n')
  * 
  *         for neighbor in bgp.neighbors:             # <<<<<<<<<<<<<<
@@ -12797,26 +13199,26 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __pyx_t_2 = __pyx_v_bgp->neighbors; __Pyx_INCREF(__pyx_t_2); __pyx_t_7 = 0;
     __pyx_t_8 = NULL;
   } else {
-    __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_bgp->neighbors); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
+    __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_bgp->neighbors); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 420, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 414, __pyx_L1_error)
+    __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 420, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_8)) {
       if (likely(PyList_CheckExact(__pyx_t_2))) {
         if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 414, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 420, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 414, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 420, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       } else {
         if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 414, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 420, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 414, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 420, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       }
@@ -12826,7 +13228,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 414, __pyx_L1_error)
+          else __PYX_ERR(0, 420, __pyx_L1_error)
         }
         break;
       }
@@ -12835,18 +13237,18 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     __Pyx_XDECREF_SET(__pyx_v_neighbor, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":415
+    /* "horse/router.pyx":421
  * 
  *         for neighbor in bgp.neighbors:
  *             writeLine(configFile, 0, 'neighbor %s {' % neighbor.ip)             # <<<<<<<<<<<<<<
  *             writeLine(configFile, 2, 'inherit router;')
  *             writeLine(configFile, 2, 'peer-as %s;' % neighbor.asn)
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 415, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 421, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 415, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_ip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 421, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 415, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_neighbor_s, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 421, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -12864,7 +13266,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_t_5};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 415, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -12873,14 +13275,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_t_5};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 415, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else
     #endif
     {
-      __pyx_t_9 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 415, __pyx_L1_error)
+      __pyx_t_9 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       if (__pyx_t_3) {
         __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -12894,21 +13296,21 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_GIVEREF(__pyx_t_5);
       PyTuple_SET_ITEM(__pyx_t_9, 2+__pyx_t_4, __pyx_t_5);
       __pyx_t_5 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 415, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":416
+    /* "horse/router.pyx":422
  *         for neighbor in bgp.neighbors:
  *             writeLine(configFile, 0, 'neighbor %s {' % neighbor.ip)
  *             writeLine(configFile, 2, 'inherit router;')             # <<<<<<<<<<<<<<
  *             writeLine(configFile, 2, 'peer-as %s;' % neighbor.asn)
  *             writeLine(configFile, 2, 'router-id %s;' % bgp.router_id)
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 416, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 422, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_9 = NULL;
     __pyx_t_4 = 0;
@@ -12925,7 +13327,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_9, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_inherit_router};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 416, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_GOTREF(__pyx_t_1);
     } else
@@ -12933,13 +13335,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_9, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_inherit_router};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 416, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_GOTREF(__pyx_t_1);
     } else
     #endif
     {
-      __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 416, __pyx_L1_error)
+      __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       if (__pyx_t_9) {
         __Pyx_GIVEREF(__pyx_t_9); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_9); __pyx_t_9 = NULL;
@@ -12953,25 +13355,25 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_INCREF(__pyx_kp_s_inherit_router);
       __Pyx_GIVEREF(__pyx_kp_s_inherit_router);
       PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_kp_s_inherit_router);
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 416, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":417
+    /* "horse/router.pyx":423
  *             writeLine(configFile, 0, 'neighbor %s {' % neighbor.ip)
  *             writeLine(configFile, 2, 'inherit router;')
  *             writeLine(configFile, 2, 'peer-as %s;' % neighbor.asn)             # <<<<<<<<<<<<<<
  *             writeLine(configFile, 2, 'router-id %s;' % bgp.router_id)
  *             writeLine(configFile, 2, 'local-address %s;' % neighbor.local_ip)
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 423, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_asn); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_asn); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 423, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_9 = __Pyx_PyString_Format(__pyx_kp_s_peer_as_s, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 417, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyString_Format(__pyx_kp_s_peer_as_s, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 423, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -12989,7 +13391,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_2, __pyx_t_9};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
@@ -12998,14 +13400,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_2, __pyx_t_9};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     } else
     #endif
     {
-      __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       if (__pyx_t_5) {
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -13019,23 +13421,23 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_GIVEREF(__pyx_t_9);
       PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_4, __pyx_t_9);
       __pyx_t_9 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":418
+    /* "horse/router.pyx":424
  *             writeLine(configFile, 2, 'inherit router;')
  *             writeLine(configFile, 2, 'peer-as %s;' % neighbor.asn)
  *             writeLine(configFile, 2, 'router-id %s;' % bgp.router_id)             # <<<<<<<<<<<<<<
  *             writeLine(configFile, 2, 'local-address %s;' % neighbor.local_ip)
  *             writeLine(configFile, 2, 'group-updates false;')
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 418, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 424, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_router_id_s, __pyx_v_bgp->router_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 418, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_router_id_s, __pyx_v_bgp->router_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 424, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_9 = NULL;
     __pyx_t_4 = 0;
@@ -13052,7 +13454,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_9, __pyx_v_configFile, __pyx_int_2, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -13061,14 +13463,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_9, __pyx_v_configFile, __pyx_int_2, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     {
-      __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       if (__pyx_t_9) {
         __Pyx_GIVEREF(__pyx_t_9); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_9); __pyx_t_9 = NULL;
@@ -13082,25 +13484,25 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":419
+    /* "horse/router.pyx":425
  *             writeLine(configFile, 2, 'peer-as %s;' % neighbor.asn)
  *             writeLine(configFile, 2, 'router-id %s;' % bgp.router_id)
  *             writeLine(configFile, 2, 'local-address %s;' % neighbor.local_ip)             # <<<<<<<<<<<<<<
  *             writeLine(configFile, 2, 'group-updates false;')
  *             writeLine(configFile, 0, '}\n')
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 419, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 425, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_local_ip); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 419, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_neighbor, __pyx_n_s_local_ip); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 425, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_local_address_s, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 419, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_local_address_s, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 425, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -13118,7 +13520,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_2, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 425, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -13127,14 +13529,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_5, __pyx_v_configFile, __pyx_int_2, __pyx_t_3};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 425, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else
     #endif
     {
-      __pyx_t_9 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_9 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 425, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       if (__pyx_t_5) {
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -13148,21 +13550,21 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_9, 2+__pyx_t_4, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 425, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":420
+    /* "horse/router.pyx":426
  *             writeLine(configFile, 2, 'router-id %s;' % bgp.router_id)
  *             writeLine(configFile, 2, 'local-address %s;' % neighbor.local_ip)
  *             writeLine(configFile, 2, 'group-updates false;')             # <<<<<<<<<<<<<<
  *             writeLine(configFile, 0, '}\n')
  * 
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 420, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 426, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_9 = NULL;
     __pyx_t_4 = 0;
@@ -13179,7 +13581,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_9, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_group_updates_false};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 426, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_GOTREF(__pyx_t_1);
     } else
@@ -13187,13 +13589,13 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_9, __pyx_v_configFile, __pyx_int_2, __pyx_kp_s_group_updates_false};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 426, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_GOTREF(__pyx_t_1);
     } else
     #endif
     {
-      __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 426, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       if (__pyx_t_9) {
         __Pyx_GIVEREF(__pyx_t_9); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_9); __pyx_t_9 = NULL;
@@ -13207,21 +13609,21 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_INCREF(__pyx_kp_s_group_updates_false);
       __Pyx_GIVEREF(__pyx_kp_s_group_updates_false);
       PyTuple_SET_ITEM(__pyx_t_3, 2+__pyx_t_4, __pyx_kp_s_group_updates_false);
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 426, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":421
+    /* "horse/router.pyx":427
  *             writeLine(configFile, 2, 'local-address %s;' % neighbor.local_ip)
  *             writeLine(configFile, 2, 'group-updates false;')
  *             writeLine(configFile, 0, '}\n')             # <<<<<<<<<<<<<<
  * 
  *         configFile.close()
  */
-    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 421, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_writeLine); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 427, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_3 = NULL;
     __pyx_t_4 = 0;
@@ -13237,22 +13639,22 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     }
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
-      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__28};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__23};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 427, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_1);
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
-      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__28};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
+      PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_configFile, __pyx_int_0, __pyx_kp_s__23};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 427, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_1);
     } else
     #endif
     {
-      __pyx_t_9 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 421, __pyx_L1_error)
+      __pyx_t_9 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 427, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       if (__pyx_t_3) {
         __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -13263,17 +13665,17 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
       __Pyx_INCREF(__pyx_int_0);
       __Pyx_GIVEREF(__pyx_int_0);
       PyTuple_SET_ITEM(__pyx_t_9, 1+__pyx_t_4, __pyx_int_0);
-      __Pyx_INCREF(__pyx_kp_s__28);
-      __Pyx_GIVEREF(__pyx_kp_s__28);
-      PyTuple_SET_ITEM(__pyx_t_9, 2+__pyx_t_4, __pyx_kp_s__28);
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
+      __Pyx_INCREF(__pyx_kp_s__23);
+      __Pyx_GIVEREF(__pyx_kp_s__23);
+      PyTuple_SET_ITEM(__pyx_t_9, 2+__pyx_t_4, __pyx_kp_s__23);
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 427, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "horse/router.pyx":414
+    /* "horse/router.pyx":420
  *         writeLine(configFile, 0, '}\n')
  * 
  *         for neighbor in bgp.neighbors:             # <<<<<<<<<<<<<<
@@ -13283,14 +13685,14 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":423
+  /* "horse/router.pyx":429
  *             writeLine(configFile, 0, '}\n')
  * 
  *         configFile.close()             # <<<<<<<<<<<<<<
  * 
  *     def add_ip(self, ip):
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_close); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_configFile, __pyx_n_s_close); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 429, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_6 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -13303,16 +13705,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
     }
   }
   if (__pyx_t_6) {
-    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 423, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 429, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   } else {
-    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 423, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 429, __pyx_L1_error)
   }
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "horse/router.pyx":389
+  /* "horse/router.pyx":395
  * 
  * 
  *     def generateExaBGPconfig(self, BGP bgp):             # <<<<<<<<<<<<<<
@@ -13340,7 +13742,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_4generateExaBGPconfig(st
   return __pyx_r;
 }
 
-/* "horse/router.pyx":425
+/* "horse/router.pyx":431
  *         configFile.close()
  * 
  *     def add_ip(self, ip):             # <<<<<<<<<<<<<<
@@ -13367,16 +13769,16 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_6add_ip(struct __pyx_obj
   char *__pyx_t_1;
   __Pyx_RefNannySetupContext("add_ip", 0);
 
-  /* "horse/router.pyx":426
+  /* "horse/router.pyx":432
  * 
  *     def add_ip(self, ip):
  *         exabgp_daemon_add_port_ip(self._exa_ptr, ip)             # <<<<<<<<<<<<<<
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_AsWritableString(__pyx_v_ip); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 426, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_AsWritableString(__pyx_v_ip); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 432, __pyx_L1_error)
   exabgp_daemon_add_port_ip(__pyx_v_self->_exa_ptr, __pyx_t_1);
 
-  /* "horse/router.pyx":425
+  /* "horse/router.pyx":431
  *         configFile.close()
  * 
  *     def add_ip(self, ip):             # <<<<<<<<<<<<<<
@@ -13427,7 +13829,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_8__reduce_cython__(CYTHO
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__29, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__24, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -13480,7 +13882,7 @@ static PyObject *__pyx_pf_5horse_6router_12ExaBGPDaemon_10__setstate_cython__(CY
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__30, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__25, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -13659,15 +14061,93 @@ static PyTypeObject __pyx_type_5horse_6router_Daemon = {
   0, /*tp_finalize*/
   #endif
 };
+static struct __pyx_vtabstruct_5horse_6router_QuaggaDaemon __pyx_vtable_5horse_6router_QuaggaDaemon;
 
 static PyObject *__pyx_tp_new_5horse_6router_QuaggaDaemon(PyTypeObject *t, PyObject *a, PyObject *k) {
+  struct __pyx_obj_5horse_6router_QuaggaDaemon *p;
   PyObject *o = __pyx_tp_new_5horse_6router_Daemon(t, a, k);
   if (unlikely(!o)) return 0;
+  p = ((struct __pyx_obj_5horse_6router_QuaggaDaemon *)o);
+  p->__pyx_vtab = __pyx_vtabptr_5horse_6router_QuaggaDaemon;
+  p->zebraConfFile = Py_None; Py_INCREF(Py_None);
+  p->bgpd_conf = Py_None; Py_INCREF(Py_None);
+  p->ospfd_conf = Py_None; Py_INCREF(Py_None);
+  p->ospf6d_conf = Py_None; Py_INCREF(Py_None);
+  p->ripd_conf = Py_None; Py_INCREF(Py_None);
+  p->ripngd_conf = Py_None; Py_INCREF(Py_None);
   if (unlikely(__pyx_pw_5horse_6router_12QuaggaDaemon_1__cinit__(o, a, k) < 0)) goto bad;
   return o;
   bad:
   Py_DECREF(o); o = 0;
   return NULL;
+}
+
+static void __pyx_tp_dealloc_5horse_6router_QuaggaDaemon(PyObject *o) {
+  struct __pyx_obj_5horse_6router_QuaggaDaemon *p = (struct __pyx_obj_5horse_6router_QuaggaDaemon *)o;
+  #if CYTHON_USE_TP_FINALIZE
+  if (unlikely(PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE) && Py_TYPE(o)->tp_finalize) && !_PyGC_FINALIZED(o)) {
+    if (PyObject_CallFinalizerFromDealloc(o)) return;
+  }
+  #endif
+  PyObject_GC_UnTrack(o);
+  Py_CLEAR(p->zebraConfFile);
+  Py_CLEAR(p->bgpd_conf);
+  Py_CLEAR(p->ospfd_conf);
+  Py_CLEAR(p->ospf6d_conf);
+  Py_CLEAR(p->ripd_conf);
+  Py_CLEAR(p->ripngd_conf);
+  PyObject_GC_Track(o);
+  __pyx_tp_dealloc_5horse_6router_Daemon(o);
+}
+
+static int __pyx_tp_traverse_5horse_6router_QuaggaDaemon(PyObject *o, visitproc v, void *a) {
+  int e;
+  struct __pyx_obj_5horse_6router_QuaggaDaemon *p = (struct __pyx_obj_5horse_6router_QuaggaDaemon *)o;
+  e = __pyx_tp_traverse_5horse_6router_Daemon(o, v, a); if (e) return e;
+  if (p->zebraConfFile) {
+    e = (*v)(p->zebraConfFile, a); if (e) return e;
+  }
+  if (p->bgpd_conf) {
+    e = (*v)(p->bgpd_conf, a); if (e) return e;
+  }
+  if (p->ospfd_conf) {
+    e = (*v)(p->ospfd_conf, a); if (e) return e;
+  }
+  if (p->ospf6d_conf) {
+    e = (*v)(p->ospf6d_conf, a); if (e) return e;
+  }
+  if (p->ripd_conf) {
+    e = (*v)(p->ripd_conf, a); if (e) return e;
+  }
+  if (p->ripngd_conf) {
+    e = (*v)(p->ripngd_conf, a); if (e) return e;
+  }
+  return 0;
+}
+
+static int __pyx_tp_clear_5horse_6router_QuaggaDaemon(PyObject *o) {
+  PyObject* tmp;
+  struct __pyx_obj_5horse_6router_QuaggaDaemon *p = (struct __pyx_obj_5horse_6router_QuaggaDaemon *)o;
+  __pyx_tp_clear_5horse_6router_Daemon(o);
+  tmp = ((PyObject*)p->zebraConfFile);
+  p->zebraConfFile = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->bgpd_conf);
+  p->bgpd_conf = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->ospfd_conf);
+  p->ospfd_conf = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->ospf6d_conf);
+  p->ospf6d_conf = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->ripd_conf);
+  p->ripd_conf = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->ripngd_conf);
+  p->ripngd_conf = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  return 0;
 }
 
 static PyMethodDef __pyx_methods_5horse_6router_QuaggaDaemon[] = {
@@ -13684,7 +14164,7 @@ static PyTypeObject __pyx_type_5horse_6router_QuaggaDaemon = {
   "horse.router.QuaggaDaemon", /*tp_name*/
   sizeof(struct __pyx_obj_5horse_6router_QuaggaDaemon), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_5horse_6router_Daemon, /*tp_dealloc*/
+  __pyx_tp_dealloc_5horse_6router_QuaggaDaemon, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -13706,8 +14186,8 @@ static PyTypeObject __pyx_type_5horse_6router_QuaggaDaemon = {
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
   0, /*tp_doc*/
-  __pyx_tp_traverse_5horse_6router_Daemon, /*tp_traverse*/
-  __pyx_tp_clear_5horse_6router_Daemon, /*tp_clear*/
+  __pyx_tp_traverse_5horse_6router_QuaggaDaemon, /*tp_traverse*/
+  __pyx_tp_clear_5horse_6router_QuaggaDaemon, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
@@ -13890,6 +14370,7 @@ static PyObject *__pyx_tp_new_5horse_6router_BGPNeighbor(PyTypeObject *t, PyObje
   p->filter_list = Py_None; Py_INCREF(Py_None);
   p->route_map = Py_None; Py_INCREF(Py_None);
   p->route_reflector_client = Py_None; Py_INCREF(Py_None);
+  p->port = Py_None; Py_INCREF(Py_None);
   if (unlikely(__pyx_pw_5horse_6router_11BGPNeighbor_1__cinit__(o, a, k) < 0)) goto bad;
   return o;
   bad:
@@ -13917,6 +14398,7 @@ static void __pyx_tp_dealloc_5horse_6router_BGPNeighbor(PyObject *o) {
   Py_CLEAR(p->filter_list);
   Py_CLEAR(p->route_map);
   Py_CLEAR(p->route_reflector_client);
+  Py_CLEAR(p->port);
   (*Py_TYPE(o)->tp_free)(o);
 }
 
@@ -13958,6 +14440,9 @@ static int __pyx_tp_traverse_5horse_6router_BGPNeighbor(PyObject *o, visitproc v
   }
   if (p->route_reflector_client) {
     e = (*v)(p->route_reflector_client, a); if (e) return e;
+  }
+  if (p->port) {
+    e = (*v)(p->port, a); if (e) return e;
   }
   return 0;
 }
@@ -14001,6 +14486,9 @@ static int __pyx_tp_clear_5horse_6router_BGPNeighbor(PyObject *o) {
   tmp = ((PyObject*)p->route_reflector_client);
   p->route_reflector_client = Py_None; Py_INCREF(Py_None);
   Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->port);
+  p->port = Py_None; Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
   return 0;
 }
 
@@ -14016,6 +14504,10 @@ static PyObject *__pyx_getprop_5horse_6router_11BGPNeighbor_local_ip(PyObject *o
   return __pyx_pw_5horse_6router_11BGPNeighbor_8local_ip_1__get__(o);
 }
 
+static PyObject *__pyx_getprop_5horse_6router_11BGPNeighbor_port(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_5horse_6router_11BGPNeighbor_4port_1__get__(o);
+}
+
 static PyMethodDef __pyx_methods_5horse_6router_BGPNeighbor[] = {
   {"neighbor_to_dict", (PyCFunction)__pyx_pw_5horse_6router_11BGPNeighbor_3neighbor_to_dict, METH_NOARGS, 0},
   {"__reduce_cython__", (PyCFunction)__pyx_pw_5horse_6router_11BGPNeighbor_5__reduce_cython__, METH_NOARGS, 0},
@@ -14027,6 +14519,7 @@ static struct PyGetSetDef __pyx_getsets_5horse_6router_BGPNeighbor[] = {
   {(char *)"asn", __pyx_getprop_5horse_6router_11BGPNeighbor_asn, 0, (char *)0, 0},
   {(char *)"ip", __pyx_getprop_5horse_6router_11BGPNeighbor_ip, 0, (char *)0, 0},
   {(char *)"local_ip", __pyx_getprop_5horse_6router_11BGPNeighbor_local_ip, 0, (char *)0, 0},
+  {(char *)"port", __pyx_getprop_5horse_6router_11BGPNeighbor_port, 0, (char *)0, 0},
   {0, 0, 0, 0, 0}
 };
 
@@ -14386,21 +14879,19 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_RSTATIC, __pyx_k_RSTATIC, sizeof(__pyx_k_RSTATIC), 0, 0, 1, 1},
   {&__pyx_n_s_Router, __pyx_k_Router, sizeof(__pyx_k_Router), 0, 0, 1, 1},
   {&__pyx_n_s_TypeError, __pyx_k_TypeError, sizeof(__pyx_k_TypeError), 0, 0, 1, 1},
-  {&__pyx_kp_s__13, __pyx_k__13, sizeof(__pyx_k__13), 0, 0, 1, 0},
+  {&__pyx_kp_s__12, __pyx_k__12, sizeof(__pyx_k__12), 0, 0, 1, 0},
   {&__pyx_kp_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 0},
-  {&__pyx_kp_s__27, __pyx_k__27, sizeof(__pyx_k__27), 0, 0, 1, 0},
-  {&__pyx_kp_s__28, __pyx_k__28, sizeof(__pyx_k__28), 0, 0, 1, 0},
+  {&__pyx_kp_s__22, __pyx_k__22, sizeof(__pyx_k__22), 0, 0, 1, 0},
+  {&__pyx_kp_s__23, __pyx_k__23, sizeof(__pyx_k__23), 0, 0, 1, 0},
+  {&__pyx_n_s__26, __pyx_k__26, sizeof(__pyx_k__26), 0, 0, 1, 1},
   {&__pyx_kp_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 0},
-  {&__pyx_n_s__31, __pyx_k__31, sizeof(__pyx_k__31), 0, 0, 1, 1},
   {&__pyx_n_s_add_advertised_prefix, __pyx_k_add_advertised_prefix, sizeof(__pyx_k_add_advertised_prefix), 0, 0, 1, 1},
   {&__pyx_n_s_add_ip, __pyx_k_add_ip, sizeof(__pyx_k_add_ip), 0, 0, 1, 1},
   {&__pyx_n_s_add_neighbor, __pyx_k_add_neighbor, sizeof(__pyx_k_add_neighbor), 0, 0, 1, 1},
-  {&__pyx_n_s_address, __pyx_k_address, sizeof(__pyx_k_address), 0, 0, 1, 1},
   {&__pyx_n_s_allowas_in, __pyx_k_allowas_in, sizeof(__pyx_k_allowas_in), 0, 0, 1, 1},
   {&__pyx_n_s_always_compare_med, __pyx_k_always_compare_med, sizeof(__pyx_k_always_compare_med), 0, 0, 1, 1},
   {&__pyx_kp_s_api_speaking, __pyx_k_api_speaking, sizeof(__pyx_k_api_speaking), 0, 0, 1, 0},
   {&__pyx_n_s_append, __pyx_k_append, sizeof(__pyx_k_append), 0, 0, 1, 1},
-  {&__pyx_n_s_as, __pyx_k_as, sizeof(__pyx_k_as), 0, 0, 1, 1},
   {&__pyx_n_s_as_path, __pyx_k_as_path, sizeof(__pyx_k_as_path), 0, 0, 1, 1},
   {&__pyx_n_s_asn, __pyx_k_asn, sizeof(__pyx_k_asn), 0, 0, 1, 1},
   {&__pyx_kp_s_bgp_bestpath_as_path_multipath, __pyx_k_bgp_bestpath_as_path_multipath, sizeof(__pyx_k_bgp_bestpath_as_path_multipath), 0, 0, 1, 0},
@@ -14454,6 +14945,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_isfile, __pyx_k_isfile, sizeof(__pyx_k_isfile), 0, 0, 1, 1},
   {&__pyx_n_s_itervalues, __pyx_k_itervalues, sizeof(__pyx_k_itervalues), 0, 0, 1, 1},
   {&__pyx_n_s_json, __pyx_k_json, sizeof(__pyx_k_json), 0, 0, 1, 1},
+  {&__pyx_n_s_kwargs, __pyx_k_kwargs, sizeof(__pyx_k_kwargs), 0, 0, 1, 1},
   {&__pyx_n_s_line, __pyx_k_line, sizeof(__pyx_k_line), 0, 0, 1, 1},
   {&__pyx_kp_s_local_address_0_9_0_9_3, __pyx_k_local_address_0_9_0_9_3, sizeof(__pyx_k_local_address_0_9_0_9_3), 0, 0, 1, 0},
   {&__pyx_kp_s_local_address_s, __pyx_k_local_address_s, sizeof(__pyx_k_local_address_s), 0, 0, 1, 0},
@@ -14534,7 +15026,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_router_id, __pyx_k_router_id, sizeof(__pyx_k_router_id), 0, 0, 1, 1},
   {&__pyx_kp_s_router_id_0_9_0_9_3, __pyx_k_router_id_0_9_0_9_3, sizeof(__pyx_k_router_id_0_9_0_9_3), 0, 0, 1, 0},
   {&__pyx_kp_s_router_id_s, __pyx_k_router_id_s, sizeof(__pyx_k_router_id_s), 0, 0, 1, 0},
-  {&__pyx_n_s_routes, __pyx_k_routes, sizeof(__pyx_k_routes), 0, 0, 1, 1},
   {&__pyx_n_s_runDir, __pyx_k_runDir, sizeof(__pyx_k_runDir), 0, 0, 1, 1},
   {&__pyx_kp_s_run_usr_bin_python_home_vagrant, __pyx_k_run_usr_bin_python_home_vagrant, sizeof(__pyx_k_run_usr_bin_python_home_vagrant), 0, 0, 1, 0},
   {&__pyx_kp_s_s_bgpd_s_conf, __pyx_k_s_bgpd_s_conf, sizeof(__pyx_k_s_bgpd_s_conf), 0, 0, 1, 0},
@@ -14548,7 +15039,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_sys, __pyx_k_sys, sizeof(__pyx_k_sys), 0, 0, 1, 1},
   {&__pyx_kp_s_template, __pyx_k_template, sizeof(__pyx_k_template), 0, 0, 1, 0},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
-  {&__pyx_kp_s_tmp, __pyx_k_tmp, sizeof(__pyx_k_tmp), 0, 0, 1, 0},
   {&__pyx_kp_s_update, __pyx_k_update, sizeof(__pyx_k_update), 0, 0, 1, 0},
   {&__pyx_n_s_value, __pyx_k_value, sizeof(__pyx_k_value), 0, 0, 1, 1},
   {&__pyx_n_s_w, __pyx_k_w, sizeof(__pyx_k_w), 0, 0, 1, 1},
@@ -14556,20 +15046,19 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_write, __pyx_k_write, sizeof(__pyx_k_write), 0, 0, 1, 1},
   {&__pyx_n_s_writeLine, __pyx_k_writeLine, sizeof(__pyx_k_writeLine), 0, 0, 1, 1},
   {&__pyx_n_s_write_auxiliary_config_file, __pyx_k_write_auxiliary_config_file, sizeof(__pyx_k_write_auxiliary_config_file), 0, 0, 1, 1},
-  {&__pyx_n_s_zebraConfFile, __pyx_k_zebraConfFile, sizeof(__pyx_k_zebraConfFile), 0, 0, 1, 1},
   {&__pyx_n_s_zebra_conf, __pyx_k_zebra_conf, sizeof(__pyx_k_zebra_conf), 0, 0, 1, 1},
-  {&__pyx_kp_s_zebra_s, __pyx_k_zebra_s, sizeof(__pyx_k_zebra_s), 0, 0, 1, 0},
+  {&__pyx_kp_s_zebra_s_conf, __pyx_k_zebra_s_conf, sizeof(__pyx_k_zebra_s_conf), 0, 0, 1, 0},
   {&__pyx_n_s_zip, __pyx_k_zip, sizeof(__pyx_k_zip), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 11, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
-  __pyx_builtin_file = __Pyx_GetBuiltinName(__pyx_n_s_file); if (!__pyx_builtin_file) __PYX_ERR(0, 167, __pyx_L1_error)
-  __pyx_builtin_super = __Pyx_GetBuiltinName(__pyx_n_s_super); if (!__pyx_builtin_super) __PYX_ERR(0, 228, __pyx_L1_error)
-  __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 264, __pyx_L1_error)
-  __pyx_builtin_max = __Pyx_GetBuiltinName(__pyx_n_s_max); if (!__pyx_builtin_max) __PYX_ERR(0, 357, __pyx_L1_error)
-  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 383, __pyx_L1_error)
+  __pyx_builtin_file = __Pyx_GetBuiltinName(__pyx_n_s_file); if (!__pyx_builtin_file) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_builtin_super = __Pyx_GetBuiltinName(__pyx_n_s_super); if (!__pyx_builtin_super) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 271, __pyx_L1_error)
+  __pyx_builtin_max = __Pyx_GetBuiltinName(__pyx_n_s_max); if (!__pyx_builtin_max) __PYX_ERR(0, 363, __pyx_L1_error)
+  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 389, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -14609,14 +15098,14 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "horse/router.pyx":167
+  /* "horse/router.pyx":171
  *         conf["relax"] = self.relax
  *         conf["allowas_in"] = self.allowas_in
  *         with file("%s/conf-bgp.%s" % (runDir, rname), "w") as f:             # <<<<<<<<<<<<<<
  *             json.dump(conf, f)
  * 
  */
-  __pyx_tuple__7 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_tuple__7 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
 
@@ -14658,71 +15147,16 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__11);
   __Pyx_GIVEREF(__pyx_tuple__11);
 
-  /* "horse/router.pyx":276
- *         writeLine(0, 'password %s' % 'horse')
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
- *         writeLine(0, 'debug bgp')             # <<<<<<<<<<<<<<
- *         writeLine(0, '!')
- *         writeLine(0, 'router bgp %s' % bgp.asn)
- */
-  __pyx_tuple__12 = PyTuple_Pack(2, __pyx_int_0, __pyx_kp_s_debug_bgp); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 276, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
-
-  /* "horse/router.pyx":277
- *         writeLine(0, 'log file %s/q_%s' % (self.runDir, self.namespace))
- *         writeLine(0, 'debug bgp')
- *         writeLine(0, '!')             # <<<<<<<<<<<<<<
- *         writeLine(0, 'router bgp %s' % bgp.asn)
- *         if bgp.router_id:
- */
-  __pyx_tuple__14 = PyTuple_Pack(2, __pyx_int_0, __pyx_kp_s__13); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
-  __Pyx_GIVEREF(__pyx_tuple__14);
-
-  /* "horse/router.pyx":282
- *             writeLine(1, 'bgp router-id %s' % bgp.router_id)
- *         if bgp.relax:
- *             writeLine(1, 'bgp bestpath as-path multipath-relax')             # <<<<<<<<<<<<<<
- * 
- *         # writeLine(1, 'timers bgp %s' % '3 9')
- */
-  __pyx_tuple__15 = PyTuple_Pack(2, __pyx_int_1, __pyx_kp_s_bgp_bestpath_as_path_multipath_r); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 282, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
-
-  /* "horse/router.pyx":287
- *         if bgp.maximum_paths:
- *             writeLine(1, 'maximum-paths %s' % bgp.maximum_paths)
- *         writeLine(1, '!')             # <<<<<<<<<<<<<<
- * 
- *         for neighbor in self.neighbors:
- */
-  __pyx_tuple__16 = PyTuple_Pack(2, __pyx_int_1, __pyx_kp_s__13); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 287, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-
-  /* "horse/router.pyx":296
- *             if 'port' in neighbor:
- *                 writeLine(1, 'neighbor %s port %s' % (neighbor['address'], neighbor['port']))
- *             writeLine(1, '!')             # <<<<<<<<<<<<<<
- * 
- *         for route in self.routes:
- */
-  __pyx_tuple__17 = PyTuple_Pack(2, __pyx_int_1, __pyx_kp_s__13); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 296, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__17);
-  __Pyx_GIVEREF(__pyx_tuple__17);
-
-  /* "horse/router.pyx":304
+  /* "horse/router.pyx":311
  *     def parse_bgpd_file(self):
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:             # <<<<<<<<<<<<<<
  *             conf = f.read()
  *             router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
  */
-  __pyx_tuple__18 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 304, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_tuple__13 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 311, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -14730,76 +15164,76 @@ static int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(1, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
+  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__14);
+  __Pyx_GIVEREF(__pyx_tuple__14);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__20);
-  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__15);
+  __Pyx_GIVEREF(__pyx_tuple__15);
 
-  /* "horse/router.pyx":375
+  /* "horse/router.pyx":381
  *             asys = re.findall( r'peer-as [0-9]*', conf)
  *             local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
  *             self.local_ips = [x[14:] for x in local_ips]             # <<<<<<<<<<<<<<
  *             # Router id is in the configuration
  *             if router_id and bgp.router_id == None:
  */
-  __pyx_slice__21 = PySlice_New(__pyx_int_14, Py_None, Py_None); if (unlikely(!__pyx_slice__21)) __PYX_ERR(0, 375, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__21);
-  __Pyx_GIVEREF(__pyx_slice__21);
+  __pyx_slice__16 = PySlice_New(__pyx_int_14, Py_None, Py_None); if (unlikely(!__pyx_slice__16)) __PYX_ERR(0, 381, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__16);
+  __Pyx_GIVEREF(__pyx_slice__16);
 
-  /* "horse/router.pyx":378
+  /* "horse/router.pyx":384
  *             # Router id is in the configuration
  *             if router_id and bgp.router_id == None:
  *                 bgp.router_id = router_id[0][10:]             # <<<<<<<<<<<<<<
  *             for ip in self.local_ips:
  *                 self.add_ip(ip)
  */
-  __pyx_slice__22 = PySlice_New(__pyx_int_10, Py_None, Py_None); if (unlikely(!__pyx_slice__22)) __PYX_ERR(0, 378, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__22);
-  __Pyx_GIVEREF(__pyx_slice__22);
+  __pyx_slice__17 = PySlice_New(__pyx_int_10, Py_None, Py_None); if (unlikely(!__pyx_slice__17)) __PYX_ERR(0, 384, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__17);
+  __Pyx_GIVEREF(__pyx_slice__17);
 
-  /* "horse/router.pyx":382
+  /* "horse/router.pyx":388
  *                 self.add_ip(ip)
  *             if asn:
  *                 bgp.asn = asn[0][9:]             # <<<<<<<<<<<<<<
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],
  */
-  __pyx_slice__23 = PySlice_New(__pyx_int_9, Py_None, Py_None); if (unlikely(!__pyx_slice__23)) __PYX_ERR(0, 382, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__23);
-  __Pyx_GIVEREF(__pyx_slice__23);
+  __pyx_slice__18 = PySlice_New(__pyx_int_9, Py_None, Py_None); if (unlikely(!__pyx_slice__18)) __PYX_ERR(0, 388, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__18);
+  __Pyx_GIVEREF(__pyx_slice__18);
 
-  /* "horse/router.pyx":384
+  /* "horse/router.pyx":390
  *                 bgp.asn = asn[0][9:]
  *             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
  *                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],             # <<<<<<<<<<<<<<
  *                                              local_ip = local_ip))
  *         return bgp
  */
-  __pyx_slice__24 = PySlice_New(__pyx_int_9, Py_None, Py_None); if (unlikely(!__pyx_slice__24)) __PYX_ERR(0, 384, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__24);
-  __Pyx_GIVEREF(__pyx_slice__24);
-  __pyx_slice__25 = PySlice_New(__pyx_int_8, Py_None, Py_None); if (unlikely(!__pyx_slice__25)) __PYX_ERR(0, 384, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__25);
-  __Pyx_GIVEREF(__pyx_slice__25);
+  __pyx_slice__19 = PySlice_New(__pyx_int_9, Py_None, Py_None); if (unlikely(!__pyx_slice__19)) __PYX_ERR(0, 390, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__19);
+  __Pyx_GIVEREF(__pyx_slice__19);
+  __pyx_slice__20 = PySlice_New(__pyx_int_8, Py_None, Py_None); if (unlikely(!__pyx_slice__20)) __PYX_ERR(0, 390, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__20);
+  __Pyx_GIVEREF(__pyx_slice__20);
 
-  /* "horse/router.pyx":367
+  /* "horse/router.pyx":373
  *     def parse_config_file(self):
  *         bgp = BGP()
  *         with file(self.config_file, "r") as f:             # <<<<<<<<<<<<<<
  *             conf = f.read()
  *             # neighbor = []
  */
-  __pyx_tuple__26 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__26);
-  __Pyx_GIVEREF(__pyx_tuple__26);
+  __pyx_tuple__21 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 373, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__21);
+  __Pyx_GIVEREF(__pyx_tuple__21);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -14807,18 +15241,18 @@ static int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(1, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__29);
-  __Pyx_GIVEREF(__pyx_tuple__29);
+  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__24);
+  __Pyx_GIVEREF(__pyx_tuple__24);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__30);
-  __Pyx_GIVEREF(__pyx_tuple__30);
+  __pyx_tuple__25 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__25);
+  __Pyx_GIVEREF(__pyx_tuple__25);
 
   /* "horse/router.pyx":9
  * import json
@@ -14827,10 +15261,10 @@ static int __Pyx_InitCachedConstants(void) {
  *     intentStr = ''
  *     for _ in range(0, indent):
  */
-  __pyx_tuple__32 = PyTuple_Pack(5, __pyx_n_s_configFile, __pyx_n_s_indent, __pyx_n_s_line, __pyx_n_s_intentStr, __pyx_n_s__31); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__32);
-  __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_horse_router_pyx, __pyx_n_s_writeLine, 9, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_tuple__27 = PyTuple_Pack(5, __pyx_n_s_configFile, __pyx_n_s_indent, __pyx_n_s_line, __pyx_n_s_intentStr, __pyx_n_s__26); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__27);
+  __Pyx_GIVEREF(__pyx_tuple__27);
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_horse_router_pyx, __pyx_n_s_writeLine, 9, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 9, __pyx_L1_error)
 
   /* "horse/router.pyx":15
  *     configFile.write('%s%s\n' % (intentStr, line))
@@ -14839,10 +15273,10 @@ static int __Pyx_InitCachedConstants(void) {
  *     for intfAttributesList in interfaces.itervalues():
  *         if not isinstance(intfAttributesList, list):
  */
-  __pyx_tuple__34 = PyTuple_Pack(3, __pyx_n_s_interfaces, __pyx_n_s_intfAttributesList, __pyx_n_s_intfAttributes); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 15, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__34);
-  __Pyx_GIVEREF(__pyx_tuple__34);
-  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_horse_router_pyx, __pyx_n_s_getRouterId, 15, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_tuple__29 = PyTuple_Pack(3, __pyx_n_s_interfaces, __pyx_n_s_intfAttributesList, __pyx_n_s_intfAttributes); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__29);
+  __Pyx_GIVEREF(__pyx_tuple__29);
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_horse_router_pyx, __pyx_n_s_getRouterId, 15, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -14903,34 +15337,37 @@ static int __Pyx_modinit_type_init_code(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_5horse_6router_Daemon) < 0) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_5horse_6router_Daemon) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
   __pyx_type_5horse_6router_Daemon.tp_print = 0;
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_5horse_6router_Daemon.tp_dictoffset && __pyx_type_5horse_6router_Daemon.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_5horse_6router_Daemon.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (PyObject_SetAttrString(__pyx_m, "Daemon", (PyObject *)&__pyx_type_5horse_6router_Daemon) < 0) __PYX_ERR(0, 191, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_Daemon) < 0) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (PyObject_SetAttrString(__pyx_m, "Daemon", (PyObject *)&__pyx_type_5horse_6router_Daemon) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_Daemon) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
   __pyx_ptype_5horse_6router_Daemon = &__pyx_type_5horse_6router_Daemon;
+  __pyx_vtabptr_5horse_6router_QuaggaDaemon = &__pyx_vtable_5horse_6router_QuaggaDaemon;
+  __pyx_vtable_5horse_6router_QuaggaDaemon.get_quagga_ptr = (struct quagga_daemon *(*)(struct __pyx_obj_5horse_6router_QuaggaDaemon *))__pyx_f_5horse_6router_12QuaggaDaemon_get_quagga_ptr;
   __pyx_type_5horse_6router_QuaggaDaemon.tp_base = __pyx_ptype_5horse_6router_Daemon;
-  if (PyType_Ready(&__pyx_type_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 220, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 224, __pyx_L1_error)
   __pyx_type_5horse_6router_QuaggaDaemon.tp_print = 0;
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_5horse_6router_QuaggaDaemon.tp_dictoffset && __pyx_type_5horse_6router_QuaggaDaemon.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_5horse_6router_QuaggaDaemon.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (PyObject_SetAttrString(__pyx_m, "QuaggaDaemon", (PyObject *)&__pyx_type_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 220, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 220, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_5horse_6router_QuaggaDaemon.tp_dict, __pyx_vtabptr_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 224, __pyx_L1_error)
+  if (PyObject_SetAttrString(__pyx_m, "QuaggaDaemon", (PyObject *)&__pyx_type_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 224, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_QuaggaDaemon) < 0) __PYX_ERR(0, 224, __pyx_L1_error)
   __pyx_ptype_5horse_6router_QuaggaDaemon = &__pyx_type_5horse_6router_QuaggaDaemon;
   __pyx_vtabptr_5horse_6router_ExaBGPDaemon = &__pyx_vtable_5horse_6router_ExaBGPDaemon;
   __pyx_vtable_5horse_6router_ExaBGPDaemon.get_exabgp_ptr = (struct exabgp_daemon *(*)(struct __pyx_obj_5horse_6router_ExaBGPDaemon *))__pyx_f_5horse_6router_12ExaBGPDaemon_get_exabgp_ptr;
   __pyx_type_5horse_6router_ExaBGPDaemon.tp_base = __pyx_ptype_5horse_6router_Daemon;
-  if (PyType_Ready(&__pyx_type_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 327, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 334, __pyx_L1_error)
   __pyx_type_5horse_6router_ExaBGPDaemon.tp_print = 0;
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_5horse_6router_ExaBGPDaemon.tp_dictoffset && __pyx_type_5horse_6router_ExaBGPDaemon.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_5horse_6router_ExaBGPDaemon.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (__Pyx_SetVtable(__pyx_type_5horse_6router_ExaBGPDaemon.tp_dict, __pyx_vtabptr_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 327, __pyx_L1_error)
-  if (PyObject_SetAttrString(__pyx_m, "ExaBGPDaemon", (PyObject *)&__pyx_type_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 327, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 327, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_5horse_6router_ExaBGPDaemon.tp_dict, __pyx_vtabptr_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 334, __pyx_L1_error)
+  if (PyObject_SetAttrString(__pyx_m, "ExaBGPDaemon", (PyObject *)&__pyx_type_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 334, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_ExaBGPDaemon) < 0) __PYX_ERR(0, 334, __pyx_L1_error)
   __pyx_ptype_5horse_6router_ExaBGPDaemon = &__pyx_type_5horse_6router_ExaBGPDaemon;
   if (PyType_Ready(&__pyx_type_5horse_6router_BGPNeighbor) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   __pyx_type_5horse_6router_BGPNeighbor.tp_print = 0;
@@ -14940,13 +15377,13 @@ static int __Pyx_modinit_type_init_code(void) {
   if (PyObject_SetAttrString(__pyx_m, "BGPNeighbor", (PyObject *)&__pyx_type_5horse_6router_BGPNeighbor) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_BGPNeighbor) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   __pyx_ptype_5horse_6router_BGPNeighbor = &__pyx_type_5horse_6router_BGPNeighbor;
-  if (PyType_Ready(&__pyx_type_5horse_6router_BGP) < 0) __PYX_ERR(0, 88, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_5horse_6router_BGP) < 0) __PYX_ERR(0, 92, __pyx_L1_error)
   __pyx_type_5horse_6router_BGP.tp_print = 0;
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_5horse_6router_BGP.tp_dictoffset && __pyx_type_5horse_6router_BGP.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_5horse_6router_BGP.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (PyObject_SetAttrString(__pyx_m, "BGP", (PyObject *)&__pyx_type_5horse_6router_BGP) < 0) __PYX_ERR(0, 88, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_BGP) < 0) __PYX_ERR(0, 88, __pyx_L1_error)
+  if (PyObject_SetAttrString(__pyx_m, "BGP", (PyObject *)&__pyx_type_5horse_6router_BGP) < 0) __PYX_ERR(0, 92, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5horse_6router_BGP) < 0) __PYX_ERR(0, 92, __pyx_L1_error)
   __pyx_ptype_5horse_6router_BGP = &__pyx_type_5horse_6router_BGP;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -15280,50 +15717,50 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_getRouterId, __pyx_t_1) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "horse/router.pyx":81
+  /* "horse/router.pyx":85
  * 
  * # Values for redistribute
  * RKERNEL = 1             # <<<<<<<<<<<<<<
  * RSTATIC = 2
  * RCONNECTED = 4
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RKERNEL, __pyx_int_1) < 0) __PYX_ERR(0, 81, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RKERNEL, __pyx_int_1) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
 
-  /* "horse/router.pyx":82
+  /* "horse/router.pyx":86
  * # Values for redistribute
  * RKERNEL = 1
  * RSTATIC = 2             # <<<<<<<<<<<<<<
  * RCONNECTED = 4
  * RRIB = 8
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RSTATIC, __pyx_int_2) < 0) __PYX_ERR(0, 82, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RSTATIC, __pyx_int_2) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
 
-  /* "horse/router.pyx":83
+  /* "horse/router.pyx":87
  * RKERNEL = 1
  * RSTATIC = 2
  * RCONNECTED = 4             # <<<<<<<<<<<<<<
  * RRIB = 8
  * ROSPF = 16
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RCONNECTED, __pyx_int_4) < 0) __PYX_ERR(0, 83, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RCONNECTED, __pyx_int_4) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
 
-  /* "horse/router.pyx":84
+  /* "horse/router.pyx":88
  * RSTATIC = 2
  * RCONNECTED = 4
  * RRIB = 8             # <<<<<<<<<<<<<<
  * ROSPF = 16
  * 
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RRIB, __pyx_int_8) < 0) __PYX_ERR(0, 84, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_RRIB, __pyx_int_8) < 0) __PYX_ERR(0, 88, __pyx_L1_error)
 
-  /* "horse/router.pyx":85
+  /* "horse/router.pyx":89
  * RCONNECTED = 4
  * RRIB = 8
  * ROSPF = 16             # <<<<<<<<<<<<<<
  * 
  * # This class serves as a configuration for the BGP protocol
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_ROSPF, __pyx_int_16) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_ROSPF, __pyx_int_16) < 0) __PYX_ERR(0, 89, __pyx_L1_error)
 
   /* "horse/router.pyx":1
  * cimport router             # <<<<<<<<<<<<<<
@@ -16573,6 +17010,27 @@ bad:
     return -1;
 }
 
+/* ArgTypeTest */
+        static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
+{
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    else if (exact) {
+        #if PY_MAJOR_VERSION == 2
+        if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
+        #endif
+    }
+    else {
+        if (likely(__Pyx_TypeCheck(obj, type))) return 1;
+    }
+    PyErr_Format(PyExc_TypeError,
+        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
+        name, type->tp_name, Py_TYPE(obj)->tp_name);
+    return 0;
+}
+
 /* PyObjectSetAttrStr */
         #if CYTHON_USE_TYPE_SLOTS
 static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr_name, PyObject* value) {
@@ -16586,11 +17044,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
     return PyObject_SetAttr(obj, attr_name, value);
 }
 #endif
-
-/* None */
-        static CYTHON_INLINE void __Pyx_RaiseUnboundLocalError(const char *varname) {
-    PyErr_Format(PyExc_UnboundLocalError, "local variable '%s' referenced before assignment", varname);
-}
 
 /* SliceObject */
         static CYTHON_INLINE PyObject* __Pyx_PyObject_GetSlice(PyObject* obj,
@@ -16687,27 +17140,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
         "'%.200s' object is unsliceable", Py_TYPE(obj)->tp_name);
 bad:
     return NULL;
-}
-
-/* ArgTypeTest */
-        static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
-{
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    else if (exact) {
-        #if PY_MAJOR_VERSION == 2
-        if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
-        #endif
-    }
-    else {
-        if (likely(__Pyx_TypeCheck(obj, type))) return 1;
-    }
-    PyErr_Format(PyExc_TypeError,
-        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
-        name, type->tp_name, Py_TYPE(obj)->tp_name);
-    return 0;
 }
 
 /* PyObject_GenericGetAttrNoDict */
