@@ -8,7 +8,7 @@
 #include <signal.h>
 #include <unistd.h> 
 
-static void start_quagga(struct routing_daemon *);
+static void start_quagga(struct routing_daemon *, char* router_id);
 static void stop_quagga(struct routing_daemon *);
 
 struct quagga_config {
@@ -51,7 +51,7 @@ quagga_daemon_new(char *namespace)
 }
 
 static void
-start_quagga(struct routing_daemon *r)
+start_quagga(struct routing_daemon *r, char * router_id)
 {
     struct quagga_daemon *d = (struct quagga_daemon*) r;
     char sock_location[MAX_NAMESPACE_ID+15];
@@ -81,7 +81,9 @@ start_quagga(struct routing_daemon *r)
         perror("Configuration for zebra not found. ");
         goto error;
     }
-
+    /* The observed pid of the process is the pid returned by netns_run + 1 
+     * Any case it would not be true? 
+     */ 
     if (d->config.bgpd_file != NULL) {
         char bgpd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(bgpd_pid_file, "/tmp/bgpd%s.pid", d->base.namespace);
@@ -93,27 +95,38 @@ start_quagga(struct routing_daemon *r)
     if (d->config.ospfd_file != NULL) {
         char ospfd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ospfd_pid_file, "/tmp/ospfd%s.pid", d->base.namespace);
-        d->ospfd_pid = netns_run(d->base.namespace, "ospfd -d -f %s -z %s -i %s",
-          d->config.ospfd_file, sock_location,  ospfd_pid_file) + 1;
+        d->ospfd_pid = netns_run(d->base.namespace,
+                                 "ospfd -d -f %s -z %s -i %s",
+                                d->config.ospfd_file, sock_location,  
+                                ospfd_pid_file) + 1;
     }
     if (d->config.ospf6d_file != NULL) {
         char ospf6d_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ospf6d_pid_file, "/tmp/ospf6d%s.pid", d->base.namespace);
-        d->ospf6d_pid = netns_run(d->base.namespace, "ospf6d -d -f %s -z %s -i %s",
-          d->config.ospf6d_file, sock_location,  ospf6d_pid_file) + 1;
+        d->ospf6d_pid = netns_run(d->base.namespace,
+                                  "ospf6d -d -f %s -z %s -i %s",
+                                d->config.ospf6d_file, sock_location,  
+                                ospf6d_pid_file) + 1;
     }
     if (d->config.ripd_file!= NULL) {
         char ripd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ripd_pid_file, "/tmp/ripd%s.pid", d->base.namespace);
-        d->ripd_pid = netns_run(d->base.namespace, "ripd -d -f %s -z %s -i %s",
-          d->config.ripd_file, sock_location,  ripd_pid_file) + 1;
+        d->ripd_pid = netns_run(d->base.namespace,
+                                "ripd -d -f %s -z %s -i %s",
+                                d->config.ripd_file, sock_location,  
+                                ripd_pid_file) + 1;
     }
     if (d->config.ripngd_file != NULL) {
         char ripngd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ripngd_pid_file, "/tmp/ripngd%s.pid", d->base.namespace);
-        d->ripngd_pid =  netns_run(d->base.namespace, "ripngd -d -f %s -z %s -i %s",
-          d->config.ripngd_file, sock_location,  ripngd_pid_file) + 1;
+        d->ripngd_pid =  netns_run(d->base.namespace,
+                                   "ripngd -d -f %s -z %s -i %s",
+                                    d->config.ripngd_file, sock_location, 
+                                    ripngd_pid_file) + 1;
     }
+
+    netns_run(d->base.namespace, "/home/vagrant/horse/horse_daemon %s",
+              router_id);
 
     /* TODO: Return an error code for the function */
     error:

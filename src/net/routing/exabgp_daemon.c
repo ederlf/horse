@@ -4,7 +4,7 @@
 #include <uthash/utarray.h>
 #include <unistd.h>
 
-static void start_exabgp(struct routing_daemon *);
+static void start_exabgp(struct routing_daemon *, char* router_id);
 static void stop_exabgp(struct routing_daemon *);
 
 struct exabgp_daemon {
@@ -27,30 +27,23 @@ exabgp_daemon_new(char *namespace)
 }
 
 static void
-start_exabgp(struct routing_daemon* r)
+start_exabgp(struct routing_daemon* r, char *router_id)
 {
+    UNUSED(router_id);
     char *buf;
     FILE *stream;
     size_t len;
     struct exabgp_daemon *d = (struct exabgp_daemon*) r;
     char **addr = NULL;
     stream = open_memstream(&buf, &len);
-    // char ip[INET_ADDRSTRLEN];
     fprintf(stream, "\" ");
     while ( (addr=(char**)utarray_next(d->ips, addr))) {
-        
-        // memset(ip, 0x0, INET_ADDRSTRLEN);
-        // char *p = strchr(*addr,'/');
-        // printf("Buf is %s\n", *addr);
-        // strncpy(ip, *addr, p - (*addr));
         fprintf(stream, "%s ", *addr);
 
     }
     fprintf(stream, "\"");
     fclose(stream);
     /* Start exabgp */
-    printf("%s\n", d->config_file);
-    printf("%s\n", buf);
     netns_launch(d->base.namespace, "env exabgp.daemon.daemonize=true "
           "exabgp.tcp.bind=%s "
           "exabgp.log.level=NOTICE "

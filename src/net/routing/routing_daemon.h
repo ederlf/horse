@@ -9,9 +9,9 @@ enum daemon_type {
 };
 
 struct routing_daemon {
-    enum daemon_type type;
+    enum daemon_type type; 
     char namespace[MAX_NAMESPACE_ID];
-    void (*start) (struct routing_daemon *);
+    void (*start) (struct routing_daemon*, char*);
     void (*stop) (struct routing_daemon*);
 };
 
