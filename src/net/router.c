@@ -85,10 +85,18 @@ router_set_intf_ipv4(struct router *r, uint32_t port_id,
 struct netflow* 
 router_recv_netflow(struct node *n, struct netflow *flow)
 {
+    uint16_t eth_type;
     struct router *r = (struct router*) n;
+    struct netflow* nf = NULL;
+    uint32_t in_port = flow->match.in_port;
+        struct port *p = router_port(r, in_port);
+        if (p != NULL) {
+            p->stats.rx_bytes += flow->byte_cnt;
+            p->stats.rx_packets += flow->pkt_cnt;
+    }
     /* L2 handling */
-    uint16_t eth_type = flow->match.eth_type;
-    struct netflow* nf = l2_recv_netflow(&r->ln, flow); 
+    eth_type = flow->match.eth_type;
+    nf = l2_recv_netflow(&r->ln, flow); 
     if (nf) {
         /*L3 handling */
         if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
@@ -141,7 +149,10 @@ router_start(struct router *r)
 void 
 router_start_daemon(struct router *r)
 {
-    r->daemon->start(r->daemon);
+    char router_id[INET_ADDRSTRLEN];
+    uint32_t ip = htonl(r->router_id);
+    get_ip_str(&ip, router_id, AF_INET);
+    r->daemon->start(r->daemon, router_id);
 }
 
 void 
@@ -168,6 +179,7 @@ static void fib_add(struct router *r, uint8_t *data, size_t len)
         else {
             port_id = 0;
         }
+        log_debug("Installing route to %x, %x, %x", addr, netmask, next_hop);
         struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
         memset(e, 0x0, sizeof(struct route_entry_v4));
         e->ip = addr & netmask;
@@ -192,9 +204,11 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
         }
         case BGP_ANNOUNCE:
         case BGP_ACTIVITY:{
+            printf("Received BGP_ACTIVITY\n");
             break;
         }
         case BGP_FIB: {
+            printf("GOT FIB %u\n", r->router_id);
             fib_add(r, data + HEADER_LEN, msg->size -  HEADER_LEN);
             break;
         }
