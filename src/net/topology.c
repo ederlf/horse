@@ -201,7 +201,7 @@ topology_datapath_by_dpid(const struct topology *topo, uint64_t dp_id)
 {
     struct dp_node *dn;
     HASH_FIND(hh, topo->dps, &dp_id, sizeof(uint64_t), dn);
-    return dn->dp;
+    return dn == NULL? NULL: dn->dp;
 }
 
 struct router*
@@ -209,7 +209,7 @@ topology_router_by_id(const struct topology *topo, uint32_t router_id)
 {
     struct router_node *rn;
     HASH_FIND(hh, topo->routers, &router_id, sizeof(uint32_t), rn);
-    return rn->rt;
+    return rn == NULL? NULL : rn->rt;
 }
 
 static
