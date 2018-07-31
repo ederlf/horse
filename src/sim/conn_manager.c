@@ -89,20 +89,22 @@ conn_manager_router_message_cb(struct bufferevent *bev, void *ctx)
             len = HEADER_LEN;
             memset(header, 0x0, 8);
             n = bufferevent_read(bev, header, len);
-            struct routing_msg *msg = (struct routing_msg*) header;
-            /* Message does not contain data */
-            if (ROUND_UP(ntohs(msg->size), 8) == HEADER_LEN){
-                uint8_t *data = xmalloc(len);
-                memcpy(data, header, HEADER_LEN);
-                uint64_t time = cm->sch->clock;
-                uint32_t router_id = ntohl(msg->router_id);
-                struct sim_event_fti *ev = sim_event_router_in_new(time, router_id,
-                                                                   c->id,data, 
-                                                                   msg->size);
-                scheduler_insert(cm->sch, (struct sim_event*) ev);
-            }
-            else if (ROUND_UP(ntohs(msg->size), 8) > HEADER_LEN){
-                pos += len;
+            if (n){
+                struct routing_msg *msg = (struct routing_msg*) header;
+                /* Message does not contain data */
+                if (ntohs(msg->size) == HEADER_LEN){
+                    uint8_t *data = xmalloc(len);
+                    memcpy(data, header, HEADER_LEN);
+                    uint64_t time = cm->sch->clock;
+                    uint32_t router_id = ntohl(msg->router_id);
+                    struct sim_event_fti *ev = sim_event_router_in_new(time, router_id,
+                                                                       c->id,data, 
+                                                                       msg->size);
+                    scheduler_insert(cm->sch, (struct sim_event*) ev);
+                }
+                else if (ROUND_UP(ntohs(msg->size), 8) > HEADER_LEN){
+                    pos += len;
+                }
             }
         }
         else {

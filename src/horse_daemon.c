@@ -314,14 +314,14 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
         
         if (nlh->nlmsg_type == RTM_NEWROUTE){
             if (destination) {
-                uint8_t msg_data[HEADER_LEN+12] = {0x0, BGP_FIB, 0x0, HEADER_LEN+12};
-                memcpy(msg_data+4, &dd->router_id,
-                       sizeof(uint32_t));
+                uint8_t msg_data[HEADER_LEN+16] = {0x0, BGP_FIB, 0x0, HEADER_LEN+12};
+                memcpy(msg_data+4, &dd->router_id, sizeof(uint32_t));
                 memcpy(msg_data + HEADER_LEN, &destination, sizeof(uint32_t));
                 memcpy(msg_data + 12, &netmask, sizeof(uint32_t));
                 memcpy(msg_data + 16, &next_hop, sizeof(uint32_t));
+                memset(msg_data + 20, 0x0, sizeof(uint32_t));
                 int ret = send(dd->server_fd, msg_data,
-                               HEADER_LEN+12, 0);
+                               HEADER_LEN+16, 0);
                 if (ret == -1){
                     perror("Failed to send message");
                 }
