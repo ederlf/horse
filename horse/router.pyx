@@ -114,7 +114,7 @@ cdef class BGP:
         self.cmp_med = always_compare_med
         self.redistribute = redistribute
         self.multiple_instances = multiple_instances
-        self.maximum_paths = 1
+        self.maximum_paths = maximum_paths
         self.relax = relax
         self.allowas_in = allowas_in
 
@@ -262,7 +262,8 @@ cdef class QuaggaDaemon(Daemon):
                 self.generateBgpd(bgp)
                 set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf)   
                 self.check_ecmp(bgp)
-
+                if bgp.router_id:
+                    self.router_id = bgp.router_id
 
     cdef quagga_daemon* get_quagga_ptr(self):
         return self._qd_ptr
