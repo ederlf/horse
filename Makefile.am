@@ -16,6 +16,9 @@ bin_PROGRAMS = main
 main_SOURCES = src/main.c
 main_LDADD = .libs/libhorse.la -lcfluid_base -loci -levent
 
+bin_PROGRAMS = horse_daemon
+main_SOURCES = src/horse_daemon.c 
+main_LDADD = -lpcap
 
 # Unit tests
 TESTS = flow_table_test scheduler_test instruction_test netflow_test
