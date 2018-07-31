@@ -24,6 +24,7 @@ struct quagga_daemon {
     struct routing_daemon base;
     struct quagga_config config;
     int sock_fd;
+    uint32_t router_id;
     pid_t zebra_pid;
     pid_t bgpd_pid;
     pid_t ospfd_pid;
@@ -53,8 +54,11 @@ quagga_daemon_new(char *namespace)
 static void
 start_quagga(struct routing_daemon *r, char * router_id)
 {
+    uint32_t rid;
     struct quagga_daemon *d = (struct quagga_daemon*) r;
     char sock_location[MAX_NAMESPACE_ID+15];
+    get_ip_net(router_id, &rid, AF_INET);
+    d->router_id = ntohl(rid);
     sprintf(sock_location, "/tmp/zebra%s.api", d->base.namespace);
     if (d->config.zebra_file != NULL) {
         struct sockaddr_un server;
@@ -139,10 +143,12 @@ stop_quagga(struct routing_daemon *r)
     struct quagga_daemon *d = (struct quagga_daemon*) r;
     close(d->sock_fd);
     if (d->zebra_pid){
-        kill(d->zebra_pid, SIGKILL);    
+        netns_run(NULL, "pkill -9 -F /tmp/zebra%s.pid", d->base.namespace);
+        // kill(d->zebra_pid, SIGKILL);    
     }
     if (d->bgpd_pid){
-        kill(d->bgpd_pid, SIGKILL);    
+        netns_run(NULL, "pkill -9 -F /tmp/bgpd%s.pid", d->base.namespace);
+        // kill(d->bgpd_pid, SIGKILL);    
     }
     if (d->ospfd_pid){
         kill(d->ospfd_pid, SIGKILL);    
@@ -156,6 +162,7 @@ stop_quagga(struct routing_daemon *r)
     if (d->ripngd_pid){
         kill(d->ripngd_pid, SIGKILL);    
     }
+    netns_run(NULL, "pkill -9 -F /tmp/daemon%u.pid", d->router_id);
     free(d->config.zebra_file);
     free(d->config.bgpd_file);
     free(d->config.ospfd_file);

@@ -33,7 +33,7 @@ struct pcap_data {
 #define BUFFER_SIZE 4095
 
 static 
-void daemonise(void) {
+void daemonise(uint32_t rid) {
     // Fork, allowing the parent process to terminate.
     pid_t pid = fork();
     if (pid == -1) {
@@ -53,6 +53,12 @@ void daemonise(void) {
     if (pid == -1) {
         fprintf(stderr, "failed to fork while daemonising (errno=%d)",errno);
     } else if (pid != 0) {
+        FILE *pid_file;
+        char rname[60];
+        sprintf(rname, "/tmp/daemon%u.pid", ntohl(rid));
+        pid_file = fopen(rname, "w");
+        fprintf(pid_file, "%u\n", pid);
+        fclose(pid_file);
         _exit(0);
     }
 
@@ -131,9 +137,6 @@ static void capture_cb(u_char *user,
     (void) h;
     uint8_t *tmp_pkt = (uint8_t*) packet;
     uint16_t eth_type = *((uint16_t*) (tmp_pkt+14));
-    char fname[40];
-    sprintf(fname, "/tmp/daemon%u.log", data->ddata.router_id);
-    FILE *f = fopen(fname, "a");
     if (ntohs(eth_type) == ETH_TYPE_IP){
         tmp_pkt += 16;
         struct ip_header *ip = (struct ip_header*) tmp_pkt;
@@ -165,7 +168,6 @@ static void capture_cb(u_char *user,
             }
         }
     }
-    fclose(f);
 }
 
 static void* capture(void* args)
@@ -282,34 +284,25 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
         /* Get the route atttibutes len */
         route_attribute_len = RTM_PAYLOAD(nlh);
         /* Loop through all attributes */
-        char fname[40];
-        sprintf(fname, "/tmp/daemon%u.log", dd->router_id);
-        FILE *f = fopen(fname, "a");
         for ( ; RTA_OK(route_attribute, route_attribute_len); \
             route_attribute = RTA_NEXT(route_attribute, route_attribute_len))
         {
             /* Get the destination address */
             if (route_attribute->rta_type == RTA_DST)
             {
-                // memcpy(RTA_DATA(route_attribute), )
                 destination = *(uint32_t*) RTA_DATA(route_attribute);
-                fprintf(f, "Destination %x\n", destination);
-                inet_ntop(AF_INET, RTA_DATA(route_attribute), \
-                        destination_address, sizeof(destination_address));
             }
             /* Get the gateway (Next hop) */
             if (route_attribute->rta_type == RTA_GATEWAY)
             {
                 next_hop = *(uint32_t*) RTA_DATA(route_attribute);
-                inet_ntop(AF_INET, RTA_DATA(route_attribute), \
-                        gateway_address, sizeof(gateway_address));
             }
         }
         /* TODO: Send all prefixes in a single message? */
         
         /* Now we can dump the routing attributes */
         if (nlh->nlmsg_type == RTM_DELROUTE)
-            fprintf(f, "Deleting route to destination --> %s/%d proto %d and gateway %s\n", \
+            fprintf(stderr, "Deleting route to destination --> %s/%d proto %d and gateway %s\n", \
                 destination_address, route_netmask, route_protocol, gateway_address);
         
         if (nlh->nlmsg_type == RTM_NEWROUTE){
@@ -326,10 +319,9 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
                     perror("Failed to send message");
                 }
             }
-            fprintf(f, "Adding route to destination --> %s/%d proto %d and gateway %s\n", \
+            fprintf(stderr, "Adding route to destination --> %s/%d proto %d and gateway %s\n", \
                                 destination_address, route_netmask, route_protocol, gateway_address);
         }
-        fclose(f);
     }
         
     return 0;
@@ -382,14 +374,8 @@ int main(int argc, char* argv[])
     inet_pton(AF_INET, argv[1], &router_id);
     inet_pton(AF_INET, "172.20.254.254", &server_ip);
     dd.router_id = router_id;
-    char fname[40];
-    sprintf(fname, "/tmp/daemon%u.log", router_id);
-    FILE *f = fopen(fname, "w");
-    fprintf(f, "Daemon started %u\n", router_id);
     dd.server_fd = client_connect(server_ip, 6000);
-    fprintf(f, "Daemon connected %u\n", router_id);
-    fclose(f);
-    daemonise();
+    daemonise(router_id);
     if (pthread_create(&pcap, NULL, capture, &dd) != 0) {
         perror("pthread_create() error");
         exit(1);
