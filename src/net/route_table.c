@@ -80,7 +80,7 @@ ipv4_lookup(const struct route_table *rt, uint32_t ip, uint32_t hash)
         UT_array *next_hops = node->data;
         size_t n = utarray_len(next_hops);
         unsigned index = hash % n;
-        log_info("Route chosen is %u From total %ld with hash %u", index, n, hash);
+        log_debug("Route chosen is %u From total %ld with hash %u", index, n, hash);
         return (struct route_entry_v4*) utarray_eltptr(next_hops, index);
     }
     return NULL;

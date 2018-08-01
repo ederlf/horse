@@ -142,6 +142,7 @@ router_start(struct router *r)
     /* Add internal port */
     gen_internal_ip(addr);
     setup_veth(rname, intf, intf2, addr, "16", "br0");
+    netns_run(rname, "ifconfig lo up");
     // set_intf_up(rname, "lo");
     return 0;
 }
@@ -204,11 +205,9 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
         }
         case BGP_ANNOUNCE:
         case BGP_ACTIVITY:{
-            printf("Received BGP_ACTIVITY\n");
             break;
         }
         case BGP_FIB: {
-            printf("GOT FIB %u\n", r->router_id);
             fib_add(r, data + HEADER_LEN, msg->size -  HEADER_LEN);
             break;
         }
