@@ -1,4 +1,4 @@
-from horse import *
+from horse.horse import *
 from random import randint
 import sys
 
@@ -47,8 +47,9 @@ time = 5000000
 for i, h in enumerate(hosts):
     for z in range(1, k):
       if z != i + 1:
+        # print "10.0.0.%s" % (z)
         h.ping("10.0.0.%s" % (z), time)
         time += 1000000
 end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000  
-sim = Sim(topo, ctrl_interval = 100000, end_time = end_time)
+sim = Sim(topo, ctrl_interval = 100000, end_time = end_time, log_level = LogLevels.LOG_INFO)
 sim.start()
