@@ -1,5 +1,6 @@
 #include "quagga_daemon.h"
 #include "lib/util.h"
+#include "lib/packets.h"
 #include <netemu/netns.h>
 #include <errno.h>
 #include <netinet/in.h> 
@@ -8,10 +9,18 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <signal.h>
-#include <unistd.h> 
+#include <unistd.h>
 
-static void start_quagga(struct routing_daemon *, char* router_id);
+static void send_ripd_cmd(char* namespace, char* cmd);
+static void send_ripngd_cmd(char* namespace, char* cmd);
+static void send_ospfd_cmd(char* namespace, char* cmd);
+static void send_bgpd_cmd(char* namespace, char* cmd);
+static void send_ospf6d_cmd(char* namespace, char* cmd);
+static void send_isisd_cmd(char* namespace, char* cmd);
+static void start_quagga(struct routing_daemon *, char* );
 static void stop_quagga(struct routing_daemon *);
+static void change_quagga_config(struct routing_daemon*, char *, uint8_t );
+
 
 struct quagga_config {
     char *zebra_file;
@@ -20,6 +29,7 @@ struct quagga_config {
     char *ripngd_file;
     char *ospfd_file;
     char *ospf6d_file;
+    char *isis_file;
 };
 
 struct quagga_daemon {
@@ -27,12 +37,6 @@ struct quagga_daemon {
     struct quagga_config config;
     int sock_fd;
     uint32_t router_id;
-    pid_t zebra_pid;
-    pid_t bgpd_pid;
-    pid_t ospfd_pid;
-    pid_t ospf6d_pid;
-    pid_t ripd_pid;
-    pid_t ripngd_pid;
 };
 
 struct quagga_daemon*
@@ -48,13 +52,15 @@ quagga_daemon_new(char *namespace)
     d->config.ripngd_file = NULL;
     d->config.ospfd_file = NULL;
     d->config.ospf6d_file = NULL;
+    d->config.isis_file = NULL;
     d->base.start = start_quagga;
     d->base.stop = stop_quagga;
+    d->base.change_config = change_quagga_config;
     return d;
 }
 
-int 
-quagga_daemon_send_bgpd_cmd(struct quagga_daemon* d, char* cmd)
+static int
+send_quagga_cmd(char *namespace, char* cmd, uint16_t port)
 {
     int sockfd, status;
     struct sockaddr_in sock;
@@ -67,33 +73,29 @@ quagga_daemon_send_bgpd_cmd(struct quagga_daemon* d, char* cmd)
     }
     if (pid != 0) {
         waitpid(pid, &status, 0);
-        printf("I returned\n");
         return WEXITSTATUS(status) == EXIT_SUCCESS ? pid : -1;
     }
 
-    if (netns_enter(d->base.namespace) != 0){
-        return -1;
+    if (netns_enter(namespace) != 0){
+        exit(-1);
     }
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0){
-        perror("opening stream socket when starting zebra");
+        perror("opening stream socket when trying to send quagga command");
         goto error;
     }
 
     inet_pton(AF_INET, "127.0.0.1", &sock.sin_addr);
     sock.sin_family = AF_INET;
-    sock.sin_port = htons( 2605 );
+    sock.sin_port = htons( port );
     if (connect(sockfd , (struct sockaddr *)&sock , sizeof(sock)) < 0){
         perror("connect failed. Error");
         goto error;
     }
-    else {
-        printf("Connected %s\n", d->base.namespace);
-    }
     int err = send(sockfd , cmd , strlen(cmd) , 0); 
     if(err   < 0){
-        printf("Send failed %s\n", strerror(errno));
+        fprintf(stderr, "Send failed %s\n", strerror(errno));
         goto error;
     }
     error:
@@ -101,6 +103,41 @@ quagga_daemon_send_bgpd_cmd(struct quagga_daemon* d, char* cmd)
     exit(0);
 }
 
+static void 
+send_ripd_cmd(char* namespace, char* cmd)
+{
+    send_quagga_cmd(namespace, cmd, 2602);
+}
+
+static void 
+send_ripngd_cmd(char* namespace, char* cmd)
+{
+    send_quagga_cmd(namespace, cmd, 2603);
+}
+
+static void 
+send_ospfd_cmd(char* namespace, char* cmd)
+{
+    send_quagga_cmd(namespace, cmd, 2604);
+}
+
+static void 
+send_bgpd_cmd(char* namespace, char* cmd)
+{
+    send_quagga_cmd(namespace, cmd, 2605);
+}
+
+static void 
+send_ospf6d_cmd(char* namespace, char* cmd)
+{
+    send_quagga_cmd(namespace, cmd, 2606);
+}
+
+static void 
+send_isisd_cmd(char* namespace, char* cmd)
+{
+    send_quagga_cmd(namespace, cmd, 2608);
+}
 
 static void
 start_quagga(struct routing_daemon *r, char * router_id)
@@ -115,10 +152,8 @@ start_quagga(struct routing_daemon *r, char * router_id)
         struct sockaddr_un server;
         char zebra_pid_file[MAX_NAMESPACE_ID+15];      
         sprintf(zebra_pid_file, "/tmp/zebra%s.pid", d->base.namespace);
-        d->zebra_pid = netns_run(d->base.namespace,
-                                    "zebra -d -f %s -z %s -i %s",
-                                    d->config.zebra_file, sock_location, 
-                                    zebra_pid_file) + 1;
+        netns_run(d->base.namespace,"zebra -d -f %s -z %s -i %s",
+                  d->config.zebra_file, sock_location, zebra_pid_file) ;
     
         d->sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (d->sock_fd < 0){
@@ -142,42 +177,43 @@ start_quagga(struct routing_daemon *r, char * router_id)
     if (d->config.bgpd_file != NULL) {
         char bgpd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(bgpd_pid_file, "/tmp/bgpd%s.pid", d->base.namespace);
-        d->bgpd_pid = netns_run(d->base.namespace,
-                                   "bgpd -d -f %s -z %s -i %s",
+        netns_run(d->base.namespace, "bgpd -d -f %s -z %s -i %s",
                                     d->config.bgpd_file, sock_location,  
-                                    bgpd_pid_file) + 1;
+                                    bgpd_pid_file);
     }
     if (d->config.ospfd_file != NULL) {
         char ospfd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ospfd_pid_file, "/tmp/ospfd%s.pid", d->base.namespace);
-        d->ospfd_pid = netns_run(d->base.namespace,
-                                 "ospfd -d -f %s -z %s -i %s",
+        netns_run(d->base.namespace,"ospfd -d -f %s -z %s -i %s",
                                 d->config.ospfd_file, sock_location,  
-                                ospfd_pid_file) + 1;
+                                ospfd_pid_file);
     }
     if (d->config.ospf6d_file != NULL) {
         char ospf6d_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ospf6d_pid_file, "/tmp/ospf6d%s.pid", d->base.namespace);
-        d->ospf6d_pid = netns_run(d->base.namespace,
-                                  "ospf6d -d -f %s -z %s -i %s",
+        netns_run(d->base.namespace, "ospf6d -d -f %s -z %s -i %s",
                                 d->config.ospf6d_file, sock_location,  
-                                ospf6d_pid_file) + 1;
+                                ospf6d_pid_file);
     }
     if (d->config.ripd_file!= NULL) {
         char ripd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ripd_pid_file, "/tmp/ripd%s.pid", d->base.namespace);
-        d->ripd_pid = netns_run(d->base.namespace,
-                                "ripd -d -f %s -z %s -i %s",
+        netns_run(d->base.namespace, "ripd -d -f %s -z %s -i %s",
                                 d->config.ripd_file, sock_location,  
-                                ripd_pid_file) + 1;
+                                ripd_pid_file);
     }
     if (d->config.ripngd_file != NULL) {
         char ripngd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(ripngd_pid_file, "/tmp/ripngd%s.pid", d->base.namespace);
-        d->ripngd_pid =  netns_run(d->base.namespace,
-                                   "ripngd -d -f %s -z %s -i %s",
+        netns_run(d->base.namespace, "ripngd -d -f %s -z %s -i %s",
                                     d->config.ripngd_file, sock_location, 
-                                    ripngd_pid_file) + 1;
+                                    ripngd_pid_file);
+    }
+    if (d->config.isis_file != NULL) {
+        char isis_pid_file[MAX_NAMESPACE_ID+15];
+        sprintf(isis_pid_file, "/tmp/isisd%s/pid", d->base.namespace);
+        netns_run(d->base.namespace,"isisd -d -f %s -z %s -i %s",
+                  d->config.isis_file, sock_location, isis_pid_file);
     }
 
     netns_run(d->base.namespace, "/home/vagrant/horse/horse_daemon %s",
@@ -195,25 +231,27 @@ stop_quagga(struct routing_daemon *r)
 {
     struct quagga_daemon *d = (struct quagga_daemon*) r;
     close(d->sock_fd);
-    if (d->zebra_pid){
+    if (d->config.zebra_file){
         netns_run(NULL, "pkill -9 -F /tmp/zebra%s.pid", d->base.namespace);
-        // kill(d->zebra_pid, SIGKILL);    
     }
-    if (d->bgpd_pid){
+    if (d->config.bgpd_file){
         netns_run(NULL, "pkill -9 -F /tmp/bgpd%s.pid", d->base.namespace);
         // kill(d->bgpd_pid, SIGKILL);    
     }
-    if (d->ospfd_pid){
-        kill(d->ospfd_pid, SIGKILL);    
+    if (d->config.ospfd_file){
+        netns_run(NULL, "pkill -9 -F /tmp/ospfd%s.pid", d->base.namespace);
     }
-    if (d->ospf6d_pid){
-        kill(d->ospf6d_pid, SIGKILL);    
+    if (d->config.ospf6d_file){
+        netns_run(NULL, "pkill -9 -F /tmp/ospf6d%s.pid", d->base.namespace); 
     }
-    if (d->ripd_pid){
-        kill(d->ripd_pid, SIGKILL);    
+    if (d->config.ripd_file){
+        netns_run(NULL, "pkill -9 -F /tmp/ripd%s.pid", d->base.namespace);
     }
-    if (d->ripngd_pid){
-        kill(d->ripngd_pid, SIGKILL);    
+    if (d->config.ripngd_file){
+        netns_run(NULL, "pkill -9 -F /tmp/ripngd%s.pid", d->base.namespace);
+    }
+    if (d->config.isis_file) {
+        netns_run(NULL, "pkill -9 -F /tmp/isisd%s.pid", d->base.namespace);
     }
     netns_run(NULL, "pkill -9 -F /tmp/daemon%u.pid", d->router_id);
     free(d->config.zebra_file);
@@ -222,7 +260,40 @@ stop_quagga(struct routing_daemon *r)
     free(d->config.ospf6d_file);
     free(d->config.ripd_file);
     free(d->config.ripngd_file);
-} 
+    free(d->config.isis_file);
+}
+
+static void 
+change_quagga_config(struct routing_daemon *r, char *cmd, uint8_t proto)
+{
+    switch (proto) {
+        case BGP: {
+            send_bgpd_cmd(r->namespace, cmd);
+            break;
+        }
+        case OSPF:{
+            send_ospfd_cmd(r->namespace, cmd);
+            break;
+        }
+        case OSPF6: {
+            send_ospf6d_cmd(r->namespace, cmd);
+            break;
+        }
+        case RIP:{
+            send_ripd_cmd(r->namespace, cmd);
+            break;
+        }
+        case RIPNG:{
+            send_ripngd_cmd(r->namespace, cmd);
+            break;
+        }
+        case ISIS:{
+            send_isisd_cmd(r->namespace, cmd);
+            break;
+        }
+    } 
+
+}
 
 void 
 set_quagga_daemon_zebra_file(struct quagga_daemon *d, char *fname)
@@ -266,4 +337,11 @@ set_quagga_daemon_ripngd_file(struct quagga_daemon *d, char *fname)
 {
     d->config.ripngd_file = xmalloc(strlen(fname)+1);
     strcpy(d->config.ripngd_file, fname);
+}
+
+void 
+set_quagga_daemon_isis_file(struct quagga_daemon* d, char *fname)
+{
+    d->config.isis_file = xmalloc(strlen(fname)+1);
+    strcpy(d->config.isis_file, fname);
 }
