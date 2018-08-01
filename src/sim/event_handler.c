@@ -274,8 +274,8 @@ handle_of_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
     struct fti_event_of *ev_of = (struct fti_event_of *) ev;
     struct datapath *dp = topology_datapath_by_dpid(ev_hdl->topo, ev_of->dp_id);
     
-    ret = dp_control_handle_control_msg(dp, ev_of->base.data, 
-                                        nf, ev_of->base.len, ev->hdr.time);
+    ret = dp_control_handle_control_msg(dp, ev_of->data, 
+                                        nf, ev_of->len, ev->hdr.time);
 
     
     /* A packet out may have added ports to send the flow */
@@ -334,7 +334,7 @@ handle_of_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
     struct conn_manager *cm = ev_hdl->cm;
     struct fti_event_of *ev_of = (struct fti_event_of *) ev;
-    conn_manager_send_of(cm, ev_of->dp_id, ev_of->base.data, ev_of->base.len);
+    conn_manager_send_of(cm, ev_of->dp_id, ev_of->data, ev_of->len);
 }
 
 static void
@@ -342,15 +342,19 @@ handle_router_in(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
     uint8_t *ret_data = NULL;
     size_t ret_len = 0;
-    struct fti_event_router *ev_rt = (struct fti_event_router *) ev;
-    struct router *r = topology_router_by_id(ev_hdl->topo, ev_rt->router_id);
+    struct fti_event_router *evr = (struct fti_event_router *) ev;
+    struct router *r = topology_router_by_id(ev_hdl->topo, evr->router_id);
     if (r != NULL){
-        ret_data = router_handle_control_message(r, ev->data, &ret_len);
+        ret_data = router_handle_control_message(r, evr->data, &ret_len);
         if (ret_data != NULL) {
             struct conn_manager *cm = ev_hdl->cm;
-            conn_manager_send_routing(cm, ev_rt->conn_id, ret_data, ret_len);
+            conn_manager_send_routing(cm, evr->conn_id, ret_data, ret_len);
             free(ret_data);
         }
+    }
+    else{
+        printf("Router not found %u %d\n", evr->router_id,
+               evr->data[1]);
     }
 }
 

@@ -26,15 +26,6 @@ init_event_hdr(struct sim_event* ev, uint64_t time, uint8_t type)
 }
 
 static void 
-init_fti_base(struct sim_event_fti *ev, uint16_t subtype, uint8_t *data,
-              size_t len)
-{
-    ev->subtype = subtype;
-    ev->data = data;
-    ev->len = len;
-}
-
-static void 
 fti_event_free(struct sim_event_fti *ev)
 {
     switch (ev->subtype) {
@@ -104,7 +95,8 @@ struct sim_event_flow_recv *sim_event_flow_recv_new(uint64_t time,
 struct sim_event_flow_send* 
 sim_event_flow_send_new(uint64_t time, uint64_t node_id, uint32_t out_port)
 {
-    struct sim_event_flow_send *flow = xmalloc(sizeof(struct sim_event_flow_send));
+    struct sim_event_flow_send *flow = xmalloc(sizeof
+                                                (struct sim_event_flow_send));
     init_event_hdr(&flow->hdr, time, EVENT_FLOW_SEND);
     flow->node_id = node_id;
     flow->out_port = out_port;
@@ -116,18 +108,22 @@ of_msg_new(uint64_t time, uint64_t dp_id, void *data, size_t len, uint8_t type)
 {
     struct fti_event_of *msg = xmalloc(sizeof(struct fti_event_of));
     init_event_hdr(&msg->base.hdr, time, EVENT_FTI);
-    init_fti_base(&msg->base, type, data, len);
+    msg->base.subtype = type;
+    msg->data = data;
+    msg->len = len;
     msg->dp_id = dp_id;
     return msg;        
 } 
 
 static struct fti_event_router* 
-router_msg_new(uint64_t time, uint32_t router_id, int conn_id, void *data,
-           size_t len, uint8_t type)
+router_msg_new(uint64_t time, uint32_t router_id, int conn_id,
+               void *data, size_t len, uint8_t type)
 {
     struct fti_event_router *msg = xmalloc(sizeof(struct fti_event_router));
     init_event_hdr(&msg->base.hdr, time, EVENT_FTI);
-    init_fti_base(&msg->base, type, data, len);
+    msg->base.subtype = type;
+    msg->data = data;
+    msg->len = len;
     msg->router_id = router_id;
     msg->conn_id = conn_id;
     return msg;        
@@ -162,6 +158,12 @@ sim_event_router_out_new(uint64_t time, uint32_t router_id, int conn_id,
     return (struct sim_event_fti*) router_msg_new(time, router_id, conn_id,
                                                   data, len, EVENT_ROUTER_OUT);
 }
+
+// struct sim_event_fti* 
+// sim_event_router_config_new(uint64_t time, uint32_t router_id, char *cmd)
+// {
+
+// }
 
 struct sim_event_app_start*
 sim_event_app_start_new(uint64_t time, uint64_t node_id, struct exec *exec)

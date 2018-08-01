@@ -31,10 +31,11 @@ enum events {
 
  /* Events that trigger or maintain Fixed Time Increment Mode */ 
 enum fti_events {
-    EVENT_OF_MSG_IN = 0,       /* OF message from controller to simulator */
-    EVENT_OF_MSG_OUT = 1,      /* Send OF message to controller */
+    EVENT_OF_MSG_IN = 0,      /* OF message from controller to simulator */
+    EVENT_OF_MSG_OUT = 1,     /* Send OF message to controller */
     EVENT_ROUTER_IN = 2,      /* Routing message from emulated part. */
     EVENT_ROUTER_OUT = 3,     /* Routing message to emulated part */
+    EVENT_ROUTER_CONFIG = 4   /* Change to router configuration */
 };
 
 /*  The initial field of event heap node so 
@@ -79,8 +80,6 @@ struct sim_event_flow_send {
 struct sim_event_fti {
     struct sim_event hdr;
     uint8_t subtype;
-    uint8_t *data;  
-    size_t len; 
 };
 
 /* Start of an application */
@@ -100,15 +99,25 @@ struct event_port {
 
 /* Used for events of OpenFlow Messages */
 struct fti_event_of {
-    struct sim_event_fti base;       
+    struct sim_event_fti base;
+    uint8_t *data;  
+    size_t len;        
     uint64_t dp_id;        
 };
 
 /* For events between emulated/simulated routers */
 struct fti_event_router {
-    struct sim_event_fti base;       
+    struct sim_event_fti base;
+    uint8_t *data;  
+    size_t len;        
     uint32_t router_id; 
     int conn_id;   
+};
+
+struct fti_event_router_config {
+    struct sim_event_fti base;       
+    uint32_t router_id;
+    char *cmd;
 };
 
 struct sim_event* sim_event_new(uint64_t time);
@@ -135,6 +144,10 @@ struct sim_event_fti *sim_event_router_in_new(uint64_t time,
 struct sim_event_fti *sim_event_router_out_new(uint64_t time,
                                               uint32_t router_id, int conn_id, 
                                               void* data, size_t len);
+
+struct sim_event_fti *sim_event_router_config_new(uint64_t time,
+                                                  uint32_t router_id,
+                                                  char *cmd);
 
 struct sim_event_app_start *sim_event_app_start_new(uint64_t time, uint64_t 
                                               node_id, struct exec *exec);
