@@ -15,7 +15,6 @@ enum daemon_proto {
 struct quagga_daemon;
 
 struct quagga_daemon* quagga_daemon_new(char *namespace);
-void quagga_daemon_send_bgpd_cmd(struct quagga_daemon* d, char* cmd);
 void set_quagga_daemon_zebra_file(struct quagga_daemon *d, char *fname);
 void set_quagga_daemon_bgpd_file(struct quagga_daemon *d, char *fname);
 void set_quagga_daemon_ospfd_file(struct quagga_daemon *d, char *fname);

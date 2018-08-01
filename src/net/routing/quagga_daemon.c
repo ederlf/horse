@@ -21,6 +21,13 @@ static void start_quagga(struct routing_daemon *, char* );
 static void stop_quagga(struct routing_daemon *);
 static void change_quagga_config(struct routing_daemon*, char *, uint8_t );
 
+#define ZEBRA_PORT 2601
+#define RIPD_PORT 2602
+#define RIPNGD_PORT 2603
+#define OSPFD_PORT 2604
+#define BGPD_PORT 2605
+#define OSPF6D_PORT 2606
+#define ISISD_PORT 2608 
 
 struct quagga_config {
     char *zebra_file;
@@ -106,37 +113,37 @@ send_quagga_cmd(char *namespace, char* cmd, uint16_t port)
 static void 
 send_ripd_cmd(char* namespace, char* cmd)
 {
-    send_quagga_cmd(namespace, cmd, 2602);
+    send_quagga_cmd(namespace, cmd, RIPD_PORT);
 }
 
 static void 
 send_ripngd_cmd(char* namespace, char* cmd)
 {
-    send_quagga_cmd(namespace, cmd, 2603);
+    send_quagga_cmd(namespace, cmd, RIPNGD_PORT);
 }
 
 static void 
 send_ospfd_cmd(char* namespace, char* cmd)
 {
-    send_quagga_cmd(namespace, cmd, 2604);
+    send_quagga_cmd(namespace, cmd, OSPFD_PORT);
 }
 
 static void 
 send_bgpd_cmd(char* namespace, char* cmd)
 {
-    send_quagga_cmd(namespace, cmd, 2605);
+    send_quagga_cmd(namespace, cmd, BGPD_PORT);
 }
 
 static void 
 send_ospf6d_cmd(char* namespace, char* cmd)
 {
-    send_quagga_cmd(namespace, cmd, 2606);
+    send_quagga_cmd(namespace, cmd, OSPFD_PORT);
 }
 
 static void 
 send_isisd_cmd(char* namespace, char* cmd)
 {
-    send_quagga_cmd(namespace, cmd, 2608);
+    send_quagga_cmd(namespace, cmd, ISISD_PORT);
 }
 
 static void
@@ -171,9 +178,7 @@ start_quagga(struct routing_daemon *r, char * router_id)
         perror("Configuration for zebra not found. ");
         goto error;
     }
-    /* The observed pid of the process is the pid returned by netns_run + 1 
-     * Any case it would not be true? 
-     */ 
+
     if (d->config.bgpd_file != NULL) {
         char bgpd_pid_file[MAX_NAMESPACE_ID+15];        
         sprintf(bgpd_pid_file, "/tmp/bgpd%s.pid", d->base.namespace);
@@ -292,7 +297,6 @@ change_quagga_config(struct routing_daemon *r, char *cmd, uint8_t proto)
             break;
         }
     } 
-
 }
 
 void 
