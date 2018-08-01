@@ -1,9 +1,11 @@
 #include "quagga_daemon.h"
 #include "lib/util.h"
 #include <netemu/netns.h>
+#include <errno.h>
 #include <netinet/in.h> 
 #include <sys/socket.h> 
 #include <sys/un.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h> 
@@ -50,6 +52,55 @@ quagga_daemon_new(char *namespace)
     d->base.stop = stop_quagga;
     return d;
 }
+
+int 
+quagga_daemon_send_bgpd_cmd(struct quagga_daemon* d, char* cmd)
+{
+    int sockfd, status;
+    struct sockaddr_in sock;
+    pid_t pid;
+    pid = fork();
+
+    if (pid == -1) {
+        perror("fork");
+        return -1;
+    }
+    if (pid != 0) {
+        waitpid(pid, &status, 0);
+        printf("I returned\n");
+        return WEXITSTATUS(status) == EXIT_SUCCESS ? pid : -1;
+    }
+
+    if (netns_enter(d->base.namespace) != 0){
+        return -1;
+    }
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0){
+        perror("opening stream socket when starting zebra");
+        goto error;
+    }
+
+    inet_pton(AF_INET, "127.0.0.1", &sock.sin_addr);
+    sock.sin_family = AF_INET;
+    sock.sin_port = htons( 2605 );
+    if (connect(sockfd , (struct sockaddr *)&sock , sizeof(sock)) < 0){
+        perror("connect failed. Error");
+        goto error;
+    }
+    else {
+        printf("Connected %s\n", d->base.namespace);
+    }
+    int err = send(sockfd , cmd , strlen(cmd) , 0); 
+    if(err   < 0){
+        printf("Send failed %s\n", strerror(errno));
+        goto error;
+    }
+    error:
+    close(sockfd);
+    exit(0);
+}
+
 
 static void
 start_quagga(struct routing_daemon *r, char * router_id)
@@ -132,6 +183,8 @@ start_quagga(struct routing_daemon *r, char * router_id)
     netns_run(d->base.namespace, "/home/vagrant/horse/horse_daemon %s",
               router_id);
 
+    // quagga_daemon_send_bgpd_cmd(d, "horse\nenable\nshow ip bgp summary\nquit\nquit\nquit\n");
+
     /* TODO: Return an error code for the function */
     error:
     return;
@@ -169,7 +222,7 @@ stop_quagga(struct routing_daemon *r)
     free(d->config.ospf6d_file);
     free(d->config.ripd_file);
     free(d->config.ripngd_file);
-}
+} 
 
 void 
 set_quagga_daemon_zebra_file(struct quagga_daemon *d, char *fname)
