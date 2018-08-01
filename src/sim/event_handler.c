@@ -47,6 +47,9 @@ static void
 handle_router_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
 
 static void
+handle_router_config(struct ev_handler *ev_hdl, struct sim_event_fti *ev);
+
+static void
 add_live_flow(struct ev_handler *evh, struct live_flow *lf);
 
 static void
@@ -61,7 +64,8 @@ static void (*event_handler_fti[FTI_EVENTS_NUM]) (struct ev_handler *ev_hdl,
     [EVENT_OF_MSG_IN] = handle_of_in,
     [EVENT_OF_MSG_OUT] = handle_of_out,
     [EVENT_ROUTER_IN] = handle_router_in,
-    [EVENT_ROUTER_OUT] = handle_router_out
+    [EVENT_ROUTER_OUT] = handle_router_out,
+    [EVENT_ROUTER_CONFIG] = handle_router_config
 };
 
 /* General handler for events */
@@ -363,6 +367,16 @@ handle_router_out(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
 {
     UNUSED(ev_hdl);
     UNUSED(ev);
+}
+
+static void
+handle_router_config(struct ev_handler *ev_hdl, struct sim_event_fti *ev)
+{
+    struct fti_event_router_config *evr = (struct fti_event_router_config *) ev;
+    struct router *r = topology_router_by_id(ev_hdl->topo, evr->router_id);
+    if (r != NULL){
+        router_change_daemon_config(r, evr->cmd, evr->proto);
+    }
 }
 
 static void

@@ -17,7 +17,7 @@
 #include "lib/netflow.h"
 
 #define EVENTS_NUM 6
-#define FTI_EVENTS_NUM 4
+#define FTI_EVENTS_NUM 5
 
 enum events {
     EVENT_FLOW_RECV = 0,
@@ -118,6 +118,7 @@ struct fti_event_router_config {
     struct sim_event_fti base;       
     uint32_t router_id;
     char *cmd;
+    uint8_t proto;
 };
 
 struct sim_event* sim_event_new(uint64_t time);
@@ -147,7 +148,7 @@ struct sim_event_fti *sim_event_router_out_new(uint64_t time,
 
 struct sim_event_fti *sim_event_router_config_new(uint64_t time,
                                                   uint32_t router_id,
-                                                  char *cmd);
+                                                  char *cmd, uint8_t proto);
 
 struct sim_event_app_start *sim_event_app_start_new(uint64_t time, uint64_t 
                                               node_id, struct exec *exec);

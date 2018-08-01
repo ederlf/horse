@@ -159,11 +159,19 @@ sim_event_router_out_new(uint64_t time, uint32_t router_id, int conn_id,
                                                   data, len, EVENT_ROUTER_OUT);
 }
 
-// struct sim_event_fti* 
-// sim_event_router_config_new(uint64_t time, uint32_t router_id, char *cmd)
-// {
-
-// }
+struct sim_event_fti* 
+sim_event_router_config_new(uint64_t time, uint32_t router_id,
+                            char *cmd, uint8_t proto)
+{
+    struct fti_event_router_config *msg = 
+                                xmalloc(sizeof(struct fti_event_router_config));
+    init_event_hdr(&msg->base.hdr, time, EVENT_FTI);
+    msg->base.subtype = EVENT_ROUTER_CONFIG;
+    msg->router_id = router_id;
+    msg->cmd = cmd;
+    msg->proto = proto;
+    return (struct sim_event_fti*) msg;
+}
 
 struct sim_event_app_start*
 sim_event_app_start_new(uint64_t time, uint64_t node_id, struct exec *exec)

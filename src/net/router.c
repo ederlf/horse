@@ -224,6 +224,12 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
     return ret;
 }
 
+void 
+router_change_daemon_config(struct router *r, char *cmd, uint8_t proto)
+{
+    r->daemon->change_config(r->daemon, cmd, proto);
+}
+
 static void 
 gen_internal_ip(char *addr)
 {

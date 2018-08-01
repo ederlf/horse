@@ -26,6 +26,7 @@ void router_send_netflow(struct node *n, struct netflow *flow,
                          uint32_t out_port);
 uint8_t *router_handle_control_message(struct router *r, uint8_t *data,
                                        size_t *ret_len);
+void router_change_daemon_config(struct router *r, char *cmd, uint8_t proto);
 int router_start(struct router *rt);
 void router_set_id(struct router *r, uint32_t router_id);
 void router_set_quagga_daemon(struct router *r, struct quagga_daemon *d);
