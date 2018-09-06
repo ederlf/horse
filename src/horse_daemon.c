@@ -108,26 +108,20 @@ int client_connect(uint32_t server_ip, uint16_t port)
     }
 
     return sockfd;
-    // while (1) {
-    //     if (send(sockfd, "Hello, world!\n", 14, 0) == -1){
-    //         perror("send");
-    //         exit (1);
-    //     }
-    //     printf("After the send function \n");
-
-    //     if ((numbytes=recv(sockfd, buf, MAXDATASIZE, 0)) == -1) {
-    //         perror("recv");
-    //         exit(1);
-    //     }   
-
-    //     buf[numbytes] = '\0';
-
-    //     printf("Received in pid=%d, text=: %s \n",getpid(), buf);
-    //     sleep(1);
-    // }
     return 0;
 }
 
+
+static void 
+send_activity(int fd, uint32_t router_id)
+{
+    uint8_t msg_data[HEADER_LEN] = {0x0, BGP_ACTIVITY, 0x0, HEADER_LEN};
+    memcpy(msg_data + 4, &router_id, sizeof(uint32_t));
+    int ret = send(fd, msg_data, HEADER_LEN, 0);
+    if (ret == -1){
+        perror("Failed to send message");
+    }
+}
 
 /* callback function when a packet is captured */
 static void capture_cb(u_char *user,
@@ -141,7 +135,12 @@ static void capture_cb(u_char *user,
         tmp_pkt += 16;
         struct ip_header *ip = (struct ip_header*) tmp_pkt;
         if (ip->ip_proto == IP_PROTO_OSPF) {
-            /*TODO */
+            tmp_pkt += sizeof(struct ip_header);
+            uint8_t ospf_type = *(tmp_pkt+1);
+            /* Only send activities to messages other than OSPF Hello */
+            if (ospf_type > 1){
+                send_activity(data->ddata.server_fd, data->ddata.router_id);
+            }
         } 
         else if (ip->ip_proto == IP_PROTO_TCP){
             tmp_pkt += sizeof(struct ip_header);
@@ -155,15 +154,8 @@ static void capture_cb(u_char *user,
                 uint8_t bgp_type = *tmp_pkt;
                 /* SEND Activity to Controller */
                 if (bgp_type == BGP_UPDATE || bgp_type == BGP_OPEN){
-                    uint8_t msg_data[HEADER_LEN] = {0x0, BGP_ACTIVITY, 
-                                                    0x0, HEADER_LEN};
-                    memcpy(msg_data+4, &data->ddata.router_id,
-                           sizeof(uint32_t));
-                    int ret = send(data->ddata.server_fd, msg_data,
-                                   HEADER_LEN, 0);
-                    if (ret == -1){
-                        perror("Failed to send message");
-                    }
+                    send_activity(data->ddata.server_fd,
+                                  data->ddata.router_id);
                 }
             }
         }
