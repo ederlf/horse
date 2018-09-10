@@ -211,7 +211,7 @@ cdef class OSPF:
         self.router_id = router_id
         self.networks = networks
         self.interfaces = interfaces
-        self.debug = false
+        self.debug = debug
 
     property router_id:
         def __get__(self):
