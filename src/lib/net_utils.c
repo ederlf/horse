@@ -16,20 +16,17 @@ add_veth_pair(char *intf1, char *rname1, char* intf2, char *rname2)
     /* Adds intf1 to namespace rname1 */
     else if (rname1 != NULL && rname2 == NULL){
         netns_run(NULL, "ip link add %s netns %s type veth "
-            "peer name %s",
-            intf1, rname1, intf2);
+            "peer name %s", intf1, rname1, intf2);
     }
     /* Adds intf2 to namespace rname2 */
     else if (rname1 == NULL && rname2 != NULL){
         netns_run(NULL, "ip link add %s type veth "
-            "peer name %s netns %s",
-            intf1, intf2, rname2);
+            "peer name %s netns %s", intf1, intf2, rname2);
     }
     /* No namespace */
     else {
         netns_run(NULL, "ip link add %s type veth "
-            "peer name %s",
-            intf1, intf2);  
+            "peer name %s", intf1, intf2);  
     }
 }
 

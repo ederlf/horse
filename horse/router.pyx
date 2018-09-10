@@ -5,6 +5,7 @@ from msg import ip2int, int2ip, netmask2cidr
 from horse import Router
 import os
 import json
+from util import namedtuple_with_defaults 
 
 def writeLine(configFile, indent, line):
     intentStr = ''
@@ -102,10 +103,10 @@ cdef class BGP:
     cdef relax   # Allows load balancing among different ASes. Only AS path needs to match.
     cdef allowas_in
 
-    def __cinit__(self, asn = None, router_id = None, neighbors = None, networks=None,
-                  med = None, always_compare_med = False, redistribute = None, 
-                  multiple_instances = None, maximum_paths = None, 
-                  relax = False, allowas_in = False):
+    def __cinit__(self, asn = None, router_id = None, neighbors = None,
+                  networks=None, med = None, always_compare_med = False, 
+                  redistribute = None, multiple_instances = None, 
+                  maximum_paths = None, relax = False, allowas_in = False):
         self.asn = asn
         self.router_id = router_id
         self.networks = networks
@@ -192,6 +193,54 @@ cdef class BGP:
         def __set__(self, maximum_paths):
             self.maximum_paths = maximum_paths
 
+netparams = ('network', 'area')
+OSPFNet = namedtuple_with_defaults('OSPFNet', netparams, ('0.0.0.0', 0))
+ifaceparams = ('name', 'cost', 'type', 'priority', 'hello_interval')
+# Default priority is the same as Quagga.
+OSPFInterface = namedtuple_with_defaults('OSPFInterface', ifaceparams,
+                                         (None, 1, 'point-to-point', 0, 10))
+cdef class OSPF:
+    cdef router_id
+    cdef interfaces
+    cdef networks
+    cdef hello_interval
+    # @networks: list of announced networks 
+    # @interfaces: list of OSPFInterface"
+    def __cinit__(self, router_id = None, networks = [], interfaces = [],
+                  debug= False):
+        self.router_id = router_id
+        self.networks = networks
+        self.interfaces = interfaces
+        self.debug = false
+
+    property router_id:
+        def __get__(self):
+            return self.router_id
+
+        def __set__(self, router_id):
+            self.router_id = router_id
+
+    property interfaces:
+        def __get__(self):
+            return self.interfaces
+
+        def __set__(self, interfaces):
+            self.interfaces = interfaces
+
+    property networks:
+        def __get__(self):
+            return self.networks
+
+        def __set__(self, networks):
+            self.networks = networks
+
+    property debug:
+        def __get__(self):
+            return self.debug
+
+        def __set__(self, debug):
+            self.debug = debug
+
 cdef class Daemon:
     # cdef namespace
     # cdef router_id
@@ -220,6 +269,7 @@ cdef class Daemon:
 
         def __set__(self, router_id):
             self.router_id = router_id
+
 
 cdef class QuaggaDaemon(Daemon):
     # cdef quagga_daemon* _qd_ptr
@@ -264,6 +314,13 @@ cdef class QuaggaDaemon(Daemon):
                 self.check_ecmp(bgp)
                 if bgp.router_id:
                     self.router_id = bgp.router_id
+            elif isinstance(p, OSPF):
+                ospf = <OSPF> p
+                self.ospfd_conf = "%s/ospfd%s.conf" % (runDir, self.namespace)
+                self.generateOspfd(ospf)
+                set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf)
+                if ospf.router_id:
+                    self.router_id = ospf.router_id
 
     cdef quagga_daemon* get_quagga_ptr(self):
         return self._qd_ptr
@@ -280,7 +337,7 @@ cdef class QuaggaDaemon(Daemon):
         configFile = open(self.bgpd_conf, 'w+')
         writeLine(configFile, 0, 'hostname %s' % self.namespace);
         writeLine(configFile, 0, 'password %s' % 'horse')
-        writeLine(configFile, 0, 'log file %s/q_%s' % (self.runDir, self.namespace))
+        writeLine(configFile, 0, 'log file %s/qbgp_%s' % (self.runDir, self.namespace))
         writeLine(configFile, 0, 'debug bgp')
         writeLine(configFile, 0, '!')
         writeLine(configFile, 0, 'router bgp %s' % bgp.asn)
@@ -331,6 +388,38 @@ cdef class QuaggaDaemon(Daemon):
                 bgp.maximum_paths = maximum_paths.split()[1]
         return bgp
 
+    def generateOspfd(self, OSPF ospf):
+        configFile = open(self.ospfd_conf, 'w+')
+        writeLine(configFile, 0, 'hostname %s' % self.namespace);
+        writeLine(configFile, 0, 'password %s' % 'horse')
+        writeLine(configFile, 0, 'log file %s/qospf_%s' % (self.runDir,
+                                                           self.namespace))
+        if (self.debug):
+            writeLine(configFile, 0, 'debug ospf event')
+            writeLine(configFile, 0, 'debug ospf zebra')
+            writeLine(configFile, 0, 'debug ospf packet all')
+            writeLine(configFile, 0, 'debug ospf lsa')
+        for intf in ospf.interfaces:
+            writeLine(configFile, 0, '!')
+            writeLine(configFile, 0, "interface %s" % intf.name)
+            writeLine(configFile, 2, "ip ospf cost %s" % intf.cost)
+            writeLine(configFile, 2, "ip ospf network %s" % intf.type)
+            writeLine(configFile, 2, "ip ospf priority %s" % intf.priority)
+            writeLine(configFile, 2, "ip ospf hello-interval %s" % intf.hello_interval)
+            writeLine(configFile, 0, '!')
+        # writeLine(configFile, 0, "interface %s-inet" % self.namespace)
+        writeLine(configFile, 0, 'router ospf')
+        writeLine(configFile, 2, 'passive-interface default')
+        writeLine(configFile, 2, 'no passive-interface %s' % intf.name)
+        if ospf.router_id:
+            writeLine(configFile, 2, 'ospf router-id %s' % ospf.router_id)
+        for net in ospf.networks:
+            writeLine(configFile, 2, 'network %s area %s' % (net.network,
+                                                             net.area))
+        writeLine(configFile, 0, '!')
+
+
+        configFile.close()
 
 cdef class ExaBGPDaemon(Daemon):
     # cdef exabgp_daemon* _exa_ptr

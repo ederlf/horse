@@ -143,7 +143,7 @@ router_start(struct router *r)
     gen_internal_ip(addr);
     setup_veth(rname, intf, intf2, addr, "16", "br0");
     netns_run(rname, "ifconfig lo up");
-    // set_intf_up(rname, "lo");
+    netns_run(rname, "sysctl -w net.ipv4.ip_forward=1");
     return 0;
 }
 

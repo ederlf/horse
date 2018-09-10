@@ -108,8 +108,9 @@ setup_routers(struct topology *topo)
                 struct router *r2 = (struct router*) n2;
                 uint32_t p1 = l->node1.port;
                 uint32_t p2 = l->node2.port;
-                sprintf(intf1, "eth%u", p1);
-                sprintf(intf2, "eth%u", p2);
+                sprintf(intf1, "%s-eth%u", router_name(r1), p1);
+                sprintf(intf2, "%s-eth%u",router_name(r2), p2);
+                // printf("Setting veth pair %s %s %s %s\n", router_name(r1), intf1, router_name(r1), intf2);
                 add_veth_pair(intf1, router_name(r1), intf2, router_name(r2));
                 port1 = router_port(r1, p1);
                 port2 = router_port(r2, p2);
@@ -140,15 +141,57 @@ setup_routers(struct topology *topo)
                                     netmask_str);
                     }
                 }
-                /* Create a backwards link so it does not repeat*/
-                done = (struct link*) xmalloc(sizeof(struct link));
-                memset(done, 0x0, sizeof(struct link));
-                done->node1.port = l->node2.port;
-                done->node1.uuid = l->node2.uuid;
-                done->node2.port = l->node1.port;
-                done->node2.uuid = l->node1.uuid;
-                HASH_ADD(hh, added, node1, sizeof(struct node_port_pair), done);
             }
+            else {
+                struct router *r = NULL;
+                struct host *h = NULL;
+                uint32_t rp = l->node1.port;
+                uint32_t host_port = l->node2.port;
+                if (n1->type == ROUTER && n2->type == HOST){
+                    r = (struct router*) n1;
+                    h = (struct host*) n2;
+                    rp = l->node1.port;
+                    host_port = l->node2.port;
+                }
+                else if (n1->type == HOST && n2->type == ROUTER){
+                    r = (struct router*) n2;
+                    h = (struct host*) n1;
+                    rp = l->node2.port;
+                    host_port = l->node1.port;
+                }
+                if (r && h){
+                    char intf1[42], intf2[42];
+                    struct port *p;
+                    sprintf(intf1, "%s-eth%u", router_name(r), rp);
+                    sprintf(intf2, "%s-eth%u", host_name(h), host_port);
+                    printf("Should be Router Host %s %s\n", intf1, intf2);
+                    add_veth_pair(intf1, router_name(r), intf2, NULL);
+                    set_intf_up(NULL, intf2);
+                    p = router_port(r, rp);
+                    if (p){
+                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
+                        struct in_addr ip;
+                        int mask;
+                        ip.s_addr = htonl(p->ipv4_addr->addr);
+                        mask = count_set_bits(p->ipv4_addr->netmask);
+                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
+                        get_ip_str(&ip, ip_str, AF_INET);
+                        printf("Setting it up %s\n", router_name(r));
+                        set_intf_ip(router_name(r), intf1, ip_str,
+                                    netmask_str);
+                    }
+
+                }
+            }
+            /* Create a backwards link so it does not check backwards*/
+            done = (struct link*) xmalloc(sizeof(struct link));
+            memset(done, 0x0, sizeof(struct link));
+            done->node1.port = l->node2.port;
+            done->node1.uuid = l->node2.uuid;
+            done->node2.port = l->node1.port;
+            done->node2.uuid = l->node1.uuid;
+            HASH_ADD(hh, added, node1,
+                     sizeof(struct node_port_pair), done);
         }
     }
 
@@ -187,7 +230,7 @@ setup(struct sim *s)
     }
     setup_routers(topo);
     // int i = 0;
-    // while (i < 10){
+    // while (i < 5){
     //     sleep(1);
     //     ++i;
     // }
@@ -350,8 +393,7 @@ cont_mode(void* args)
 {
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
-    /* The code below is just a demonstration. */
-    /* Increase time and check if there a DP event to execute */
+    /* Increase time and check if there is a DP event to execute */
     pthread_mutex_lock( &mtx_mode );
     while(!sch->mode){
         pthread_cond_wait( &mode_cond_var, &mtx_mode );
