@@ -18,19 +18,21 @@ def rand_mac():
         randint(0, 255)
 )
 
+DAEMON = "quagga"
+
 topo = Topology()
 #Create OpenFlow switch
 bgp1 = [BGP(asn = 100,
             neighbors = [BGPNeighbor(200,"10.0.0.2",local_ip="10.0.0.1")],
             networks = ["140.0.0.0/16"])]
-r1 = Router("r1", daemon = "exabgp", *bgp1)
+r1 = Router("r1", daemon = DAEMON, *bgp1)
 r1.add_port(port = 1,  eth_addr = rand_mac(), ip = "10.0.0.1", netmask = "255.255.0.0")
 r1.add_port(port = 2,  eth_addr = rand_mac(), ip = "140.0.0.2", netmask = "255.255.0.0")
 
 bgp2 = [BGP(asn=200, neighbors=[BGPNeighbor(100,"10.0.0.1",local_ip="10.0.0.2")],
             networks=["130.0.0.0/16"])]
 
-r2 = Router("r2", daemon= "exabgp", *bgp2)
+r2 = Router("r2", daemon= DAEMON, *bgp2)
 r2.add_port(port = 1,  eth_addr = rand_mac(), ip = "10.0.0.2", netmask = "255.255.0.0")
 r2.add_port(port = 2,  eth_addr = rand_mac(), ip = "130.0.0.2", netmask = "255.255.0.0")
 
@@ -53,10 +55,10 @@ topo.add_link(r1, r2, 1, 1)
 topo.add_link(r1, h1, 2, 1)
 topo.add_link(r2, h2, 2, 1)
 
-h1.ping("130.0.0.1", 5000000)
-h2.ping("140.0.0.1", 5000000)
+h1.ping("130.0.0.1", 10000000)
+h2.ping("140.0.0.1", 10000000)
 
 # # Start the experiment
-sim = Sim(topo, ctrl_interval = 2000000, end_time = 10000000,
+sim = Sim(topo, ctrl_interval = 3000000, end_time = 20000000,
         log_level = LogLevels.LOG_INFO)
 sim.start()
