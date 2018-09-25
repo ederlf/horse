@@ -440,21 +440,24 @@ class HorseBGPFatTreeTopo(StructuredTopo):
         for node in nodes:
             created = None
             if 'asn' in nodes[node]:
+                router_id = max([nodes[node]['intfs'][x][0]['ipAddrs'][0] for x in nodes[node]['intfs']])
                 if nodes[node]['type'] == self.LAYER_EDGE or nodes[node]['type'] == self.LAYER_AGG: 
                     bgp = [BGP(asn = nodes[node]['asn'],
                               neighbors = nodes[node]['neighbors'],
                               networks = nodes[node]['networks'],
                               allowas_in = False,
-                              relax = True, maximum_paths = self.k/2)]
+                              relax = True, maximum_paths = self.k/2, 
+                              router_id=router_id)]
 
-                    created = Router(node, daemon = "exabgp", *bgp)
+                    created = Router(node, daemon = "quagga", *bgp)
                     
                 else:
                     bgp = [BGP(asn=nodes[node]['asn'],
                               neighbors=nodes[node]['neighbors'],
                               networks=nodes[node]["networks"],
-                              allowas_in=True)]
-                    created = Router(node, daemon = "exabgp", *bgp)
+                              allowas_in=True,
+                              router_id=router_id)]
+                    created = Router(node, daemon = "quagga", *bgp)
                 # for intf in nodes[node]['intfs']:
                 for intf in nodes[node]['intfs']:
                     i = nodes[node]['intfs'][intf][0]
