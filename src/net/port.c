@@ -43,3 +43,12 @@ void port_add_v6addr(struct port *p, uint8_t ipv6_addr[IPV6_LEN],
     memcpy(p->ipv6_addr, ipv6_addr, IPV6_LEN);
     memcpy(p->ipv6_addr->netmask , netmask, IPV6_LEN);
 }
+
+void 
+port_set_name(struct port *p, char *name)
+{
+    size_t len = strlen(name);
+    if ((len+1) <= MAX_PORT_NAME){
+        strcpy(p->name, name);
+    }
+}
