@@ -9,14 +9,14 @@
  */
 
 #include "sim.h"
+#include "setup.h"
 #include <unistd.h>
 #include <time.h>
 #include <netemu/netns.h>
-#include <uthash/utlist.h>
 #include "lib/openflow.h"
 #include "lib/signal_handler.h"
 #include <log/log.h>
-#include "lib/net_utils.h"
+
 
 #define EV_NUM 1000000
 
@@ -30,26 +30,17 @@ int last_wrt = 0;
 uint64_t last_ctrl = 0;
 uint64_t last_stats = 0;
 
-static void
-create_internal_devices(void)
-{
-    /* TODO: Move it somewhere else? */
-    create_bridge("br0");
-    setup_veth(NULL, "conn1", "conn2", "172.20.254.254", "16", "br0");
-    /* Add static route */
-    netns_run(NULL, "ip route add 172.20.0.0/16 dev conn1");
-
-}
 
 static void 
 wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
 {
     uint32_t switches;
     uint32_t time = 0;
-    switches = HASH_COUNT(cm->of->active_conns);
+    struct of_conn *ac = cm->of->active_conns;
+    switches = HASH_COUNT(ac);
     while (switches < topology_dps_num(topo))  {
         sleep(1);
-        switches = HASH_COUNT(cm->of->active_conns);
+        switches = HASH_COUNT(ac);
         time++;
         /* Exit if it takes too long to connect */ 
         if (time > 60) {
@@ -57,188 +48,6 @@ wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
             exit(1);
         }
     } 
-}
-
-// static void 
-// wait_all_external_connections(struct topology *topo, struct conn_manager *cm)
-// {
-//     uint32_t connected;
-//     uint32_t time = 0;
-//     connected = HASH_COUNT(cm->server->connections);
-//     while (connected < topology_routers_num(topo))  {
-//         sleep(1);
-//         connected = HASH_COUNT(cm->server->connections);
-//         time++;
-//         /* Exit if it takes too long to connect */ 
-//         if (time > 60) {
-//             fprintf(stderr, "Connection time expired\n");
-//             exit(1);
-//         }
-//     } 
-// }
-
-static void
-setup_routers(struct topology *topo)
-{
-    struct link *l, *ltmp, *added;
-    struct router_node *rnode, *rtmp;
-
-    added = NULL;
-
-    HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
-        struct router *r = rnode->rt;
-        printf("Starting Router %s\n", router_name(r));
-        router_start(r);
-    }
-
-    HASH_ITER(hh, topology_links(topo), l, ltmp){
-        struct node *n1, *n2;
-        struct link *done = NULL;
-        HASH_FIND(hh, added, &l->node1, sizeof(struct node_port_pair), done);
-        if (done){
-            continue;
-        }
-        else {
-            n1 = topology_node(topo, l->node1.uuid);
-            n2 = topology_node(topo, l->node2.uuid);
-            if (n1->type == ROUTER && n2->type == ROUTER){
-                char intf1[42], intf2[42];
-                struct port *port1, *port2;
-                struct router *r1 = (struct router*) n1;
-                struct router *r2 = (struct router*) n2;
-                uint32_t p1 = l->node1.port;
-                uint32_t p2 = l->node2.port;
-                sprintf(intf1, "%s-eth%u", router_name(r1), p1);
-                sprintf(intf2, "%s-eth%u",router_name(r2), p2);
-                // printf("Setting veth pair %s %s %s %s\n", router_name(r1), intf1, router_name(r1), intf2);
-                add_veth_pair(intf1, router_name(r1), intf2, router_name(r2));
-                port1 = router_port(r1, p1);
-                port2 = router_port(r2, p2);
-                if (port1){
-                    if (port1->ipv4_addr){
-                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
-                        struct in_addr ip;
-                        int mask;
-                        ip.s_addr = htonl(port1->ipv4_addr->addr);
-                        mask = count_set_bits(port1->ipv4_addr->netmask);
-                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
-                        get_ip_str(&ip, ip_str, AF_INET);
-                        set_intf_ip(router_name(r1), intf1, ip_str,
-                                    netmask_str);
-                    }
-                    
-                }
-                if (port2){
-                    if (port2->ipv4_addr){
-                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
-                        struct in_addr ip;
-                        int mask;
-                        ip.s_addr = htonl(port2->ipv4_addr->addr);
-                        mask = count_set_bits(port1->ipv4_addr->netmask);
-                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
-                        get_ip_str(&ip, ip_str, AF_INET);
-                        set_intf_ip(router_name(r2), intf2, ip_str,
-                                    netmask_str);
-                    }
-                }
-            }
-            else {
-                struct router *r = NULL;
-                struct host *h = NULL;
-                uint32_t rp = l->node1.port;
-                uint32_t host_port = l->node2.port;
-                if (n1->type == ROUTER && n2->type == HOST){
-                    r = (struct router*) n1;
-                    h = (struct host*) n2;
-                    rp = l->node1.port;
-                    host_port = l->node2.port;
-                }
-                else if (n1->type == HOST && n2->type == ROUTER){
-                    r = (struct router*) n2;
-                    h = (struct host*) n1;
-                    rp = l->node2.port;
-                    host_port = l->node1.port;
-                }
-                if (r && h){
-                    char intf1[42], intf2[42];
-                    struct port *p;
-                    sprintf(intf1, "%s-eth%u", router_name(r), rp);
-                    sprintf(intf2, "%s-eth%u", host_name(h), host_port);
-                    printf("Should be Router Host %s %s\n", intf1, intf2);
-                    add_veth_pair(intf1, router_name(r), intf2, NULL);
-                    set_intf_up(NULL, intf2);
-                    p = router_port(r, rp);
-                    if (p){
-                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
-                        struct in_addr ip;
-                        int mask;
-                        ip.s_addr = htonl(p->ipv4_addr->addr);
-                        mask = count_set_bits(p->ipv4_addr->netmask);
-                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
-                        get_ip_str(&ip, ip_str, AF_INET);
-                        printf("Setting it up %s\n", router_name(r));
-                        set_intf_ip(router_name(r), intf1, ip_str,
-                                    netmask_str);
-                    }
-
-                }
-            }
-            /* Create a backwards link so it does not check backwards*/
-            done = (struct link*) xmalloc(sizeof(struct link));
-            memset(done, 0x0, sizeof(struct link));
-            done->node1.port = l->node2.port;
-            done->node1.uuid = l->node2.uuid;
-            done->node2.port = l->node1.port;
-            done->node2.uuid = l->node1.uuid;
-            HASH_ADD(hh, added, node1,
-                     sizeof(struct node_port_pair), done);
-        }
-    }
-
-    /* Need to think a better way to no go twice over the the routers */
-    HASH_ITER(hh, topology_routers(topo), rnode, rtmp){
-        struct router *r = rnode->rt;
-        router_start_daemon(r);
-        // sleep(1);
-    }
-
-    HASH_ITER(hh, added, l, ltmp){
-        HASH_DEL(added, l);
-        free(l);
-    }
-
-}
-
-static void 
-setup(struct sim *s)
-{
-
-    struct scheduler *sch = s->evh.sch;
-    struct topology *topo = s->evh.topo;
-    struct host_node *hnode, *htmp;
-    register_handle_sigchild();
-
-    HASH_ITER(hh, topology_hosts(topo), hnode, htmp){
-        struct host *h = hnode->h;
-        struct exec *exec, *exec_tmp;
-        HASH_ITER(hh, host_execs(h), exec, exec_tmp) {
-            struct sim_event_app_start *ev = sim_event_app_start_new(
-                                            exec->start_time,
-                                            host_uuid(h), exec);
-            scheduler_insert(sch, (struct sim_event*) ev);
-        }
-    }
-    setup_routers(topo);
-    // int i = 0;
-    // while (i < 5){
-    //     sleep(1);
-    //     ++i;
-    // }
-    /* Event to stop the simulator */
-    struct sim_event *end_ev; 
-    end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
-    end_ev->type = EVENT_END;
-    scheduler_insert(sch, end_ev);
 }
 
 struct timespec last = {0};
@@ -251,31 +60,25 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
 
     s->config = config;
     s->evh.topo = topo;
-    s->evh.sch = scheduler_new();
-    s->evh.live_flows = NULL;
     s->cont.exec = cont_mode; 
-    
-    if (sim_config_get_mode(s->config) == EMU_CTRL){
-        struct dp_node *dpcur, *dptmp;
-        s->evh.cm = conn_manager_new(s->evh.sch);
-        
-        /* Start server if routers included */
-        if (topology_routers_num(topo)) {
-            struct server *srv = s->evh.cm->srv;
-            create_internal_devices();
-            server_start(srv);
-        }
+    s->evh.live_flows = NULL;
+    s->evh.sch = scheduler_new();
 
-        /* Add of_settings to client */
-        HASH_ITER(hh, topology_datapaths(topo), dpcur, dptmp) {
-            struct datapath *dp = dpcur->dp;
-            of_client_add_ofsc(s->evh.cm->of, dp_settings(dp));
+    if (sim_config_get_mode(s->config) == EMU_CTRL){
+        s->evh.cm = conn_manager_new(s->evh.sch);
+        setup(s->evh.topo, s->evh.sch, s->evh.cm);
+        if (topology_dps_num(s->evh.topo)){
+            wait_all_switches_connect(topo, s->evh.cm);
         }
-        of_client_start(s->evh.cm->of, false);
     }
 
-    setup(s);
-    wait_all_switches_connect(topo, s->evh.cm);
+    struct sim_event *end_ev; 
+    end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
+    end_ev->type = EVENT_END;
+    scheduler_insert(s->evh.sch, end_ev);
+
+    sleep(5);
+
     pFile = fopen ("bwm.txt","w");
     init_timer(&s->cont, (void*)s);
     set_periodic_timer(/* 1 */1000);
@@ -451,4 +254,3 @@ start(struct topology *topo, struct sim_config *config)
     sim_init(&s, topo, config);
     sim_close(&s);
 }
-

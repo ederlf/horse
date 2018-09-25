@@ -180,7 +180,7 @@ static void fib_add(struct router *r, uint8_t *data, size_t len)
         else {
             port_id = 0;
         }
-        log_debug("Installing route to %x, %x, %x", addr, netmask, next_hop);
+        log_debug("%s Installing route to %x, %x, %x, %x", r->ln.base.name, addr, netmask, next_hop, port_id);
         struct route_entry_v4 *e = malloc(sizeof(struct route_entry_v4));
         memset(e, 0x0, sizeof(struct route_entry_v4));
         e->ip = addr & netmask;
