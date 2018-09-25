@@ -203,6 +203,23 @@ static void* capture(void* args)
     return 0;
 }
 
+static void
+send_next_hop(int fd, uint32_t router_id, uint32_t destination,
+              uint32_t netmask, uint32_t next_hop)
+{
+    uint8_t msg_data[HEADER_LEN+16] = {0x0, BGP_FIB, 0x0, HEADER_LEN+12};
+    memcpy(msg_data+4, &router_id, sizeof(uint32_t));
+    memcpy(msg_data + HEADER_LEN, &destination, sizeof(uint32_t));
+    memcpy(msg_data + 12, &netmask, sizeof(uint32_t));
+    memcpy(msg_data + 16, &next_hop, sizeof(uint32_t));
+    memset(msg_data + 20, 0x0, sizeof(uint32_t));
+    int ret = send(fd, msg_data,
+                   HEADER_LEN+16, 0);
+    if (ret == -1){
+        perror("Failed to send message");
+    }
+}
+
 static
 int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
 {
@@ -252,10 +269,12 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
         uint32_t destination = 0;
         uint32_t netmask= 0;
         uint32_t next_hop= 0;
+        struct rtnexthop *mhops = NULL;
+        int attrlen = 0;
         /* Get the route data */
          route_entry = (struct rtmsg *) NLMSG_DATA(nlh);
 
-        /* We are just intrested in main routing table */
+        /* We are just interested in main routing table */
                 /*
         if (route_entry->rtm_table != RT_TABLE_MAIN)
             continue;
@@ -276,9 +295,11 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
         /* Get the route atttibutes len */
         route_attribute_len = RTM_PAYLOAD(nlh);
         /* Loop through all attributes */
+        
         for ( ; RTA_OK(route_attribute, route_attribute_len); \
             route_attribute = RTA_NEXT(route_attribute, route_attribute_len))
         {
+
             /* Get the destination address */
             if (route_attribute->rta_type == RTA_DST)
             {
@@ -286,12 +307,24 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
             }
             /* Get the gateway (Next hop) */
             if (route_attribute->rta_type == RTA_GATEWAY)
-            {
+            {   
+                
                 next_hop = *(uint32_t*) RTA_DATA(route_attribute);
+                
+            }
+
+            if (route_attribute->rta_type == RTA_MULTIPATH)
+            {
+                mhops = (struct rtnexthop*) RTA_DATA(route_attribute);
+                int rtnhp_len = RTA_PAYLOAD(route_attribute);
+                if (rtnhp_len < (int) sizeof(*mhops) || 
+                    mhops->rtnh_len > rtnhp_len){
+                    continue;
+                }
+                attrlen = rtnhp_len - sizeof(struct rtnexthop);
             }
         }
         /* TODO: Send all prefixes in a single message? */
-        
         /* Now we can dump the routing attributes */
         if (nlh->nlmsg_type == RTM_DELROUTE)
             fprintf(stderr, "Deleting route to destination --> %s/%d proto %d and gateway %s\n", \
@@ -299,16 +332,22 @@ int loop (int sock, struct sockaddr_nl *addr, struct daemon_data *dd)
         
         if (nlh->nlmsg_type == RTM_NEWROUTE){
             if (destination) {
-                uint8_t msg_data[HEADER_LEN+16] = {0x0, BGP_FIB, 0x0, HEADER_LEN+12};
-                memcpy(msg_data+4, &dd->router_id, sizeof(uint32_t));
-                memcpy(msg_data + HEADER_LEN, &destination, sizeof(uint32_t));
-                memcpy(msg_data + 12, &netmask, sizeof(uint32_t));
-                memcpy(msg_data + 16, &next_hop, sizeof(uint32_t));
-                memset(msg_data + 20, 0x0, sizeof(uint32_t));
-                int ret = send(dd->server_fd, msg_data,
-                               HEADER_LEN+16, 0);
-                if (ret == -1){
-                    perror("Failed to send message");
+                if (mhops){
+                    if (attrlen) {
+                        struct rtattr *attr = RTNH_DATA(mhops);
+                        for (; RTA_OK(attr, attrlen); attr = RTA_NEXT(attr, attrlen)) {
+                            if (attr->rta_type == RTA_GATEWAY) {
+                                uint32_t nh = *(uint32_t*) RTA_DATA(attr);
+                                send_next_hop(dd->server_fd, dd->router_id,
+                                             destination, netmask, nh);  
+                            }
+                        }
+                    }
+                }
+
+                if (next_hop){
+                    send_next_hop(dd->server_fd, dd->router_id,
+                                  destination, netmask, next_hop);
                 }
             }
             fprintf(stderr, "Adding route to destination --> %s/%d proto %d and gateway %s\n", \
