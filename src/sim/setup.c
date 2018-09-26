@@ -69,14 +69,57 @@ configure_router_port(struct router *r, struct port *p)
 }
 
 static void
+setup_router_pair_link(struct router *r1, uint32_t p1,
+                  struct router *r2, uint32_t p2)
+{
+    char intf1[MAX_PORT_NAME], intf2[MAX_PORT_NAME];
+    struct port *port1, *port2;
+    sprintf(intf1, "%s-eth%u", router_name(r1), p1);
+    sprintf(intf2, "%s-eth%u",router_name(r2), p2);
+    add_veth_pair(intf1, router_name(r1), intf2, router_name(r2));
+    port1 = router_port(r1, p1);
+    if (port1){
+        port_set_name(port1, intf1);
+        if (port1->ipv4_addr){
+            configure_router_port(r1, port1);
+        }
+        
+    }
+    port2 = router_port(r2, p2);
+    if (port2){
+        port_set_name(port2, intf2);
+        if (port2->ipv4_addr){
+            configure_router_port(r2, port2);
+        }
+    }
+}
+
+/* For routers connected to any node that is not of router */
+static void
+setup_router_nonrouter_link(struct router *r, uint32_t rport)
+{
+    char intf1[42], intf2[42];
+    struct port *p;
+    sprintf(intf1, "%s-eth%u", router_name(r), rport);
+    sprintf(intf2, "%s-ext-eth%u", router_name(r), rport);
+    add_veth_pair(intf1, router_name(r), intf2, NULL);
+    set_intf_up(NULL, intf2);
+    p = router_port(r, rport);
+    if (p){
+        port_set_name(p, intf1);
+        if (p->ipv4_addr){
+            configure_router_port(r, p);
+        }
+    }
+}
+
+static void
 setup_routers(struct topology *topo)
 {
     struct link *l, *ltmp, *added;
-    
-    start_routers(topo);
-
     added = NULL;
 
+    start_routers(topo);
     HASH_ITER(hh, topology_links(topo), l, ltmp){
         struct node *n1, *n2;
         struct link *done = NULL;
@@ -88,74 +131,39 @@ setup_routers(struct topology *topo)
             n1 = topology_node(topo, l->node1.uuid);
             n2 = topology_node(topo, l->node2.uuid);
             if (n1->type == ROUTER && n2->type == ROUTER){
-                char intf1[MAX_PORT_NAME], intf2[MAX_PORT_NAME];
-                struct port *port1, *port2;
-                struct router *r1 = (struct router*) n1;
-                struct router *r2 = (struct router*) n2;
-                uint32_t p1 = l->node1.port;
-                uint32_t p2 = l->node2.port;
-                sprintf(intf1, "%s-eth%u", router_name(r1), p1);
-                sprintf(intf2, "%s-eth%u",router_name(r2), p2);
-                add_veth_pair(intf1, router_name(r1), intf2, router_name(r2));
-                port1 = router_port(r1, p1);
-                port2 = router_port(r2, p2);
-                if (port1){
-                    port_set_name(port1, intf1);
-                    if (port1->ipv4_addr){
-                        configure_router_port(r1, port1);
-                    }
-                    
-                }
-                if (port2){
-                    port_set_name(port2, intf2);
-                    if (port2->ipv4_addr){
-                        configure_router_port(r2, port2);
-                    }
-                }
+                setup_router_pair_link((struct router*)n1, l->node1.port,
+                                       (struct router*)n2, l->node2.port);
             }
             else {
-                /* Because OSPF also needs the host ports, there is need to 
-                *  add virtual interfaces to the routers in that case too. 
-                */
-                struct router *r = NULL;
-                struct host *h = NULL;
-                uint32_t rp = l->node1.port;
-                uint32_t host_port = l->node2.port;
-                if (n1->type == ROUTER && n2->type == HOST){
-                    r = (struct router*) n1;
-                    h = (struct host*) n2;
-                    rp = l->node1.port;
-                    host_port = l->node2.port;
-                }
-                else if (n1->type == HOST && n2->type == ROUTER){
-                    r = (struct router*) n2;
-                    h = (struct host*) n1;
-                    rp = l->node2.port;
-                    host_port = l->node1.port;
-                }
-                if (r && h){
-                    char intf1[42], intf2[42];
-                    struct port *p;
-                    sprintf(intf1, "%s-eth%u", router_name(r), rp);
-                    sprintf(intf2, "%s-eth%u", host_name(h), host_port);
-                    add_veth_pair(intf1, router_name(r), intf2, NULL);
-                    set_intf_up(NULL, intf2);
-                    p = router_port(r, rp);
-                    if (p){
-                        char ip_str[INET_ADDRSTRLEN], netmask_str[5];
-                        struct in_addr ip;
-                        int mask;
-                        ip.s_addr = htonl(p->ipv4_addr->addr);
-                        mask = count_set_bits(p->ipv4_addr->netmask);
-                        snprintf( netmask_str, (mask / 10) + 2, "%d", mask );
-                        get_ip_str(&ip, ip_str, AF_INET);
-                        set_intf_ip(router_name(r), intf1, ip_str,
-                                    netmask_str);
-                    }
+                /* Two cases a router need additional ports: 
+                 * - OSPF requires the port connected to the router to exist. 
+                 * - Router connected to an SDN or LAN. 
+                 */
 
+                struct router *r = NULL;
+                uint32_t rp;
+                uint16_t other_type;
+                if (n1->type == ROUTER){
+                    r = (struct router*) n1;
+                    rp = l->node1.port;
+                    other_type = n2->type;
+                }
+                else if (n2->type == ROUTER){
+                    r = (struct router*) n2;
+                    rp = l->node2.port;
+                    other_type = n1->type;
+                }
+                if (r){
+                    setup_router_nonrouter_link(r, rp);\
+                    /* Add to the array of interfaces 
+                     * to be added in the bridge.
+                     */ 
+                    if (other_type == DATAPATH){
+
+                    }
                 }
             }
-            /* Create a backwards link so it does not check backwards*/
+            /* Create a backwards link so it does not check link again*/
             done = (struct link*) xmalloc(sizeof(struct link));
             memset(done, 0x0, sizeof(struct link));
             done->node1.port = l->node2.port;
