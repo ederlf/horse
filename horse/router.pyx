@@ -204,6 +204,7 @@ cdef class OSPF:
     cdef interfaces
     cdef networks
     cdef hello_interval
+    cdef debug
     # @networks: list of announced networks 
     # @interfaces: list of OSPFInterface"
     def __cinit__(self, router_id = None, networks = [], interfaces = [],
@@ -394,7 +395,7 @@ cdef class QuaggaDaemon(Daemon):
         writeLine(configFile, 0, 'password %s' % 'horse')
         writeLine(configFile, 0, 'log file %s/qospf_%s' % (self.runDir,
                                                            self.namespace))
-        if (self.debug):
+        if (ospf.debug):
             writeLine(configFile, 0, 'debug ospf event')
             writeLine(configFile, 0, 'debug ospf zebra')
             writeLine(configFile, 0, 'debug ospf packet all')
