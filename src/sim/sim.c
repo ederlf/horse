@@ -40,10 +40,11 @@ wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
     switches = HASH_COUNT(ac);
     while (switches < topology_dps_num(topo))  {
         sleep(1);
+        ac = cm->of->active_conns;
         switches = HASH_COUNT(ac);
         time++;
         /* Exit if it takes too long to connect */ 
-        if (time > 60) {
+        if (time > 10) {
             fprintf(stderr, "Connection time expired\n");
             exit(1);
         }
@@ -66,7 +67,8 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
 
     if (sim_config_get_mode(s->config) == EMU_CTRL){
         s->evh.cm = conn_manager_new(s->evh.sch);
-        setup(s->evh.topo, s->evh.sch, s->evh.cm);
+        // s->ebr = emu_bridge_new(s->evh.cm);
+        setup(s->evh.topo, s->evh.sch, s->evh.cm, s->ebr);
         if (topology_dps_num(s->evh.topo)){
             wait_all_switches_connect(topo, s->evh.cm);
         }
@@ -77,7 +79,7 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
     end_ev->type = EVENT_END;
     scheduler_insert(s->evh.sch, end_ev);
 
-    sleep(5);
+    // sleep(5);
 
     pFile = fopen ("bwm.txt","w");
     init_timer(&s->cont, (void*)s);
@@ -90,14 +92,26 @@ static void
 sim_close(struct sim *s)
 {
     pthread_join(s->dataplane, 0);
+    clock_t t; 
+    t = clock(); 
     fclose (pFile);
     scheduler_destroy(s->evh.sch);
-    topology_destroy(s->evh.topo);
     conn_manager_destroy(s->evh.cm);
+    // emu_bridge_stop(s->ebr);
+    
+    topology_destroy(s->evh.topo);
+    
     /* TODO: move somewhere else */
     netns_launch(NULL, "ip link delete conn1");
-    netns_launch(NULL, "ip link delete conn2");
-    netns_launch(NULL, "ovs-vsctl del-br br0");
+    // netns_launch(NULL, "ip link delete conn2");
+    netns_launch(NULL, "ifconfig br0 down");
+    // netns_launch(NULL, "ovs-vsctl del-br br0");
+    netns_launch(NULL, "brctl delbr br0");
+    netns_launch(NULL, "ip netns del bridge");
+    t = clock() - t; 
+    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
+  
+    printf("sim close() took %f seconds to execute \n", time_taken); 
 }
 
 static void update_stats(struct topology *topo, uint64_t time){
