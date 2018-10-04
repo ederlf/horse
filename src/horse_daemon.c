@@ -115,7 +115,7 @@ int client_connect(uint32_t server_ip, uint16_t port)
 static void 
 send_activity(int fd, uint32_t router_id)
 {
-    uint8_t msg_data[HEADER_LEN] = {0x0, BGP_ACTIVITY, 0x0, HEADER_LEN};
+    uint8_t msg_data[HEADER_LEN] = {0x0, ROUTER_ACTIVITY, 0x0, HEADER_LEN};
     memcpy(msg_data + 4, &router_id, sizeof(uint32_t));
     int ret = send(fd, msg_data, HEADER_LEN, 0);
     if (ret == -1){
@@ -207,7 +207,7 @@ static void
 send_next_hop(int fd, uint32_t router_id, uint32_t destination,
               uint32_t netmask, uint32_t next_hop)
 {
-    uint8_t msg_data[HEADER_LEN+16] = {0x0, BGP_FIB, 0x0, HEADER_LEN+12};
+    uint8_t msg_data[HEADER_LEN+16] = {0x0, ROUTER_FIB, 0x0, HEADER_LEN+12};
     memcpy(msg_data+4, &router_id, sizeof(uint32_t));
     memcpy(msg_data + HEADER_LEN, &destination, sizeof(uint32_t));
     memcpy(msg_data + 12, &netmask, sizeof(uint32_t));

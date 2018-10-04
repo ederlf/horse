@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <log/log.h>
 #include <netemu/netns.h>
+#include <uthash/utarray.h>
 
 struct router
 {
@@ -13,6 +14,7 @@ struct router
     uint32_t router_id;                /* Highest router_id from protocols */
     bool ecmp;
     struct routing_daemon *daemon;
+    UT_array *ext_intfs;
 };
 
 /* The internal network is 172.20.0.0/16, enabling 16384 possible namespaces. 
@@ -36,16 +38,21 @@ router_new(void)
     r->router_id = 0;
     r->ecmp =  false;
     r->daemon = NULL;
+    utarray_new(r->ext_intfs, &ut_str_icd);
     return r;
 }
 
 static void
 router_stop(struct router *r){
     char rname[MAX_NODE_NAME], internal_intf[MAX_NODE_NAME+10];
-    
+    char **i = NULL;
     memcpy(rname, r->ln.base.name, MAX_NODE_NAME);
     sprintf(internal_intf, "%s-inet-ext", rname);
     delete_intf(internal_intf);
+    while ( (i=(char**)utarray_next(r->ext_intfs, i))) {
+        delete_intf(*i);
+    }
+    utarray_free(r->ext_intfs);
     netns_delete(rname);
     r->daemon->stop(r->daemon);
 }
@@ -63,6 +70,12 @@ router_add_port(struct router *r, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
                 uint32_t speed, uint32_t curr_speed)
 {   
     node_add_port( (struct node*) r, port_id, eth_addr, speed, curr_speed);
+}
+
+void 
+router_add_external_intf(struct router* r, char *intf)
+{
+    utarray_push_back(r->ext_intfs, &intf);
 }
 
 void 
@@ -204,10 +217,11 @@ router_handle_control_message(struct router *r, uint8_t *data, size_t *ret_len)
             break;
         }
         case BGP_ANNOUNCE:
-        case BGP_ACTIVITY:{
+        case ROUTER_ACTIVITY:{
+            log_debug("Received BGP BGP_ACTIVITY");
             break;
         }
-        case BGP_FIB: {
+        case ROUTER_FIB: {
             fib_add(r, data + HEADER_LEN, msg->size -  HEADER_LEN);
             break;
         }

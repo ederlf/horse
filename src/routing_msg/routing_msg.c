@@ -75,7 +75,7 @@ routing_msg_pack(struct routing_msg *msg)
             pack_bgp_announce(msg, data);
             break;
         }
-        case BGP_ACTIVITY: {
+        case ROUTER_ACTIVITY: {
             break;
         }
         default: {
@@ -117,8 +117,8 @@ routing_msg_unpack(uint8_t *data, struct routing_msg **msg)
         case BGP_ANNOUNCE: {
             break;
         }
-        case BGP_ACTIVITY:
-        case BGP_FIB: {
+        case ROUTER_ACTIVITY:
+        case ROUTER_FIB: {
             unpack_header(data, msg);
             break;
         }

@@ -6,10 +6,10 @@
 #define HEADER_LEN 8
 
 enum routing_msg_type {
-    BGP_STATE = 0,
-    BGP_ANNOUNCE = 1,
-    BGP_FIB = 2,
-    BGP_ACTIVITY = 3
+    ROUTER_ACTIVITY = 0,
+    ROUTER_FIB = 1,
+    BGP_STATE = 2,
+    BGP_ANNOUNCE = 3
 };
 
 struct routing_msg {
