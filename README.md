@@ -14,57 +14,51 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-Horse is implemented in C with Python binding implemented in Cython.
+Horse is implemented in C with Python bindings implemented in Cython.
+The modern build requires Linux, a C11 compiler, CMake 3.20+, Git, pkg-config,
+libevent with pthread support, libpcap, and Python 3.10+ with development headers.
 
-The current version of this code is compiled on Ubuntu 14.0.4.3 with the following gcc version:
-```
-gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04.3)
-```
-
-Installing Cython:
+On Debian/Ubuntu:
 
 ```bash
-$ sudo apt-get install python-pip
-$ pip install cython
+$ sudo apt-get install build-essential cmake git pkg-config libevent-dev libpcap-dev python3-dev python3-venv
 ```
 
-The connection with OpenFlow controllers needs the installation of a C version from the base part of [Libfluid](http://opennetworkingfoundation.github.io/libfluid/). Consequently, libfluid dependencies are required:
+On Fedora:
 
 ```bash
-$ sudo apt-get install autoconf libtool build-essential pkg-config
-$ sudo apt-get install libevent-dev 
-
+$ sudo dnf install gcc cmake git pkgconf-pkg-config libevent-devel libpcap-devel python3-devel
 ```
 
 ### Installing
 
-The first step is to install the C version of libfluid base from the multi-client branch.
+CMake builds LOCI from the bundled sources and downloads the libcfluid_base
+fork and cmockery at pinned commits. No manually installed libfluid or
+precompiled LOCI library is required.
 
 ```bash
-$ git clone https://github.com/ederlf/libcfluid_base.git
-$ cd libcfluid_base
-$ git checkout multi-client
-$ ./autogen
-$ ./configure
-$ make
-$ sudo make install
+$ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+$ cmake --build build --parallel 2
+$ ctest --test-dir build --output-on-failure
 ```
 
-Then compile Horse:
+Build the Python bindings in a virtual environment:
 
 ```bash
-$ cd horse
-$ ./boot.sh
-$ ./configure
-$ make
+$ python3 -m venv .venv
+$ . .venv/bin/activate
+$ python -m pip install -e .
 ```
 
-Finally, generate the cython code:
-
-```bash
-$ cd horse/python
-$ python setup.py build_ext --inplace
-```
+The Python build uses the pinned tools in `pyproject.toml` and bundles
+`libhorse.so` beside the extensions, so `LD_LIBRARY_PATH` is unnecessary.
+For offline builds, supply local dependency checkouts using
+`-DFETCHCONTENT_SOURCE_DIR_CFLUID=/path/to/libcfluid_base` and
+`-DFETCHCONTENT_SOURCE_DIR_CMOCKERY=/path/to/cmockery` when configuring CMake.
+The Python build accepts `FETCHCONTENT_SOURCE_DIR_CFLUID` as an environment
+variable. Optional native installation uses
+`cmake --install build --prefix /path/to/install`; Quagga finds `horse_daemon`
+on PATH or through `HORSE_ROUTING_HELPER`.
 
 # Creating a Topology
 
@@ -130,11 +124,21 @@ $ cd ryu; pip install .
 $ ryu-manager ryu/ryu/app/simple_switch_13.py
 ```
 
+The bundled learning-switch application was also validated with OS-Ken 4.2.0
+in a separate Python 3.12 environment:
+
+```bash
+$ python3.12 -m venv /tmp/horse-controller
+$ /tmp/horse-controller/bin/python -m pip install -r requirements-controller.txt
+$ /tmp/horse-controller/bin/python tools/run_controller.py
+```
+
+
 Now, in another window, start the example of a linear topology with 2 hosts and 2 switches:
 
 ```bash
 $ cd horse
-$ python python/linear.py 2
+$ python -m horse.linear 2
 ```
 
 The code executes ping between all hosts. You should see some informational logs about the start and conclusion of pings:
@@ -157,7 +161,7 @@ The code executes ping between all hosts. You should see some informational logs
 
 ## Authors
 
-* **Eder Leao Fernandes** - *Initial work* - [Personal Page](http://www.eecs.qmul.ac.uk/~eleao/)
+* **Eder Leao Moosmann** - main author [Personal Page](http://www.ederlm.de)
 
 See also the list of [contributors](https://github.com/ederlf/horse/contributors) who participated in this project.
 

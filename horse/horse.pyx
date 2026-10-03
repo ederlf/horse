@@ -1,7 +1,14 @@
-cimport horse
+from . cimport horse
+from .router cimport ExaBGPDaemon, QuaggaDaemon
 from libc.stdint cimport uint64_t
 from libc.stdint cimport UINT64_MAX
 import random
+import os.path
+import json
+import re
+from .msg import ip2int, int2ip, netmask2cidr
+from collections import namedtuple 
+
 
 # class Intf(object):
 #     # IPv4 and IPv6 
@@ -23,7 +30,7 @@ import random
 #         # Convert string to number
 #         ip_mask = ipv4_addr.split('/')
 #         ip_parts = ip_mask[0].split('.')
-#         self.ipv4_addr = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
+#         self.ipv4_addr = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(BGP[3])
 #         if len(ip_mask) == 2:
 #             cidr = int(ip_mask[1])
 #             self.ipv4_mask = ((2**cidr) - 1) << (32 - cidr)
@@ -40,25 +47,25 @@ cdef class SDNSwitch:
     # Default port is the IANA number allocated for OpenFlow  
     def __cinit__(self, name, uint64_t dp_id, ctrl_ip = "127.0.0.1", 
                   ctrl_port = 6653):
-        self._dp_ptr = dp_new(dp_id, ctrl_ip, ctrl_port)
+        self._dp_ptr = dp_new(dp_id, ctrl_ip.encode("utf-8"), ctrl_port)
         self.name = name
 
     # def add_port(self, intf):
-    #     mac = intf.eth_addr.replace(':', '').decode('hex')
+    #     mac = bytes.fromhex(intf.eth_addr.replace(':', ''))
     #     cdef uint8_t *c_eth_addr = mac
     #     dp_add_port(self._dp_ptr, intf.port_id, c_eth_addr, intf.max_speed, intf.cur_speed) 
 
     def add_port(self, port, eth_addr, max_speed = 1000000, cur_speed = 10000):
-        mac = eth_addr.replace(':', '').decode('hex')
+        mac = bytes.fromhex(eth_addr.replace(':', ''))
         cdef uint8_t *c_eth_addr = mac
         dp_add_port(self._dp_ptr, port, c_eth_addr, max_speed, cur_speed)
 
     property name:
         def __get__(self):
-            return dp_name(self._dp_ptr)
+            return dp_name(self._dp_ptr).decode("utf-8")
 
         def __set__(self, name):
-            dp_set_name(self._dp_ptr, name)
+            dp_set_name(self._dp_ptr, name.encode("utf-8"))
 
     @property
     def dp_id(self):
@@ -68,21 +75,73 @@ cdef class SDNSwitch:
     def uuid(self):
         return dp_uuid(self._dp_ptr)     
 
-
+params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
+Port = namedtuple('Port', params)
 cdef class Router:
-    cdef router* _router_ptr 
+    cdef router* _router_ptr
+    cdef daemon
+    cdef ports
+    cdef id_set
+    # cdef quagga_daemon *quagga_ptr
 
-    def __cinit__(self, name):
+    def __cinit__(self, name, *protocols, daemon = "quagga", runDir = "/tmp",
+                  **config_files):
         self._router_ptr = router_new()
-        # It needs to be improved when number of apps grow
         self.name = name
+        self.ports = {}
+        self.id_set = False
+        # Daemon pointers are provided by the selected adapter.
+        self.daemon = daemon
+        if daemon == "quagga":
+            self.daemon = QuaggaDaemon(self.name, runDir, protocols,
+                                       config_files)
+            self.set_quagga_daemon(self.daemon)
+
+        elif daemon == "exabgp":
+            self.daemon = ExaBGPDaemon(self.name, runDir, protocols,
+                                       config_files)
+            self.set_exabgp_daemon(self.daemon)
+
+        if self.daemon.router_id:
+            router_set_id(self._router_ptr, ip2int(self.daemon.router_id))
+            self.id_set = True
+
+        if self.daemon.get_ecmp_enabled():
+            router_set_ecmp(self._router_ptr, self.daemon.get_ecmp_enabled())
+
+
+    def set_exabgp_daemon(self, ExaBGPDaemon d):
+        router_set_exabgp_daemon(self._router_ptr, d.get_exabgp_ptr())
+
+    def set_quagga_daemon(self, QuaggaDaemon d):
+        router_set_quagga_daemon(self._router_ptr, d.get_quagga_ptr())
+
+    def add_port(self, port, eth_addr, ip = None, 
+                netmask = None, max_speed = 1000000, cur_speed = 10000):
+        # TODO: Add mac conversion to utils...
+        mac = bytes.fromhex(eth_addr.replace(':', ''))
+        cdef uint8_t *c_eth_addr = mac
+        # Add internal for check of configuration
+        self.ports[ip] = Port(port, eth_addr, ip, netmask, max_speed,
+                              cur_speed)
+        router_add_port(self._router_ptr, port, c_eth_addr, max_speed,
+                        cur_speed)
+        if ip != None and netmask != None:
+            int_ip = ip2int(ip)
+            int_nm = ip2int(netmask)
+            router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)     
+            if not self.id_set and router_id(self._router_ptr) < int_ip:
+                router_set_id(self._router_ptr, int_ip)
+
+    def pick_router_id(self):
+        return max([ip2int(ip) for ip in self.ports])
 
     property name:
         def __get__(self):
-            return router_name(self._router_ptr)
+            return router_name(self._router_ptr).decode("utf-8")
 
         def __set__(self, name):
-            router_set_name(self._router_ptr, name)
+            router_set_name(self._router_ptr, name.encode("utf-8"))
 
     @property
     def uuid(self):
@@ -91,6 +150,7 @@ cdef class Router:
 cdef class Host:
     cdef host* _host_ptr
     cdef int exec_id
+    cdef object ports # Quick workaround to get ips
 
     def __cinit__(self, name):
         self._host_ptr = host_new()
@@ -99,46 +159,55 @@ cdef class Host:
         host_add_app(self._host_ptr, 17) #UDP
         self.exec_id = 1
         self.name = name
+        self.ports = []
 
     def add_port(self, port, eth_addr, ip = None, 
                 netmask = None, max_speed = 1000000, cur_speed = 10000):
         # TODO: Add mac conversion to utils...
-        mac = eth_addr.replace(':', '').decode('hex')
+        mac = bytes.fromhex(eth_addr.replace(':', ''))
         cdef uint8_t *c_eth_addr = mac
         host_add_port(self._host_ptr, port, c_eth_addr, max_speed, cur_speed)
+        self.ports.append(Port(port, eth_addr, ip, netmask, max_speed,
+                               cur_speed))
         if ip != None and netmask != None:
-            ip_parts = ip.split('.')
-            int_ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-            nm_parts = netmask.split('.')
-            int_nm = (int(nm_parts[0]) << 24) + (int(nm_parts[1]) << 16) + (int(nm_parts[2]) << 8) + int(nm_parts[3])
+            int_ip = ip2int(ip)
+            int_nm = ip2int(netmask)
             host_set_intf_ipv4(self._host_ptr, port, int_ip, int_nm)
 
+    def get_ports(self):
+        return self.ports
+
+    def set_default_gw(self, ip, port):
+        int_ip = ip2int(ip)
+        host_set_default_gw(self._host_ptr, int_ip, port)
+
     def ping(self, dst, start_time = 0):
-        cdef int ip
-        ip_parts = dst.split('.')
-        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3])
-        host_add_app_exec(self._host_ptr, self.exec_id, 1, 1, start_time, <void*> &ip, sizeof(int))
+        cdef uint32_t ip
+        ip = ip2int(dst)
+        host_add_app_exec(self._host_ptr, self.exec_id, 1, 1,
+                          start_time, <void*> &ip, sizeof(int))
         self.exec_id += 1
 
     # Rate in Mbps, duration and interval in seconds
-    def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001, src_port = random.randint(5002, 65000)):
-        cdef int ip
+    def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001,
+            src_port = random.randint(5002, 65000)):
+        cdef uint32_t ip
         cdef raw_udp_args args
-        ip_parts = dst.split('.')
-        ip = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(ip_parts[3]) 
+        ip = ip2int(dst)
         args.rate = rate * 1000000 #Mbits to bits
         args.ip_dst = ip
         args.dst_port = dst_port
         args.src_port = src_port 
-        host_add_app_exec(self._host_ptr, self.exec_id, 17, duration, start_time, <void*> &args, sizeof(raw_udp_args))
+        host_add_app_exec(self._host_ptr, self.exec_id, 17, duration,
+                          start_time, <void*> &args, sizeof(raw_udp_args))
         self.exec_id += 1
 
     property name:
         def __get__(self):
-            return host_name(self._host_ptr)
+            return host_name(self._host_ptr).decode("utf-8")
 
         def __set__(self, name):
-            host_set_name(self._host_ptr, name)
+            host_set_name(self._host_ptr, name.encode("utf-8"))
 
     @property
     def uuid(self):
@@ -193,28 +262,29 @@ cdef class Topology:
     #         topology_destroy(self._topo_ptr)
 
     # @staticmethod
-    cdef topology* topo_ptr(self):
-        return self._topo_ptr
+    # cdef topology* topo_ptr(self):
+    #     return self._topo_ptr
 
     def add_node(self, Node, **kwargs):
+        if "name" in kwargs:
+            self.node_info[kwargs["name"]] = kwargs
+            self.nodes[kwargs["name"]] = Node
+        else:
+            self.nodes[Node.name] = Node
+    
         if isinstance(Node, SDNSwitch):
             dp = <SDNSwitch> Node
-            if "name" in kwargs:
-                self.node_info[kwargs["name"]] = kwargs
-                self.nodes[kwargs["name"]] = Node
             topology_add_datapath(self._topo_ptr, dp._dp_ptr)
-
         elif isinstance (Node, Host):
             h = <Host> Node
-            # TODO: Remember to improve it
-            if "name" in kwargs:
-                self.node_info[kwargs["name"]] = kwargs
-                self.nodes[kwargs["name"]] = Node
             topology_add_host(self._topo_ptr, h._host_ptr)
+        elif isinstance (Node, Router):
+            r = <Router> Node
+            topology_add_router(self._topo_ptr, r._router_ptr)
 
     def add_link(self, node1, node2, port1, port2, bw = 1, latency = 0):
-        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1, port2, bw, latency, False)
-
+        topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1,
+                          port2, bw, latency, False)
 
     property nodes:
         def __get__(self):

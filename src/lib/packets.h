@@ -50,10 +50,18 @@
 #define IP_PROTO_TCP 6
 #define IP_PROTO_UDP 17
 #define IP_PROTO_ICMPV6 58
+#define IP_PROTO_OSPF 89
+
+#define TCP_PORT_BGP 179
 
 #define ICMPV6_NEIGH_SOL 135
 #define ICMPV6_NEIGH_ADV 136   
 
+#define BGP_OPEN 1
+#define BGP_UPDATE 2
+#define BGP_NOTIFICATION 3
+#define BGP_KEEPALIVE 4
+#define BGP_ROUTE_REFRESH 5
 
 struct eth_header {
     uint8_t eth_dst[ETH_LEN];

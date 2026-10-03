@@ -1,18 +1,7 @@
-!/bin/bash
-
-install deps if we are in travis
-if [ -n "$TRAVIS" ]; then
-	sudo apt-get install python-pip
-	sudo pip install cython
-	sudo apt-get install autoconf libtool build-essential pkg-config
-	sudo apt-get install libevent-dev
-	git clone https://github.com/ederlf/libcfluid_base.git && cd $TRAVIS_BUILD_DIR/libcfluid_base && 
-	git checkout multi-client && ./autogen.sh && ./configure && make
-	sudo make install
-	cd $TRAVIS_BUILD_DIR
-	./boot.sh && ./configure && make
-	cd $TRAVIS_BUILD_DIR/python && python setup.py build_ext --inplace
-else
-	./boot.sh && ./configure && make
-	cd python && python setup.py build_ext --inplace
-fi
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo "$@"
+cmake --build build --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-2}"
+ctest --test-dir build --output-on-failure
+python3 -m pip install -e .

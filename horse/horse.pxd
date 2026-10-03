@@ -2,6 +2,7 @@ from libc.stdint cimport uint64_t
 from libc.stdint cimport uint32_t
 from libc.stdint cimport uint16_t
 from libc.stdint cimport uint8_t
+from .router cimport quagga_daemon, exabgp_daemon
 
 cdef extern from "sim/sim.h":
 
@@ -31,7 +32,8 @@ cdef extern from "sim/sim.h":
     # Datapath .h
     datapath* dp_new(uint64_t, char*, int)
     void dp_destroy(datapath* dp)
-    void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr, uint32_t speed, uint32_t cur_speed)
+    void dp_add_port(datapath *dp, uint32_t port_id, uint8_t *eth_addr,
+                     uint32_t speed, uint32_t cur_speed)
     void dp_set_name(datapath *dp, char* name)
     char* dp_name(const datapath *dp)
     uint64_t dp_id(const datapath* dp)
@@ -42,25 +44,34 @@ cdef extern from "sim/sim.h":
     void router_destroy(router *r)
     void router_add_port(router *r, uint32_t port_id, uint8_t *eth_addr,
                          uint32_t speed, uint32_t cur_speed)
-    void router_set_intf_ipv4(router *h, uint32_t port_id, 
-                            uint32_t addr, uint32_t netmask) 
-    uint64_t router_uuid(const router* h)
-    void router_set_name(router *h, char* name)
-    char* router_name(const router *h)
+    # void router_add_bgp(router *r, bgp *p)
+    void router_set_intf_ipv4(router *r, uint32_t port_id,
+                              uint32_t addr, uint32_t netmask) 
+    uint64_t router_uuid(const router* r)
+    void router_set_quagga_daemon(router *r, quagga_daemon *d)
+    void router_set_exabgp_daemon(router *r, exabgp_daemon *d)
+    void router_set_name(router *r, char* name)
+    char* router_name(const router *r)
+    void router_set_id(router *r, uint32_t router_id)
+    void router_set_ecmp(router *r, bint enable)
+    bint router_ecmp(router *r)
+    uint32_t router_id(const router *r)
 
     # Host.h
     host* host_new()
-    void host_destroy(host* h)
+    void host_destroy(host *h)
     void host_add_port(host *h, uint32_t port_id, uint8_t *eth_addr,
                        uint32_t speed, uint32_t cur_speed)
     void host_set_intf_ipv4(host *h, uint32_t port_id, 
                             uint32_t addr, uint32_t netmask)
+    void host_set_default_gw(host *h, uint32_t ip, uint32_t port)
     uint64_t host_uuid(const host* h)
     void host_set_name(host *h, char* name)
     char* host_name(const host *h)
     void host_add_app(host *h, uint16_t type)
-    void host_add_app_exec(host *h, uint64_t id, uint32_t type, uint32_t execs_num, uint64_t 
-                        start_time, void* args, size_t arg_len)
+    void host_add_app_exec(host *h, uint64_t id, uint32_t type,
+                           uint32_t execs_num, uint64_t start_time, void* args, 
+                           size_t arg_len)
     void host_start_app(host *h, uint64_t id)
 
     # Topology.h
@@ -68,9 +79,12 @@ cdef extern from "sim/sim.h":
     void topology_destroy(topology *topo)
     void topology_add_datapath(topology *topo, datapath *dp)
     void topology_add_host(topology *topo, host *h)
+    void topology_add_router(topology *topo, router *r)
     uint32_t topology_dps_num(const topology *topo)
     uint32_t topology_links_num(const topology *topo)
-    void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB, uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency, bint directed)
+    void topology_add_link(topology *t, uint64_t uuidA, uint64_t uuidB,
+                           uint32_t portA, uint32_t portB, uint32_t bw, 
+                           uint32_t latency, bint directed)
     
     # Sim.h
     # TODO: Create an object for the simulator to ease adding config?

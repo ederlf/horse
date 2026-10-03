@@ -69,24 +69,49 @@ host_recv_netflow(struct node *n, struct netflow *flow)
        both have the node destination MAC and IP       */
     uint16_t eth_type = flow->match.eth_type;
     struct netflow* nf = l2_recv_netflow(&h->ep, flow); 
-    
-    if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
-        if (l3_recv_netflow(&h->ep, nf)){
-            struct app *app;
-            uint16_t ip_proto = flow->match.ip_proto;
-            HASH_FIND(hh, h->apps, &ip_proto, sizeof(uint16_t), app);
-            /* If gets here send to application */
-            log_debug("APP %d %p", ip_proto, app);
-            if (app){
-                if (app->handle_netflow(nf)){
-                    return find_forwarding_ports(&h->ep, nf);
-                }
-            } 
+    if (nf) {
+        if (eth_type == ETH_TYPE_IP || eth_type == ETH_TYPE_IPV6) {
+            /* A flow arrived here */
+            if (is_l3_destination(&h->ep, nf)){
+                struct app *app;
+                uint16_t ip_proto = flow->match.ip_proto;
+                HASH_FIND(hh, h->apps, &ip_proto, sizeof(uint16_t), app);
+                /* If gets here send to application */
+                log_debug("APP %d %p", ip_proto, app);
+                if (app){
+                    if (app->handle_netflow(nf)){
+                        struct out_port *op;
+                        struct netflow *f = find_forwarding_ports(&h->ep, nf,
+                                                                  false);
+                        if (f != NULL) {
+                            LL_FOREACH(flow->out_ports, op) {
+                                struct port *p = node_port(&h->ep.base, op->port);
+                                f->match.ipv4_src = p->ipv4_addr->addr;
+                                memcpy(f->match.eth_src, p->eth_address, ETH_LEN);
+                            }
+                        }
+                        return f;
+                    }
+                } 
+            }
         }
-    }
-    else if (eth_type == ETH_TYPE_ARP){
-        /* End here if there is not further processing */
-        return nf;
+        else if (eth_type == ETH_TYPE_ARP){
+            /* There is something after the ARP. Does not seem the ideal flow 
+               but needs to be done only in the host. 
+            */
+            uint16_t new_eth_type = nf->match.eth_type;
+            if (nf != NULL && (new_eth_type == ETH_TYPE_IP || 
+                new_eth_type == ETH_TYPE_IPV6 )){
+                /* Fill l2/l3 information. Shall return a list for multicast?*/
+                struct out_port *op;
+                LL_FOREACH(nf->out_ports, op) {
+                    struct port *p = node_port(&h->ep.base, op->port);
+                    nf->match.ipv4_src = p->ipv4_addr->addr;
+                    memcpy(nf->match.eth_src, p->eth_address, ETH_LEN);
+                }
+            }
+            return nf;
+        }
     }
     return NULL;
 }
@@ -127,13 +152,37 @@ host_execute_app(struct host *h, struct exec *exec)
     struct netflow *flow = NULL;
     /* If app still has remaining executions */
     if (app) {
+        char dst[INET_ADDRSTRLEN];
+        struct in_addr ipv4_dst;
+        struct out_port *op;
         flow = app->start(exec->start_time, exec->args);
         flow->exec_id = exec->id;
-        log_info("Flow Start time APP %ld", flow-> start_time);
+        ipv4_dst.s_addr = ntohl(flow->match.ipv4_dst);
+        get_ip_str(&ipv4_dst, dst, AF_INET);
+        log_info("Flow Start from %s to %s time APP %ld",h->ep.base.name, dst,
+                 flow-> start_time);
         exec->exec_cnt -= 1;
-        return find_forwarding_ports(&h->ep, flow);
+        flow = find_forwarding_ports(&h->ep, flow, false);
+        if (flow != NULL) {
+            LL_FOREACH(flow->out_ports, op) {
+                struct port *p = node_port(&h->ep.base, op->port);
+                flow->match.ipv4_src = p->ipv4_addr->addr;
+                memcpy(flow->match.eth_src, p->eth_address, ETH_LEN);
+            }
+        }
     }
-    return NULL;
+    return flow;
+}
+
+void host_set_default_gw(struct host *h, uint32_t ip, uint32_t port)
+{
+    struct route_entry_v4 e; 
+    memset(&e, 0x0, sizeof(struct route_entry_v4));
+    e.ip = 0;
+    e.netmask = 0;
+    e.gateway = ip;
+    e.iface = port;
+    add_ipv4_entry(&h->ep.rt, &e);
 }
 
 void host_set_name(struct host* h, char *name)

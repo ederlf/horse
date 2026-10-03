@@ -30,7 +30,8 @@ node_destroy_ports(struct node *n)
 }
 
 void 
-node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
+node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
+              uint32_t speed, uint32_t curr_speed)
 {
     struct port *p = port_new(port_id, eth_addr, speed, curr_speed);
     /* TODO, allow to give a name to the interface in the python binding */
@@ -113,7 +114,8 @@ node_update_port_capacity(struct node *n, int bits, uint32_t out_port)
     }
 }
 
-int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_port)
+int node_calculate_port_loss(struct node *n, struct netflow *nf,
+                             uint32_t out_port)
 {
     struct port *p = node_port(n, out_port);
     if (p) {
@@ -121,4 +123,22 @@ int node_calculate_port_loss(struct node *n, struct netflow *nf, uint32_t out_po
     }
     return 0;
     UNUSED(nf);
+}
+
+void node_write_stats(const struct node *n, uint64_t time, FILE *fp)
+{
+    struct port *p, *tmp;
+    uint64_t total_tx = 0; 
+    uint64_t total_rx = 0;
+    uint64_t t = time / 1000000;
+    HASH_ITER(hh, n->ports, p, tmp) {
+        uint64_t tx_rate, rx_rate;
+        tx_rate = p->stats.tx_bytes - p->prev_stats.tx_bytes;
+        rx_rate = p->stats.rx_bytes - p->prev_stats.rx_bytes;
+        total_tx += tx_rate;
+        total_rx += rx_rate;
+        fprintf (fp, "%"PRIu64",%s,%"PRIu64",%"PRIu64"\n", t, p->name, tx_rate, rx_rate);
+        p->prev_stats.tx_bytes = p->stats.tx_bytes;
+        p->prev_stats.rx_bytes = p->stats.rx_bytes;
+    }
 }

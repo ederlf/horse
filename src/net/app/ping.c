@@ -12,7 +12,8 @@ int ping_handle_netflow(struct netflow *flow)
             /* Turns netflow into an echo reply. 
                No need to change the execution id because it uses the same flow.    
             */
-            log_info("ECHO REQUEST from:%x to:%x", flow->match.ipv4_src, flow->match.ipv4_dst);
+            log_info("ECHO REQUEST from:%x to:%x", flow->match.ipv4_src,
+                     flow->match.ipv4_dst);
             uint32_t ip_dst = flow->match.ipv4_src;
             flow->match.icmpv4_type = ECHO_REPLY;
             flow->match.ipv4_dst = ip_dst;
@@ -24,7 +25,9 @@ int ping_handle_netflow(struct netflow *flow)
             uint64_t start_time;
             memcpy(&start_time, flow->icmp_info.data, sizeof(uint64_t));
             uint64_t end_time = flow->start_time - start_time;
-            log_info("ECHO_REPLY ms:%lu.%lu Src:%x Dst:%x", end_time / 1000, end_time % 1000, flow->match.ipv4_dst, flow->match.ipv4_src );
+            log_info("ECHO_REPLY ms:%lu.%lu Src:%x Dst:%x", end_time / 1000,
+                     end_time % 1000, flow->match.ipv4_dst, 
+                     flow->match.ipv4_src);
             return 0;  
         }
     }

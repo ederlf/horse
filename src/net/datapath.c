@@ -465,11 +465,13 @@ dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uin
     return NULL;
 }
 
-void dp_set_name(struct datapath* dp, char *name) {
+void 
+dp_set_name(struct datapath* dp, char *name) {
     memcpy(dp->base.name, name, MAX_NODE_NAME);
 }
 
-char *dp_name(struct datapath *dp)
+char *
+dp_name(struct datapath *dp)
 {
     return dp->base.name;
 }
@@ -486,14 +488,14 @@ dp_id(const struct datapath* dp)
     return dp->dp_id;
 }
 
-struct flow_table
-*dp_flow_table(const struct datapath *dp, uint8_t table_id)
+struct flow_table*
+dp_flow_table(const struct datapath *dp, uint8_t table_id)
 {
     return dp->tables[table_id];
 }
 
-struct of_settings
-*dp_settings(const struct datapath *dp)
+struct of_settings*
+dp_settings(const struct datapath *dp)
 {
     return dp->dp_settings;
 }
@@ -502,24 +504,4 @@ struct port*
 dp_ports(const struct datapath *dp)
 {
     return dp->base.ports;
-}
-
-void 
-dp_write_stats(const struct datapath *dp, uint64_t time, FILE *fp)
-{
-    struct port *p, *tmp;
-    uint64_t total_tx = 0; 
-    uint64_t total_rx = 0;
-    uint64_t t = time / 1000000;
-    HASH_ITER(hh, dp->base.ports, p, tmp) {
-        uint64_t tx_rate, rx_rate;
-        tx_rate = p->stats.tx_bytes - p->prev_stats.tx_bytes;
-        rx_rate = p->stats.rx_bytes - p->prev_stats.rx_bytes;
-        total_tx += tx_rate;
-        total_rx += rx_rate;
-        fprintf (fp, "%"PRIu64",%s,%"PRIu64",%"PRIu64"\n", t, p->name, tx_rate, rx_rate);
-        p->prev_stats.tx_bytes = p->stats.tx_bytes;
-        p->prev_stats.rx_bytes = p->stats.rx_bytes;
-    }
-    // fprintf (fp, "%"PRIu64";%s;%"PRIu64";%"PRIu64"\n", t, "total", total_tx, total_rx);
 }

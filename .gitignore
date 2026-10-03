@@ -11,6 +11,7 @@
 .deps/
 .libs/
 autom4te.cache/
+python/topos/config/
 config.h
 configure
 config.sub
@@ -31,3 +32,16 @@ config.log
 *.pc
 config.status
 Vagrantfile
+plans/
+build/
+vendor/libcfluid_base/
+vendor/cmockery/
+
+# Modern Python build artifacts
+__pycache__/
+*.egg-info/
+dist/
+.venv/
+
+# Local build validation note
+/docs/BUILD_MODERNIZATION.md

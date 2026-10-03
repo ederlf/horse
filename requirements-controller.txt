@@ -1,0 +1,2 @@
+# Validated with Python 3.12; independent of Horse's Python interpreter.
+os-ken==4.2.0

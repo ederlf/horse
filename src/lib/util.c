@@ -63,31 +63,34 @@ nlz(uint32_t x) {
    return pop(~x);
 }
 
-int ntz(unsigned x) {
+int 
+ntz(unsigned x) {
    return pop(~x & (x - 1));
 }
 
 // Assumes 0 <= max <= RAND_MAX
 // Returns in the closed interval [0, max]
-uint32_t random_at_most(uint32_t max) {
-  uint32_t num_bins = (uint32_t) max + 1;
+uint32_t 
+random_at_most(uint32_t max) {
+    uint32_t num_bins = (uint32_t) max + 1;
     uint32_t num_rand = (uint32_t) RAND_MAX + 1;
     uint32_t bin_size = num_rand / num_bins;
     uint32_t defect   = num_rand % num_bins;
 
-  uint32_t x;
-  do {
-   x = rand();
-  }
-  // This is carefully written not to overflow
-  while (num_rand - defect <= (uint32_t)x);
+    uint32_t x;
+    do {
+        x = rand();
+    }
+    // This is carefully written not to overflow
+    while (num_rand - defect <= (uint32_t)x);
 
-  // Truncated division is intentional
-  return x/bin_size;
+    // Truncated division is intentional
+    return x/bin_size;
 }
 
 /* Return the size of the string for reuse */
-char* file_to_string(const char * file_name, size_t *size){
+char* 
+file_to_string(const char * file_name, size_t *size){
     FILE *fh = fopen(file_name, "r");
     char *str_file = NULL; 
     if ( fh != NULL ){
@@ -106,4 +109,51 @@ char* file_to_string(const char * file_name, size_t *size){
         *size = s;
     }
     return str_file;
+}
+
+uint8_t 
+get_ip_family(char *ip)
+{
+    if ( strchr(ip,'.') ) {
+        return AF_INET;
+    }
+    else if ( strchr(ip,':') ) {
+        return AF_INET6;
+    }
+    else {
+        fprintf(stderr, "Address %s is from unknown family", ip);
+        return AF_MAX;
+    } 
+}
+
+int
+ip_str_addr_compare(char *ip1, char *ip2, uint8_t addr_family)
+{
+    if ( addr_family == AF_INET ) {
+        struct sockaddr_in sa1, sa2;
+        inet_pton(AF_INET, ip1, &(sa1.sin_addr));
+        inet_pton(AF_INET, ip2, &(sa2.sin_addr));
+        return memcmp(&sa1.sin_addr.s_addr, &sa2.sin_addr.s_addr,
+                      sizeof(uint32_t));
+    }
+    else {
+        struct sockaddr_in6 sa1, sa2;
+        inet_pton(AF_INET6, ip1, &(sa1.sin6_addr));
+        inet_pton(AF_INET6, ip2, &(sa2.sin6_addr));
+        return memcmp(sa1.sin6_addr.s6_addr, sa2.sin6_addr.s6_addr,
+                      INET6_ADDRSTRLEN);
+    }
+}
+
+void
+get_ip_str(void *addr, char *str, uint8_t addr_family)
+{
+    inet_ntop(addr_family, addr, str,
+              addr_family == AF_INET? INET_ADDRSTRLEN: INET6_ADDRSTRLEN);
+}
+
+void 
+get_ip_net(char *ip, void *net_ip, uint8_t addr_family)
+{
+    inet_pton(addr_family, ip, net_ip);
 }

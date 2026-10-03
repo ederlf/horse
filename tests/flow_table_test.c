@@ -36,10 +36,11 @@ void lookup_expired(void **state)
     struct ofl_flow_key key;
     memset(&key, 0x0, sizeof(struct ofl_flow_key));
     key.eth_type = 0x800;
-    ret = flow_table_lookup(ft, &key, 4);
+    /* Simulation timestamps are microseconds; OpenFlow timeouts are seconds. */
+    ret = flow_table_lookup(ft, &key, 4000000);
     assert_int_not_equal(ret, NULL);
     assert_int_equal(ret->key.eth_type, 0x800);
-    ret = flow_table_lookup(ft, &key, 10);
+    ret = flow_table_lookup(ft, &key, 10000000);
     assert_int_equal(ret, NULL);
     flow_table_destroy(ft);
 }
@@ -58,10 +59,10 @@ void stress_lookup_expired(void **state)
         struct ofl_flow_key key;
         memset(&key, 0x0, sizeof(struct ofl_flow_key));
         key.eth_type = 0x800;
-        ret = flow_table_lookup(ft, &key, 4);
+        ret = flow_table_lookup(ft, &key, 4000000);
         assert_int_not_equal(ret, NULL);
         assert_int_equal(ret->key.eth_type, 0x800);
-        ret = flow_table_lookup(ft, &key, 10);
+        ret = flow_table_lookup(ft, &key, 10000000);
         assert_int_equal(ret, NULL);
     }
     flow_table_destroy(ft);
@@ -253,7 +254,7 @@ void modify_strict_expired(void **state)
     set_ip_proto(fl3, 7);
     set_eth_type(fl3, 0x800);
     flow_add_instructions(fl3, is2);
-    modify_flow(ft, fl3, true, 10);
+    modify_flow(ft, fl3, true, 10000000);
     /* Check if only the first flow is deleted because of expiration*/
     DL_FOREACH(ft->flows, elt) {
         struct flow *hash = elt->flows;

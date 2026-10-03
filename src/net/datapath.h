@@ -27,13 +27,6 @@
 
 struct datapath;
 
-/* Access datapaths by the dpid */
-struct dp_node {
-    uint64_t dp_id;
-    struct datapath *dp;
-    UT_hash_handle hh;
-};
-
 struct datapath* dp_new(uint64_t dp_id, char *ip, int port);
 
 void dp_destroy(struct datapath *dp);
@@ -82,6 +75,4 @@ struct port* dp_ports(const struct datapath *dp);
 struct flow_table *dp_flow_table(const struct datapath *dp, uint8_t table_id);
 
 struct of_settings *dp_settings(const struct datapath *dp);
-
-void dp_write_stats(const struct datapath *dp, uint64_t time, FILE *fp);
 #endif /*DATAPATH_H */

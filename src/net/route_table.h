@@ -35,8 +35,12 @@ struct route_table {
 void route_table_init(struct route_table *rt);
 void route_table_clean(struct route_table *rt);
 void add_ipv4_entry(struct route_table *rt, struct route_entry_v4 *e);
-struct route_entry_v4 *ipv4_lookup(const struct route_table *rt, uint32_t ip);
+struct route_entry_v4 *ipv4_lookup(const struct route_table *rt, uint32_t ip,
+                                   uint32_t hash);
+struct route_entry_v4 *ipv4_search_exact(const struct route_table *rt,
+                                         uint32_t ip, uint8_t cidr);
 void add_ipv6_entry(struct route_table *rt, struct route_entry_v6 *e);
-struct route_entry_v6 *ipv6_lookup(const struct route_table *rt, uint8_t ip[IPV6_LEN]);
-
+struct route_entry_v6 *ipv6_lookup(const struct route_table *rt,
+                                   uint8_t ip[IPV6_LEN]);
+void route_table_print(struct route_table *rt, char *res);
 #endif

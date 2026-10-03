@@ -1,0 +1,48 @@
+name: Build and experiment smoke tests
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.10', '3.14']
+        compiler: [gcc, clang]
+    env:
+      CC: ${{ matrix.compiler }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: bindings
+        with:
+          python-version: ${{ matrix.python }}
+      - name: System dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libevent-dev libpcap-dev
+      - name: C build and original tests
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          cmake --install build --prefix "$PWD/build/install"
+          build/install/bin/horse -h
+      - name: Python bindings and topology checks
+        env:
+          FETCHCONTENT_SOURCE_DIR_CFLUID: ${{ github.workspace }}/build/_deps/cfluid-src
+        run: |
+          python -m pip install -e .
+          python tests/bindings_smoke.py
+          python -m compileall -q horse experiments
+      - uses: actions/setup-python@v5
+        id: controller
+        with:
+          python-version: '3.12'
+      - name: Real controller smoke tests
+        run: |
+          python -m venv /tmp/horse-controller
+          /tmp/horse-controller/bin/python -m pip install -r requirements-controller.txt
+          '${{ steps.bindings.outputs.python-path }}' tests/integration_smoke.py --controller-python /tmp/horse-controller/bin/python
+      - name: Source distribution and wheel
+        env:
+          FETCHCONTENT_SOURCE_DIR_CFLUID: ${{ github.workspace }}/build/_deps/cfluid-src
+        run: |
+          '${{ steps.bindings.outputs.python-path }}' -m pip install build
+          '${{ steps.bindings.outputs.python-path }}' -m build

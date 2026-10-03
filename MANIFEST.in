@@ -1,0 +1,13 @@
+include CMakeLists.txt LICENSE README.md build.sh
+recursive-include src *.c *.h
+recursive-include vendor/loci *.c *.h README
+recursive-include vendor/json *.c *.h
+recursive-include vendor/log *.c *.h
+recursive-include vendor/netemu *.c *.h
+recursive-include vendor/patricia *.c *.h
+recursive-include vendor/uthash *.h
+recursive-include horse *.pyx *.pxd
+recursive-include tests *.c *.h
+include requirements-controller.txt
+recursive-include experiments *.py *.sh
+recursive-include tools *.py

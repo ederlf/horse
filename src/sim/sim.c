@@ -9,11 +9,14 @@
  */
 
 #include "sim.h"
+#include "setup.h"
 #include <unistd.h>
 #include <time.h>
-#include <uthash/utlist.h>
+#include <netemu/netns.h>
 #include "lib/openflow.h"
+#include "lib/signal_handler.h"
 #include <log/log.h>
+
 
 #define EV_NUM 1000000
 
@@ -27,51 +30,30 @@ int last_wrt = 0;
 uint64_t last_ctrl = 0;
 uint64_t last_stats = 0;
 
-static void 
-initial_events(struct sim *s)
-{
-
-    struct scheduler *sch = s->evh.sch;
-    struct topology *topo = s->evh.topo;
-    struct node *node, *tmp;
-    /* Not very efficient now... */
-    HASH_ITER(hh, topology_nodes(topo), node, tmp){
-        if (node->type == HOST){
-            struct exec *exec, *exec_tmp;
-            HASH_ITER(hh, host_execs((struct host*) node), exec, exec_tmp) {
-                struct sim_event_app_start *ev = sim_event_app_start_new(exec->start_time, node->uuid, exec);
-                scheduler_insert(sch, (struct sim_event*) ev);
-            }   
-        }
-    }
-    /* Event to stop the simulator */
-    struct sim_event *end_ev; 
-    end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
-    end_ev->type = EVENT_END;
-    scheduler_insert(sch, end_ev);
-}
-
-struct timespec last = {0};
-struct timespec now = {0};
-FILE *pFile;
 
 static void 
-wait_all_switches_connect(struct topology *topo, struct of_manager *om)
+wait_all_switches_connect(struct topology *topo, struct conn_manager *cm)
 {
     uint32_t switches;
     uint32_t time = 0;
-    switches = HASH_COUNT(om->of->active_conns);
+    struct of_conn *ac = cm->of->active_conns;
+    switches = HASH_COUNT(ac);
     while (switches < topology_dps_num(topo))  {
         sleep(1);
-        switches = HASH_COUNT(om->of->active_conns);
+        ac = cm->of->active_conns;
+        switches = HASH_COUNT(ac);
         time++;
         /* Exit if it takes too long to connect */ 
-        if (time > 60) {
+        if (time > 10) {
             fprintf(stderr, "Connection time expired\n");
             exit(1);
         }
     } 
 }
+
+struct timespec last = {0};
+struct timespec now = {0};
+FILE *pFile;
 
 static void
 sim_init(struct sim *s, struct topology *topo, struct sim_config *config) 
@@ -79,26 +61,27 @@ sim_init(struct sim *s, struct topology *topo, struct sim_config *config)
 
     s->config = config;
     s->evh.topo = topo;
-    s->evh.sch = scheduler_new();
+    s->cont.exec = cont_mode; 
     s->evh.live_flows = NULL;
-    s->cont.exec = cont_mode;
-    initial_events(s); 
+    s->evh.sch = scheduler_new();
+
     if (sim_config_get_mode(s->config) == EMU_CTRL){
-        struct node *cur_node, *tmp, *nodes;
-        struct datapath *dp;
-        s->evh.om = of_manager_new(s->evh.sch);
-        /* Add of_settings to client */
-        nodes = topology_nodes(topo);
-        HASH_ITER(hh, nodes, cur_node, tmp) {
-            if (cur_node->type == DATAPATH){
-                dp = (struct datapath*) cur_node;
-                of_client_add_ofsc(s->evh.om->of, dp_settings(dp));
-            }
+        s->evh.cm = conn_manager_new(s->evh.sch);
+        // s->ebr = emu_bridge_new(s->evh.cm);
+        setup(s->evh.topo, s->evh.sch, s->evh.cm);
+        if (topology_dps_num(s->evh.topo)){
+            wait_all_switches_connect(topo, s->evh.cm);
         }
-        of_client_start(s->evh.om->of, false);
     }
+
+    struct sim_event *end_ev; 
+    end_ev = sim_event_new(sim_config_get_end_time(s->config)); 
+    end_ev->type = EVENT_END;
+    scheduler_insert(s->evh.sch, end_ev);
+
+    // sleep(5);
+
     pFile = fopen ("bwm.txt","w");
-    wait_all_switches_connect(topo, s->evh.om);
     init_timer(&s->cont, (void*)s);
     set_periodic_timer(/* 1 */1000);
     clock_gettime(CLOCK_MONOTONIC_RAW, &last);
@@ -109,24 +92,37 @@ static void
 sim_close(struct sim *s)
 {
     pthread_join(s->dataplane, 0);
+    clock_t t; 
+    t = clock(); 
     fclose (pFile);
     scheduler_destroy(s->evh.sch);
+    conn_manager_destroy(s->evh.cm);
+    // emu_bridge_stop(s->ebr);
+    
+    bool has_routers = topology_routers_num(s->evh.topo) != 0;
     topology_destroy(s->evh.topo);
-    of_manager_destroy(s->evh.om);
+    
+    /* Router emulation owns the legacy bridge; pure SDN creates none. */
+    if (has_routers) {
+        netns_run(NULL, "ip link delete conn1");
+        netns_run(NULL, "ifconfig br0 down");
+        netns_run(NULL, "brctl delbr br0");
+        netns_run(NULL, "ip netns del bridge");
+    }
+    t = clock() - t; 
+    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
+  
+    printf("sim close() took %f seconds to execute \n", time_taken); 
 }
-
 
 static void update_stats(struct topology *topo, uint64_t time){
 
     struct node *cur_node, *tmp, *nodes;
     nodes = topology_nodes(topo);
     HASH_ITER(hh, nodes, cur_node, tmp) {
-        if (cur_node->type == DATAPATH){
-            dp_write_stats((struct datapath*) cur_node, time, pFile);
-        }
+        node_write_stats(cur_node, time, pFile);
     }
 }
-
 
 static struct sim_event* 
 make_time_msg(uint64_t time){
@@ -141,8 +137,9 @@ make_time_msg(uint64_t time){
     uint64_t *t = (uint64_t*) &buf[16];
     *t = hton64(time);   
     /* TODO: Create a dedicated control channel for the simulator messages */
-    struct sim_event_of *ev = sim_event_of_msg_out_new(time, 
-                                                      0x00000000000000001, buf, 24);
+    struct sim_event_fti *ev = sim_event_of_msg_out_new(time,
+                                                        0x00000000000000001, 
+                                                        buf, 24);
     // scheduler_insert(sch, (struct sim_event*) ev); 
     return (struct sim_event*) ev;
 }
@@ -175,23 +172,22 @@ des_mode(void *args){
             /* Execute */
             handle_event(&s->evh, ev);
             /* TODO: Very ugly right now*/
-            if ((sch->clock - last_wrt) > 10000000 ){
-                handle_event(&s->evh, make_time_msg(sch->clock));
-                /* Wake up timer */
-                pthread_mutex_lock( &mtx_mode );
-                last_ctrl = sch->clock;
-                sch->mode = CONTINUOUS;
-                last_wrt = sch->clock;
-                pthread_cond_signal( &mode_cond_var );
-                pthread_mutex_unlock( &mtx_mode );
-            }
-            if (ev->type == EVENT_OF_MSG_OUT ||
-                ev->type == EVENT_OF_MSG_IN ) {
+            // if ((sch->clock - last_wrt) > 10000000 ){
+            //     handle_event(&s->evh, make_time_msg(sch->clock));
+            //     /* Wake up timer */
+            //     pthread_mutex_lock( &mtx_mode );
+            //     last_ctrl = sch->clock;
+            //     sch->mode = FTI;
+            //     last_wrt = sch->clock;
+            //     pthread_cond_signal( &mode_cond_var );
+            //     pthread_mutex_unlock( &mtx_mode );
+            // }
+            if (ev->type == EVENT_FTI) {
                 
                 /* Wake up timer */
                 pthread_mutex_lock( &mtx_mode );
                 last_ctrl = sch->clock;
-                sch->mode = CONTINUOUS;
+                sch->mode = FTI;
                 pthread_cond_signal( &mode_cond_var );
                 pthread_mutex_unlock( &mtx_mode );
             
@@ -215,8 +211,7 @@ cont_mode(void* args)
 {
     struct sim *s = (struct sim*) args;
     struct scheduler *sch = s->evh.sch;
-    /* The code below is just a demonstration. */
-    /* Increase time and check if there a DP event to execute */
+    /* Increase time and check if there is a DP event to execute */
     pthread_mutex_lock( &mtx_mode );
     while(!sch->mode){
         pthread_cond_wait( &mode_cond_var, &mtx_mode );
@@ -239,9 +234,7 @@ cont_mode(void* args)
             update_stats(s->evh.topo, cur_ev->time);
             last_stats = cur_ev->time ;
         }
-
-        if (cur_ev->type == EVENT_OF_MSG_OUT || 
-             cur_ev->type == EVENT_OF_MSG_IN ) {
+        if (cur_ev->type == EVENT_FTI) {
             last_ctrl = cur_ev->time;
         }
         else if(cur_ev->type == EVENT_END){
@@ -276,4 +269,3 @@ start(struct topology *topo, struct sim_config *config)
     sim_init(&s, topo, config);
     sim_close(&s);
 }
-

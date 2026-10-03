@@ -1,6 +1,10 @@
-#noinst_LIBRARIES += libhorse.a
+#noinst_LIBRARIES += libhorse.a 
 
-lib_LTLIBRARIES = libhorse.la
+lib_LTLIBRARIES = libhorse.la libroutingmsg.la
+
+libroutingmsg_la_SOURCES = src/routing_msg/routing_msg.h \
+                src/routing_msg/routing_msg.c
+
 libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/action.c \
                 src/lib/action_list.h \
@@ -17,14 +21,18 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/lib/instruction_set.c \
                 src/lib/json_topology.h \
                 src/lib/json_topology.c \
-				src/lib/netflow.h \
-				src/lib/netflow.c \
+		src/lib/netflow.h \
+		src/lib/netflow.c \
+		src/lib/net_utils.h \
+		src/lib/net_utils.c \
                 src/lib/of_pack.h \
                 src/lib/of_pack.c \
                 src/lib/packets.h \
                 src/lib/of_unpack.h \
                 src/lib/of_unpack.c \
                 src/lib/openflow.h \
+                src/lib/signal_handler.h \
+                src/lib/signal_handler.c \
                 src/lib/sim_event.h \
                 src/lib/sim_event.c \
                 src/lib/timer.h \
@@ -63,17 +71,27 @@ libhorse_la_SOURCES = src/lib/action.h \
                 src/net/route_table.c \
                 src/net/router.h \
                 src/net/router.c \
+                src/net/routing/exabgp_daemon.h \
+                src/net/routing/exabgp_daemon.c \
+                src/net/routing/quagga_daemon.h \
+                src/net/routing/quagga_daemon.c \
+                src/net/routing/routing_daemon.h \
                 src/net/topology.h \
                 src/net/topology.c \
-                src/sim/of_manager.h \
-                src/sim/of_manager.c \
+                src/sim/conn_manager.h \
+                src/sim/conn_manager.c \
                 src/sim/event_handler.h \
                 src/sim/event_handler.c \
                 src/sim/scheduler.h \
                 src/sim/scheduler.c \
+                src/sim/server.h \
+                src/sim/server.c \
+                src/sim/setup.h \
+                src/sim/setup.c \
                 src/sim/sim.h \
                 src/sim/sim.c \
                 src/sim/sim_config.h \
                 src/sim/sim_config.c 
 
-libhorse_la_LIBADD = libjson.la libpatricia.la liblog.la
+libhorse_la_LIBADD = libjson.la liblog.la libnetemu.la libpatricia.la libroutingmsg.la
+

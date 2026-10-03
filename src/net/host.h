@@ -32,6 +32,8 @@ void host_add_app_exec(struct host *h, uint64_t id, uint32_t type, uint32_t exec
 
 struct netflow *host_execute_app(struct host *h, struct exec *exec);
 
+void host_set_default_gw(struct host *h, uint32_t ip, uint32_t port);
+
 void host_set_name(struct host* h, char *name);
 
 /* Access functions*/
