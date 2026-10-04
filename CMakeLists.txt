@@ -30,7 +30,7 @@ endforeach()
 FetchContent_Declare(
     cfluid
     GIT_REPOSITORY https://github.com/ederlf/libcfluid_base.git
-    GIT_TAG 4146f44e119c50eb0c29d0cd253436768c9da5a7
+    GIT_TAG main
     SOURCE_SUBDIR horse-unused)
 FetchContent_MakeAvailable(cfluid)
 
