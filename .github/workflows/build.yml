@@ -52,7 +52,7 @@ jobs:
           cd /tmp/horse-wheel/horse_project-0.1.0
           '${{ steps.bindings.outputs.python-path }}' -m pip wheel . --no-deps -w /tmp/horse-wheel
           '${{ steps.bindings.outputs.python-path }}' -m pip install --no-deps /tmp/horse-wheel/horse_project-0.1.0-*.whl
-          cd "$GITHUB_WORKSPACE"
+          cd /tmp
           env -u PYTHONPATH -u LD_LIBRARY_PATH '${{ steps.bindings.outputs.python-path }}' -c 'import horse; print(horse.__file__)'
 
   quality:
@@ -62,6 +62,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: System dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libevent-dev libpcap-dev
       - name: Install quality tools
         run: python -m pip install -r requirements-dev.txt
       - name: Configure analysis build

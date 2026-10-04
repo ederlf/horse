@@ -72,23 +72,8 @@ void merge_action_set(void **state)
     action_set_add(&as2, gen_act);
     /* Merge */
     action_set_merge(&as1, &as2);
-    // unsigned int actions_num;
-    // actions_num = HASH_COUNT(as1.actions);
-    // struct action *act;
-    // uint16_t type = ACT_PUSH_VLAN;
-    // HASH_FIND(hh, as1.actions, &type, sizeof(uint16_t), act);
-    // assert_int_not_equal(act, NULL);
-    //  // printf("%d\n", actions_num);
-    // type = ACT_SET_FIELD;
-    // HASH_FIND(hh, as1.actions, &type, sizeof(uint16_t), act);
-    // assert_int_not_equal(act, NULL);
-    // type = ACT_OUTPUT;
-    // HASH_FIND(hh, as1.actions, &type, sizeof(uint16_t), act);
-    // assert_int_not_equal(act, NULL);
-    // assert_int_equal(act->out.port, 1);
-    // action_set_clean(&as1);
-    // actions_num = HASH_COUNT(as2.actions);
-    // action_set_clean(&as2);
+    action_set_clean(&as1);
+    action_set_clean(&as2);
 }
 
 void clear_actions_instruction(void **state)
