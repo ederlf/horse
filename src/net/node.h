@@ -41,6 +41,10 @@ struct node {
 };
 
 void node_init(struct node *n, uint16_t type);
+/* Copy a NUL-terminated name of at most MAX_NODE_NAME - 1 bytes.
+ * Return false for NULL or overlong input, leaving the previous name intact.
+ */
+bool node_set_name(struct node *n, const char *name);
 void node_destroy_ports(struct node *n);
 void node_add_port(struct node *n, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
                    uint32_t speed, uint32_t curr_speed);

@@ -11,6 +11,17 @@ from collections import namedtuple
 _compat_message_helpers = (ip2int, int2ip, netmask2cidr)
 
 
+cdef bytes _encode_node_name(name):
+    cdef bytes encoded = name.encode("utf-8")
+    if b"\x00" in encoded:
+        raise ValueError("Node names must not contain NUL bytes")
+    if len(encoded) >= MAX_NODE_NAME:
+        raise ValueError(
+            f"Node names must be at most {MAX_NODE_NAME - 1} UTF-8 bytes"
+        )
+    return encoded
+
+
 cdef class SDNSwitch:
     cdef datapath * _dp_ptr
     cdef object ports
@@ -19,8 +30,9 @@ cdef class SDNSwitch:
     # Default port is the IANA number allocated for OpenFlow
     def __cinit__(self, name, uint64_t dp_id, ctrl_ip="127.0.0.1",
                   ctrl_port=6653):
+        cdef bytes encoded_name = _encode_node_name(name)
         self._dp_ptr = dp_new(dp_id, ctrl_ip.encode("utf-8"), ctrl_port)
-        self.name = name
+        dp_set_name(self._dp_ptr, encoded_name)
 
     # def add_port(self, intf):
     #     mac = bytes.fromhex(intf.eth_addr.replace(':', ''))
@@ -38,7 +50,7 @@ cdef class SDNSwitch:
             return dp_name(self._dp_ptr).decode("utf-8")
 
         def __set__(self, name):
-            dp_set_name(self._dp_ptr, name.encode("utf-8"))
+            dp_set_name(self._dp_ptr, _encode_node_name(name))
 
     @property
     def dp_id(self):
@@ -59,8 +71,9 @@ cdef class Router:
 
     def __cinit__(self, name, *protocols, daemon="quagga", runDir="/tmp",
                   **config_files):
+        cdef bytes encoded_name = _encode_node_name(name)
         self._router_ptr = router_new()
-        self.name = name
+        router_set_name(self._router_ptr, encoded_name)
         self.ports = {}
         self.id_set = False
         # Daemon pointers are provided by the selected adapter.
@@ -113,7 +126,7 @@ cdef class Router:
             return router_name(self._router_ptr).decode("utf-8")
 
         def __set__(self, name):
-            router_set_name(self._router_ptr, name.encode("utf-8"))
+            router_set_name(self._router_ptr, _encode_node_name(name))
 
     @property
     def uuid(self):
@@ -125,12 +138,13 @@ cdef class Host:
     cdef object ports  # Quick workaround to get ips
 
     def __cinit__(self, name):
+        cdef bytes encoded_name = _encode_node_name(name)
         self._host_ptr = host_new()
         # It needs to be improved when number of apps grow
         host_add_app(self._host_ptr, 1)  # PING
         host_add_app(self._host_ptr, 17)  # UDP
         self.exec_id = 1
-        self.name = name
+        host_set_name(self._host_ptr, encoded_name)
         self.ports = []
 
     def add_port(self, port, eth_addr, ip=None,
@@ -179,7 +193,7 @@ cdef class Host:
             return host_name(self._host_ptr).decode("utf-8")
 
         def __set__(self, name):
-            host_set_name(self._host_ptr, name.encode("utf-8"))
+            host_set_name(self._host_ptr, _encode_node_name(name))
 
     @property
     def uuid(self):

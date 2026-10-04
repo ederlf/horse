@@ -32,7 +32,7 @@ struct netflow *host_execute_app(struct host *h, struct exec *exec);
 
 void host_set_default_gw(struct host *h, uint32_t ip, uint32_t port);
 
-void host_set_name(struct host *h, char *name);
+bool host_set_name(struct host *h, const char *name);
 
 /* Access functions*/
 char *host_name(struct host *h);

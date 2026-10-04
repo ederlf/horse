@@ -181,9 +181,9 @@ void host_set_default_gw(struct host *h, uint32_t ip, uint32_t port)
     add_ipv4_entry(&h->ep.rt, &e);
 }
 
-void host_set_name(struct host *h, char *name)
+bool host_set_name(struct host *h, const char *name)
 {
-    memcpy(h->ep.base.name, name, MAX_NODE_NAME);
+    return node_set_name(&h->ep.base, name);
 }
 
 /* Access functions*/

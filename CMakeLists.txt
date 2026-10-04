@@ -109,7 +109,8 @@ if(BUILD_TESTING)
         cmockery SYSTEM
         PUBLIC ${cmockery_SOURCE_DIR}/src
         PRIVATE ${cmockery_SOURCE_DIR}/src/google)
-    foreach(test_name flow_table_test scheduler_test instruction_test netflow_test)
+    foreach(test_name flow_table_test scheduler_test instruction_test netflow_test
+                      node_name_test)
         add_executable(${test_name} tests/${test_name}.c)
         target_compile_definitions(${test_name} PRIVATE UNIT_TESTING=1)
         target_link_libraries(${test_name} PRIVATE horse cmockery horse_options)

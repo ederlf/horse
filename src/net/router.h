@@ -28,7 +28,7 @@ int router_start(struct router *rt);
 void router_set_id(struct router *r, uint32_t router_id);
 void router_set_quagga_daemon(struct router *r, struct quagga_daemon *d);
 void router_set_exabgp_daemon(struct router *r, struct exabgp_daemon *d);
-void router_set_name(struct router *r, char *name);
+bool router_set_name(struct router *r, const char *name);
 void router_set_ecmp(struct router *r, bool enable);
 char *router_name(struct router *r);
 struct port *router_port(const struct router *r, uint32_t port_id);

@@ -1,3 +1,7 @@
+cdef extern from "net/node.h":
+    enum:
+        MAX_NODE_NAME
+
 from libc.stdint cimport uint64_t
 from libc.stdint cimport uint32_t
 from libc.stdint cimport uint16_t
@@ -34,7 +38,7 @@ cdef extern from "sim/sim.h":
     void dp_destroy(datapath * dp)
     void dp_add_port(datapath * dp, uint32_t port_id, uint8_t * eth_addr,
                      uint32_t speed, uint32_t cur_speed)
-    void dp_set_name(datapath * dp, char * name)
+    bint dp_set_name(datapath * dp, const char * name)
     char * dp_name(const datapath * dp)
     uint64_t dp_id(const datapath * dp)
     uint64_t dp_uuid(const datapath * dp)
@@ -50,7 +54,7 @@ cdef extern from "sim/sim.h":
     uint64_t router_uuid(const router * r)
     void router_set_quagga_daemon(router * r, quagga_daemon * d)
     void router_set_exabgp_daemon(router * r, exabgp_daemon * d)
-    void router_set_name(router * r, char * name)
+    bint router_set_name(router * r, const char * name)
     char * router_name(const router * r)
     void router_set_id(router * r, uint32_t router_id)
     void router_set_ecmp(router * r, bint enable)
@@ -66,7 +70,7 @@ cdef extern from "sim/sim.h":
                             uint32_t addr, uint32_t netmask)
     void host_set_default_gw(host * h, uint32_t ip, uint32_t port)
     uint64_t host_uuid(const host * h)
-    void host_set_name(host * h, char * name)
+    bint host_set_name(host * h, const char * name)
     char * host_name(const host * h)
     void host_add_app(host * h, uint16_t type)
     void host_add_app_exec(host * h, uint64_t id, uint32_t type,

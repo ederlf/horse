@@ -249,9 +249,9 @@ static void gen_internal_ip(char *addr)
     // set_intf_ip(rname, iface_name, addr, "16");
 }
 
-void router_set_name(struct router *r, char *name)
+bool router_set_name(struct router *r, const char *name)
 {
-    memcpy(r->ln.base.name, name, MAX_NODE_NAME);
+    return node_set_name(&r->ln.base, name);
 }
 
 void router_set_ecmp(struct router *r, bool enable) { r->ecmp = enable; }

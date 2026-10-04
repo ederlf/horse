@@ -454,9 +454,9 @@ of_object_t *dp_handle_pkt_out(struct datapath *dp, of_object_t *obj,
     return NULL;
 }
 
-void dp_set_name(struct datapath *dp, char *name)
+bool dp_set_name(struct datapath *dp, const char *name)
 {
-    memcpy(dp->base.name, name, MAX_NODE_NAME);
+    return node_set_name(&dp->base, name);
 }
 
 char *dp_name(struct datapath *dp) { return dp->base.name; }

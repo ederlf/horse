@@ -4,6 +4,19 @@
 /* Starts from 1, zero is used to indicate None */
 static uint64_t current_uuid = 0;
 
+bool node_set_name(struct node *n, const char *name)
+{
+    if (name == NULL) {
+        return false;
+    }
+    size_t length = strnlen(name, MAX_NODE_NAME);
+    if (length == MAX_NODE_NAME) {
+        return false;
+    }
+    memmove(n->name, name, length + 1);
+    return true;
+}
+
 void node_init(struct node *n, uint16_t type)
 {
     n->uuid = ++current_uuid;

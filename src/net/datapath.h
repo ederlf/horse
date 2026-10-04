@@ -59,7 +59,7 @@ of_object_t *dp_handle_pkt_out(struct datapath *dp, of_object_t *obj,
                                struct netflow *nf, uint64_t time);
 
 /* Access functions*/
-void dp_set_name(struct datapath *dp, char *name);
+bool dp_set_name(struct datapath *dp, const char *name);
 
 char *dp_name(struct datapath *dp);
 
