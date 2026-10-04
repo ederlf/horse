@@ -1,84 +1,103 @@
-from .helper import *
+from .helper import argparse, plt, re, read_list, sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--files', '-f',
-                    help="Rate timeseries output to one plot",
-                    required=True,
-                    action="store",
-                    nargs='+',
-                    dest="files")
+parser.add_argument(
+    "--files",
+    "-f",
+    help="Rate timeseries output to one plot",
+    required=True,
+    action="store",
+    nargs="+",
+    dest="files",
+)
 
-parser.add_argument('--legend', '-l',
-                    help="Legend to use if there are multiple plots.  File names used as default.",
-                    action="store",
-                    nargs="+",
-                    default=None,
-                    dest="legend")
+parser.add_argument(
+    "--legend",
+    "-l",
+    help="Legend to use if there are multiple plots.  File names used as default.",
+    action="store",
+    nargs="+",
+    default=None,
+    dest="legend",
+)
 
-parser.add_argument('--out', '-o',
-                    help="Output png file for the plot.",
-                    default=None, # Will show the plot
-                    dest="out")
+parser.add_argument(
+    "--out",
+    "-o",
+    help="Output png file for the plot.",
+    default=None,  # Will show the plot
+    dest="out",
+)
 
-parser.add_argument('-s', '--summarise',
-                    help="Summarise the time series plot (boxplot).  First 10 and last 10 values are ignored.",
-                    default=False,
-                    dest="summarise",
-                    action="store_true")
+parser.add_argument(
+    "-s",
+    "--summarise",
+    help="Summarise the time series plot (boxplot).  First 10 and last 10 values are ignored.",
+    default=False,
+    dest="summarise",
+    action="store_true",
+)
 
-parser.add_argument('--labels',
-                    help="Labels for x-axis if summarising; defaults to file names",
-                    required=False,
-                    default=[],
-                    nargs="+",
-                    dest="labels")
+parser.add_argument(
+    "--labels",
+    help="Labels for x-axis if summarising; defaults to file names",
+    required=False,
+    default=[],
+    nargs="+",
+    dest="labels",
+)
 
-parser.add_argument('--xlabel',
-                    help="Custom label for x-axis",
-                    required=False,
-                    default=None,
-                    dest="xlabel")
+parser.add_argument(
+    "--xlabel",
+    help="Custom label for x-axis",
+    required=False,
+    default=None,
+    dest="xlabel",
+)
 
-parser.add_argument('--ylabel',
-                    help="Custom label for y-axis",
-                    required=False,
-                    default=None,
-                    dest="ylabel")
+parser.add_argument(
+    "--ylabel",
+    help="Custom label for y-axis",
+    required=False,
+    default=None,
+    dest="ylabel",
+)
 
-parser.add_argument('-i',
-                    help="Interfaces to plot (regex)",
-                    default=".*",
-                    dest="pat_iface")
+parser.add_argument(
+    "-i", help="Interfaces to plot (regex)", default=".*", dest="pat_iface"
+)
 
-parser.add_argument('--rx',
-                    help="Plot receive rates on the interfaces.",
-                    default=False,
-                    action="store_true",
-                    dest="rx")
+parser.add_argument(
+    "--rx",
+    help="Plot receive rates on the interfaces.",
+    default=False,
+    action="store_true",
+    dest="rx",
+)
 
-parser.add_argument('--maxy',
-                    help="Max mbps on y-axis..",
-                    default=100,
-                    action="store",
-                    dest="maxy")
+parser.add_argument(
+    "--maxy", help="Max mbps on y-axis..", default=100, action="store", dest="maxy"
+)
 
-parser.add_argument('--miny',
-                    help="Min mbps on y-axis..",
-                    default=0,
-                    action="store",
-                    dest="miny")
+parser.add_argument(
+    "--miny", help="Min mbps on y-axis..", default=0, action="store", dest="miny"
+)
 
-parser.add_argument('--normalize',
-                    help="normalise y-axis",
-                    default=False,
-                    action="store_true",
-                    dest="normalise")
+parser.add_argument(
+    "--normalize",
+    help="normalise y-axis",
+    default=False,
+    action="store_true",
+    dest="normalise",
+)
 
-parser.add_argument('--total',
-                    help="plot total value instead",
-                    default=False,
-                    dest="total",
-                    action="store_true")
+parser.add_argument(
+    "--total",
+    help="plot total value instead",
+    default=False,
+    dest="total",
+    action="store_true",
+)
 
 
 args = parser.parse_args()
@@ -87,24 +106,24 @@ if args.labels is None:
 
 pat_iface = re.compile(args.pat_iface)
 
-to_plot=[]
+to_plot = []
 """Output of bwm-ng csv has the following columns:
 unix_timestamp;iface_name;bytes_out;bytes_in;bytes_total;packets_out;packets_in;packets_total;errors_out;errors_in
 """
 
 if args.normalise and args.labels == []:
-    raise "Labels required if summarising/normalising."
+    raise ValueError("Labels required if summarising/normalising.")
     sys.exit(-1)
 
-bw = [int(e.replace('M','')) for e in args.labels]
+bw = [int(e.replace("M", "")) for e in args.labels]
 idx = 0
 
 for f in args.files:
     data = read_list(f)[:-1]
-    #xaxis = map(float, col(0, data))
-    #start_time = xaxis[0]
-    #xaxis = map(lambda x: x - start_time, xaxis)
-    #rate = map(float, col(2, data))
+    # xaxis = map(float, col(0, data))
+    # start_time = xaxis[0]
+    # xaxis = map(lambda x: x - start_time, xaxis)
+    # rate = map(float, col(2, data))
     rate = {}
     column = 2
     if args.rx:
@@ -112,15 +131,15 @@ for f in args.files:
     for row in data:
         try:
             ifname = row[1]
-        except:
+        except Exception:
             break
-        if ifname not in ['eth0', 'lo']:
+        if ifname not in ["eth0", "lo"]:
             if ifname not in rate:
                 rate[ifname] = []
             try:
                 # rate[ifname].append(float(row[column]) * 8.0 / (1 << 20))
                 rate[ifname].append(float(row[column]) * 8.0 / 1000000)
-            except:
+            except Exception:
                 break
     if args.summarise:
         for k in list(rate.keys()):
@@ -137,7 +156,7 @@ for f in args.files:
                 if pat_iface.match(k):
                     if total is None:
                         total = [0] * len(rate[k])
-                    total = [i + j for i,j in zip(rate[k], total)]
+                    total = [i + j for i, j in zip(rate[k], total, strict=False)]
             for k in total:
                 print(k)
             plt.plot(total, label="$\sum_i R_i$")
@@ -164,7 +183,7 @@ plt.ylim((int(args.miny), int(args.maxy)))
 
 if args.summarise:
     plt.boxplot(to_plot)
-    plt.xticks(list(range(1, 1+len(args.files))), args.labels)
+    plt.xticks(list(range(1, 1 + len(args.files))), args.labels)
 
 if not args.summarise:
     if args.xlabel:
@@ -178,4 +197,3 @@ if args.out:
     plt.savefig(args.out)
 else:
     plt.show()
-

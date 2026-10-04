@@ -4,9 +4,9 @@
 #include "lib/netflow.h"
 
 struct buffer_state {
-	int capacity;  /* Maximum amount of bytes it can 
-                            store before dropping*/
-    int load;	    /* How full is the buffer */
+    int capacity; /* Maximum amount of bytes it can
+                       store before dropping*/
+    int load;     /* How full is the buffer */
     // uint32_t avg_queue_delay; /* TODO */
     uint64_t last_updated;
 };

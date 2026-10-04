@@ -13,12 +13,10 @@ struct ev_handler {
     struct live_flow *live_flows; /* Hash table of running flows */
     union {
         struct conn_manager *cm; /* Real controllers */
-        //struct controller *ctrl; /* Simulated control */
+        // struct controller *ctrl; /* Simulated control */
     };
 };
 
-void handle_event(struct ev_handler *ev_hdl,
-                     struct sim_event *ev);
-
+void handle_event(struct ev_handler *ev_hdl, struct sim_event *ev);
 
 #endif

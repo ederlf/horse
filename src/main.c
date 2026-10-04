@@ -16,8 +16,7 @@
 #include "net/topology.h"
 #include "net/flow_table.h"
 #include "sim/sim.h"
-static void 
-display_help_message(void)
+static void display_help_message(void)
 {
     printf("horse: SDN simulator\n");
     printf("Usage: horse [OPTIONS]\n");
@@ -26,13 +25,13 @@ display_help_message(void)
     printf("\n");
 }
 
-static void 
-display_horse(void)
+static void display_horse(void)
 {
     printf("     >>\\.\n");
     printf("    /_  )`.\n");
     printf("   /  _)`^)`.   _.---. _hjw\n");
-    printf("  (_,' \\  `^-)""      `.\\\n");
+    printf("  (_,' \\  `^-)"
+           "      `.\\\n");
     printf("        |              | \\\n");
     printf("        \\              / |\n");
     printf("       / \\  /.___.'\\  (\\ (_\n");
@@ -42,40 +41,36 @@ display_horse(void)
     printf("         /_]         /_]\n");
 }
 
-int 
-main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
     int c;
-    while ((c = getopt (argc, argv, "ht")) != -1){
-        switch (c){
-            case 'h':{
-                display_horse();
-                display_help_message();
-                break;
-            }
-            case 't':{ 
-                struct topology *topo = from_json(argv[optind]);
-                struct sim_config *conf = sim_config_new();
-                // struct topology *topo = topology_new();
-                start(topo, conf);
-                break;
-            }
-            case '?':{
-                if (isprint (optopt)){
-                  fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-                }
-                else{
-                  fprintf (stderr,
-                           "Unknown option character `\\x%x'.\n",
-                           optopt);
-                }
-                return 1;
-            }
-            default:{
-                display_help_message();
-                exit(EXIT_FAILURE);
-            }
+    while ((c = getopt(argc, argv, "ht")) != -1) {
+        switch (c) {
+        case 'h': {
+            display_horse();
+            display_help_message();
+            break;
         }
-
+        case 't': {
+            struct topology *topo = from_json(argv[optind]);
+            struct sim_config *conf = sim_config_new();
+            // struct topology *topo = topology_new();
+            start(topo, conf);
+            break;
+        }
+        case '?': {
+            if (isprint(optopt)) {
+                fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+            } else {
+                fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+            }
+            return 1;
+        }
+        default: {
+            display_help_message();
+            exit(EXIT_FAILURE);
+        }
+        }
     }
     return EXIT_SUCCESS;
 }

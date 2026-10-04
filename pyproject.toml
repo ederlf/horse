@@ -1,3 +1,33 @@
 [build-system]
-requires = ["setuptools==80.10.2", "wheel==0.45.1", "Cython==3.3.0"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core==1.1.1", "Cython==3.3.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "horse-project"
+version = "0.1.0"
+description = "Hybrid network simulation with real control software"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+authors = [{name = "Eder Leao Fernandes"}]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.20"
+build-dir = "build/python/{wheel_tag}"
+wheel.packages = ["horse"]
+install.components = ["python"]
+sdist.include = ["CMakeLists.txt", "CMakePresets.json", ".clang-format", ".clang-tidy", ".cmake-format.yaml", "cmake/*.cmake", "requirements-dev.txt", "tools/check.py", ".github/workflows/build.yml"]
+sdist.exclude = ["TCP_IMPLEMENTATION.md", "docs", "examples", "src/net/app/tcp.*", "tests/tcp*", "build", "dist", "plans", "*.so"]
+
+[tool.scikit-build.cmake.define]
+BUILD_TESTING = "OFF"
+HORSE_BUILD_PYTHON = "ON"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+extend-exclude = ["vendor", "build", "dist", "examples", "experiments/fat_tree_dc/ryu"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]

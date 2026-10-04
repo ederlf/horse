@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
 import json
-import logging
-import os
-import sys
-import copy
 from collections import namedtuple
+
 from netaddr import IPNetwork
 
 # isdx_folder = "iSDX"
@@ -13,27 +10,28 @@ from netaddr import IPNetwork
 # isdx_path = home + isdx_folder
 # if isdx_path not in sys.path:
 #     sys.path.append(isdx_path)
-#import util.log
+# import util.log
 
-class Config(object):
+
+class Config:
     def __init__(self, config_file):
         # Connections between core and edge
         # TODO: do I really need all this information?
         self.dpids = {}
         self.dpid_2_name = {}
-        self.cores = {} # refactor?
+        self.cores = {}  # refactor?
         self.core_edge = {}
-        self.edges = {} # refactor?
+        self.edges = {}  # refactor?
         self.edge_peers = {}
         self.edge_to_edge = {}
         self.edge_core = {}
         self.participants = {}
-        self.refmon =  None
+        self.refmon = None
         self.flanc_auth = None
         self.route_server = None
         self.arp_proxy = None
         self.vnhs = None
-        config = json.load(open(config_file, 'r'))
+        config = json.load(open(config_file))
 
         if "RefMon Server" in config:
             self.refmon = config["RefMon Server"]
@@ -43,12 +41,24 @@ class Config(object):
 
         if "Route Server" in config:
             route_server = config["Route Server"]
-            self.route_server = Port(route_server['Port'], route_server["MAC"], route_server["IP"], route_server["switch"], route_server["ASN"])
+            self.route_server = Port(
+                route_server["Port"],
+                route_server["MAC"],
+                route_server["IP"],
+                route_server["switch"],
+                route_server["ASN"],
+            )
         if "ARP Proxy" in config:
             arp_proxy = config["ARP Proxy"]
             # Arp proxy ASN does not make sense. It is here because
             # I do not want another named tuple only for this case
-            self.arp_proxy = Port(arp_proxy['Port'], arp_proxy["MAC"], arp_proxy["IP"], arp_proxy["switch"], route_server["ASN"])
+            self.arp_proxy = Port(
+                arp_proxy["Port"],
+                arp_proxy["MAC"],
+                arp_proxy["IP"],
+                arp_proxy["switch"],
+                route_server["ASN"],
+            )
 
         if "Participants" in config:
             self.participants = config["Participants"]
@@ -56,15 +66,15 @@ class Config(object):
         if "RefMon Settings" in config:
             if "fabric options" in config["RefMon Settings"]:
                 datapaths = config["RefMon Settings"]["fabric options"]["dpids"]
-                edges = {x:datapaths[x] for x in datapaths if x.find('edge') == 0}
-                self.edges = edges # refactor?
-                cores = {x:datapaths[x] for x in datapaths if x.find('core') == 0}
-                self.cores = cores # refactor?
+                edges = {x: datapaths[x] for x in datapaths if x.find("edge") == 0}
+                self.edges = edges  # refactor?
+                cores = {x: datapaths[x] for x in datapaths if x.find("core") == 0}
+                self.cores = cores  # refactor?
 
             if "dpids" in config["RefMon Settings"]["fabric options"]:
-                    self.dpids = config["RefMon Settings"]["fabric options"]["dpids"]
-                    for k,v in self.dpids.items():
-                        self.dpid_2_name[v] = k
+                self.dpids = config["RefMon Settings"]["fabric options"]["dpids"]
+                for k, v in self.dpids.items():
+                    self.dpid_2_name[v] = k
 
             if "fabric connections" in config["RefMon Settings"]:
                 datapaths_conns = config["RefMon Settings"]["fabric connections"]
@@ -80,11 +90,15 @@ class Config(object):
                         core = cores[dp]
                         self.parse_core_edge(core, edges, datapaths_conns[dp])
 
-                #  ARP proxy and Route Server are not peers but forwarding in 
-                #  umbrella  is the same for every node connected to the 
+                #  ARP proxy and Route Server are not peers but forwarding in
+                #  umbrella  is the same for every node connected to the
                 #  edges of the fabric
-                self.edge_peers[self.dpids[self.arp_proxy.switch]][self.arp_proxy] = self.arp_proxy.id
-                self.edge_peers[self.dpids[self.route_server.switch]][self.route_server] = self.route_server.id
+                self.edge_peers[self.dpids[self.arp_proxy.switch]][self.arp_proxy] = (
+                    self.arp_proxy.id
+                )
+                self.edge_peers[self.dpids[self.route_server.switch]][
+                    self.route_server
+                ] = self.route_server.id
         if "VNHs" in config:
             self.vnhs = IPNetwork(config["VNHs"])
 
@@ -98,8 +112,14 @@ class Config(object):
                 i = 0
                 if p in self.participants:
                     for port in self.participants[p]["Ports"]:
-                         if port["switch"] == dp:
-                            port = Port(port['Id'], port["MAC"], port["IP"], port["switch"], self.participants[p]["ASN"])
+                        if port["switch"] == dp:
+                            port = Port(
+                                port["Id"],
+                                port["MAC"],
+                                port["IP"],
+                                port["switch"],
+                                self.participants[p]["ASN"],
+                            )
                             dpid = self.dpids[dp]
                             self.edge_peers[dpid][port] = ports[i]
                             i += 1
@@ -125,5 +145,6 @@ class Config(object):
         for dp in dp_conns:
             if dp in edges:
                 self.edge_to_edge[edge][dp] = dp_conns[dp]
- 
-Port = namedtuple('Port', "id mac ip switch asn")
+
+
+Port = namedtuple("Port", "id mac ip switch asn")

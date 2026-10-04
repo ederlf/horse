@@ -1,63 +1,36 @@
-from . cimport horse
 from .router cimport ExaBGPDaemon, QuaggaDaemon
 from libc.stdint cimport uint64_t
 from libc.stdint cimport UINT64_MAX
 import random
-import os.path
-import json
-import re
 from .msg import ip2int, int2ip, netmask2cidr
-from collections import namedtuple 
 
+from collections import namedtuple
 
-# class Intf(object):
-#     # IPv4 and IPv6 
-#     def __init__(self, port_id, eth_addr, ipv4_addr = None, ipv6_addr = None, max_speed = 1000000, cur_speed = 1000000):
-#         self.port_id = port_id
-#         self.eth_addr = eth_addr
-#         self.max_speed = max_speed
-#         self.cur_speed = cur_speed
-#         self.ipv4_addr = None
-#         self.ipv4_mask = None
-#         self.ipv6_addr = None
-#         self.ipv6_mask = None
-#         if ipv4_addr != None:
-#             self.set_ipv4(ipv4_addr)
-#         if ipv6_addr != None:
-#             self.set_ipv6(ipv6_addr)
+# Keep the message conversion helpers available from this historical extension
+# module for callers that imported them there.
+_compat_message_helpers = (ip2int, int2ip, netmask2cidr)
 
-#     def set_ipv4(self, ipv4_addr):
-#         # Convert string to number
-#         ip_mask = ipv4_addr.split('/')
-#         ip_parts = ip_mask[0].split('.')
-#         self.ipv4_addr = (int(ip_parts[0]) << 24) + (int(ip_parts[1]) << 16) + (int(ip_parts[2]) << 8) + int(BGP[3])
-#         if len(ip_mask) == 2:
-#             cidr = int(ip_mask[1])
-#             self.ipv4_mask = ((2**cidr) - 1) << (32 - cidr)
-
-#     def set_ipv6(self, ipv6_addr):
-#         # Convert string to hex number        
-#         pass
 
 cdef class SDNSwitch:
-    cdef datapath* _dp_ptr
+    cdef datapath * _dp_ptr
     cdef object ports
 
     # Default ip to connect to a controller is the localhost
-    # Default port is the IANA number allocated for OpenFlow  
-    def __cinit__(self, name, uint64_t dp_id, ctrl_ip = "127.0.0.1", 
-                  ctrl_port = 6653):
+    # Default port is the IANA number allocated for OpenFlow
+    def __cinit__(self, name, uint64_t dp_id, ctrl_ip="127.0.0.1",
+                  ctrl_port=6653):
         self._dp_ptr = dp_new(dp_id, ctrl_ip.encode("utf-8"), ctrl_port)
         self.name = name
 
     # def add_port(self, intf):
     #     mac = bytes.fromhex(intf.eth_addr.replace(':', ''))
     #     cdef uint8_t *c_eth_addr = mac
-    #     dp_add_port(self._dp_ptr, intf.port_id, c_eth_addr, intf.max_speed, intf.cur_speed) 
+    # dp_add_port(self._dp_ptr, intf.port_id, c_eth_addr, intf.max_speed,
+    # intf.cur_speed)
 
-    def add_port(self, port, eth_addr, max_speed = 1000000, cur_speed = 10000):
+    def add_port(self, port, eth_addr, max_speed=1000000, cur_speed=10000):
         mac = bytes.fromhex(eth_addr.replace(':', ''))
-        cdef uint8_t *c_eth_addr = mac
+        cdef uint8_t * c_eth_addr = mac
         dp_add_port(self._dp_ptr, port, c_eth_addr, max_speed, cur_speed)
 
     property name:
@@ -69,22 +42,22 @@ cdef class SDNSwitch:
 
     @property
     def dp_id(self):
-        return dp_id(self._dp_ptr) 
+        return dp_id(self._dp_ptr)
 
     @property
     def uuid(self):
-        return dp_uuid(self._dp_ptr)     
+        return dp_uuid(self._dp_ptr)
 
 params = ('id',  'eth_addr', 'ip', 'netmask', 'max_speed', 'cur_speed')
 Port = namedtuple('Port', params)
 cdef class Router:
-    cdef router* _router_ptr
+    cdef router * _router_ptr
     cdef daemon
     cdef ports
     cdef id_set
     # cdef quagga_daemon *quagga_ptr
 
-    def __cinit__(self, name, *protocols, daemon = "quagga", runDir = "/tmp",
+    def __cinit__(self, name, *protocols, daemon="quagga", runDir="/tmp",
                   **config_files):
         self._router_ptr = router_new()
         self.name = name
@@ -109,27 +82,26 @@ cdef class Router:
         if self.daemon.get_ecmp_enabled():
             router_set_ecmp(self._router_ptr, self.daemon.get_ecmp_enabled())
 
-
     def set_exabgp_daemon(self, ExaBGPDaemon d):
         router_set_exabgp_daemon(self._router_ptr, d.get_exabgp_ptr())
 
     def set_quagga_daemon(self, QuaggaDaemon d):
         router_set_quagga_daemon(self._router_ptr, d.get_quagga_ptr())
 
-    def add_port(self, port, eth_addr, ip = None, 
-                netmask = None, max_speed = 1000000, cur_speed = 10000):
+    def add_port(self, port, eth_addr, ip=None,
+                 netmask=None, max_speed=1000000, cur_speed=10000):
         # TODO: Add mac conversion to utils...
         mac = bytes.fromhex(eth_addr.replace(':', ''))
-        cdef uint8_t *c_eth_addr = mac
+        cdef uint8_t * c_eth_addr = mac
         # Add internal for check of configuration
         self.ports[ip] = Port(port, eth_addr, ip, netmask, max_speed,
                               cur_speed)
         router_add_port(self._router_ptr, port, c_eth_addr, max_speed,
                         cur_speed)
-        if ip != None and netmask != None:
+        if ip is not None and netmask is not None:
             int_ip = ip2int(ip)
             int_nm = ip2int(netmask)
-            router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)     
+            router_set_intf_ipv4(self._router_ptr, port, int_ip, int_nm)
             if not self.id_set and router_id(self._router_ptr) < int_ip:
                 router_set_id(self._router_ptr, int_ip)
 
@@ -148,28 +120,28 @@ cdef class Router:
         return router_uuid(self._router_ptr)
 
 cdef class Host:
-    cdef host* _host_ptr
+    cdef host * _host_ptr
     cdef int exec_id
-    cdef object ports # Quick workaround to get ips
+    cdef object ports  # Quick workaround to get ips
 
     def __cinit__(self, name):
         self._host_ptr = host_new()
         # It needs to be improved when number of apps grow
-        host_add_app(self._host_ptr, 1)  #PING
-        host_add_app(self._host_ptr, 17) #UDP
+        host_add_app(self._host_ptr, 1)  # PING
+        host_add_app(self._host_ptr, 17)  # UDP
         self.exec_id = 1
         self.name = name
         self.ports = []
 
-    def add_port(self, port, eth_addr, ip = None, 
-                netmask = None, max_speed = 1000000, cur_speed = 10000):
+    def add_port(self, port, eth_addr, ip=None,
+                 netmask=None, max_speed=1000000, cur_speed=10000):
         # TODO: Add mac conversion to utils...
         mac = bytes.fromhex(eth_addr.replace(':', ''))
-        cdef uint8_t *c_eth_addr = mac
+        cdef uint8_t * c_eth_addr = mac
         host_add_port(self._host_ptr, port, c_eth_addr, max_speed, cur_speed)
         self.ports.append(Port(port, eth_addr, ip, netmask, max_speed,
                                cur_speed))
-        if ip != None and netmask != None:
+        if ip is not None and netmask is not None:
             int_ip = ip2int(ip)
             int_nm = ip2int(netmask)
             host_set_intf_ipv4(self._host_ptr, port, int_ip, int_nm)
@@ -181,25 +153,25 @@ cdef class Host:
         int_ip = ip2int(ip)
         host_set_default_gw(self._host_ptr, int_ip, port)
 
-    def ping(self, dst, start_time = 0):
+    def ping(self, dst, start_time=0):
         cdef uint32_t ip
         ip = ip2int(dst)
         host_add_app_exec(self._host_ptr, self.exec_id, 1, 1,
-                          start_time, <void*> &ip, sizeof(int))
+                          start_time, < void*> & ip, sizeof(int))
         self.exec_id += 1
 
     # Rate in Mbps, duration and interval in seconds
-    def udp(self, dst, start_time, duration = 60, rate = 10, dst_port = 5001,
-            src_port = random.randint(5002, 65000)):
+    def udp(self, dst, start_time, duration=60, rate=10, dst_port=5001,
+            src_port=random.randint(5002, 65000)):
         cdef uint32_t ip
         cdef raw_udp_args args
         ip = ip2int(dst)
-        args.rate = rate * 1000000 #Mbits to bits
+        args.rate = rate * 1000000  # Mbits to bits
         args.ip_dst = ip
         args.dst_port = dst_port
-        args.src_port = src_port 
+        args.src_port = src_port
         host_add_app_exec(self._host_ptr, self.exec_id, 17, duration,
-                          start_time, <void*> &args, sizeof(raw_udp_args))
+                          start_time, < void*> & args, sizeof(raw_udp_args))
         self.exec_id += 1
 
     property name:
@@ -214,7 +186,7 @@ cdef class Host:
         return host_uuid(self._host_ptr)
 
 cdef class SimConfig:
-    cdef sim_config *_config_ptr
+    cdef sim_config * _config_ptr
     args = ("mode", "end_time")
 
     def __cinit__(self):
@@ -226,27 +198,27 @@ cdef class SimConfig:
     @property
     def mode(self):
         return sim_config_get_mode(self._config_ptr)
-        
+
     def set_mode(self, value):
-        sim_config_set_mode(self._config_ptr, value) 
+        sim_config_set_mode(self._config_ptr, value)
 
     @property
     def end_time(self):
         return sim_config_get_end_time(self._config_ptr)
-        
+
     def set_end_time(self, value):
         sim_config_set_end_time(self._config_ptr, value)
 
     @property
     def ctrl_idle_interval(self):
         return sim_config_get_ctrl_idle_interval(self._config_ptr)
-        
+
     def set_ctrl_idle_interval(self, value):
         sim_config_set_ctrl_idle_interval(self._config_ptr, value)
 
 
 cdef class Topology:
-    cdef topology *_topo_ptr
+    cdef topology * _topo_ptr
     cdef object dps
     cdef object node_info
     cdef object nodes
@@ -271,18 +243,18 @@ cdef class Topology:
             self.nodes[kwargs["name"]] = Node
         else:
             self.nodes[Node.name] = Node
-    
+
         if isinstance(Node, SDNSwitch):
-            dp = <SDNSwitch> Node
+            dp = <SDNSwitch > Node
             topology_add_datapath(self._topo_ptr, dp._dp_ptr)
-        elif isinstance (Node, Host):
-            h = <Host> Node
+        elif isinstance(Node, Host):
+            h = <Host > Node
             topology_add_host(self._topo_ptr, h._host_ptr)
-        elif isinstance (Node, Router):
-            r = <Router> Node
+        elif isinstance(Node, Router):
+            r = <Router > Node
             topology_add_router(self._topo_ptr, r._router_ptr)
 
-    def add_link(self, node1, node2, port1, port2, bw = 1, latency = 0):
+    def add_link(self, node1, node2, port1, port2, bw=1, latency=0):
         topology_add_link(self._topo_ptr, node1.uuid, node2.uuid, port1,
                           port2, bw, latency, False)
 
@@ -306,33 +278,34 @@ cdef class Topology:
     def links_num(self):
         return topology_links_num(self._topo_ptr)
 
-cdef class  LogLevels: #logging 
-    LOG_TRACE = 0 
+cdef class LogLevels:  # logging
+    LOG_TRACE = 0
     LOG_DEBUG = 1
-    LOG_INFO = 2 
+    LOG_INFO = 2
     LOG_WARN = 3
     LOG_ERROR = 4
-    LOG_FATAL = 5 
+    LOG_FATAL = 5
 
 cdef class Sim:
     cdef Topology topo
     cdef SimConfig config
     # Default interval is 0.5 seconds
-    def __cinit__(self, topo, mode = 1, end_time = UINT64_MAX, 
-                  ctrl_interval = 10000, log_level = None):
-        self.topo = <Topology> topo
+
+    def __cinit__(self, topo, mode=1, end_time=UINT64_MAX,
+                  ctrl_interval=10000, log_level=None):
+        self.topo = <Topology > topo
         # self._topo_ptr = topo._topo_ptr
         # print topo.topo_ptr()
-        self.config =  SimConfig()
+        self.config = SimConfig()
         self.config.set_mode(mode)
         self.config.set_end_time(end_time)
         self.config.set_ctrl_idle_interval(ctrl_interval)
-        if log_level != None:
+        if log_level is not None:
             self.config.set_log_level(log_level)
         else:
             self.config.set_log_level(LogLevels.LOG_FATAL + 1)
 
     def start(self):
-        topo = <Topology> self.topo
-        config = <SimConfig> self.config    
-        start(topo._topo_ptr, config._config_ptr)     
+        topo = <Topology > self.topo
+        config = <SimConfig > self.config
+        start(topo._topo_ptr, config._config_ptr)

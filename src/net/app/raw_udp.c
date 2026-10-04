@@ -12,20 +12,19 @@ int raw_udp_handle_netflow(struct netflow *flow)
     ipv4_dst.s_addr = ntohl(flow->match.ipv4_dst);
     get_ip_str(&ipv4_src, src, AF_INET);
     get_ip_str(&ipv4_dst, dst, AF_INET);
-    log_info("Host %s Received UDP flow from %s at %ld\n", dst,
-             src, flow->start_time);
+    log_info("Host %s Received UDP flow from %s at %ld\n", dst, src, flow->start_time);
     UNUSED(flow);
     return 0;
 }
 
-static void 
-raw_udp_flow(uint64_t start, struct netflow *flow, 
-                  struct raw_udp_args *args){
-    
+static void raw_udp_flow(uint64_t start, struct netflow *flow,
+                         struct raw_udp_args *args)
+{
+
     uint64_t pkt_cnt, byte_cnt;
-    uint32_t pkt_size = 1470 + 34; /* Datagram plus headers */
+    uint64_t pkt_size = 1470 + 34; /* Datagram plus headers */
     pkt_cnt = args->rate / (pkt_size * 8);
-    byte_cnt =  pkt_cnt * pkt_size;
+    byte_cnt = pkt_cnt * pkt_size;
     flow->match.eth_type = ETH_TYPE_IP;
     flow->match.ip_proto = IP_PROTO_UDP;
     flow->match.ipv4_dst = args->ip_dst;
@@ -36,9 +35,10 @@ raw_udp_flow(uint64_t start, struct netflow *flow,
     flow->start_time = start;
 }
 
-struct netflow *raw_udp_start(uint64_t start, void* args){
+struct netflow *raw_udp_start(uint64_t start, void *args)
+{
     struct netflow *n = netflow_new();
-    struct raw_udp_args *udp_args = (struct raw_udp_args*) args;
+    struct raw_udp_args *udp_args = (struct raw_udp_args *)args;
     /* Creates initial udp flow */
     raw_udp_flow(start, n, udp_args);
     return n;

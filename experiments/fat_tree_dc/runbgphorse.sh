@@ -17,7 +17,6 @@ ctrlc() {
 
 trap ctrlc SIGINT
 
-
 #For new kernel To disable DCTCP:
 #sysctl -w net.ipv4.tcp_dctcp_enable=0
 #sysctl -w net.ipv4.tcp_ecn=1
@@ -31,11 +30,9 @@ flowsPerHost=$3
 seed=$4
 trial=$5
 duration=$6
-rootdir=results-bgp-horse/expt-$k-$traffic-$flowsPerHost-$seed-$trial
-mkdir -p $rootdir
 bw=1000
-numhosts=$((k * k * k / 4))
-maxbw=$((numhosts * bw))
+rootdir=results-bgp-horse/expt-$k-$traffic-$flowsPerHost-$seed-$trial
+mkdir -p "$rootdir"
 
 # bandwidth of the whole topology is about 4Gb. For k=4 we have 48 links. so 10 each
 
@@ -60,15 +57,15 @@ iperf=/usr/bin/iperf
 dir=$rootdir/ecmp
 # mn -c
 python3 -m experiments.fat_tree_dc.hedera --bw $bw \
-        --dir $dir \
-        -k $k \
-        --iperf $iperf \
-        --traffic $traffic \
-        --seed $seed \
-        --time $duration \
-        --horse \
-        --bgp \
-        --flowsPerHost $flowsPerHost
+    --dir "$dir" \
+    -k "$k" \
+    --iperf $iperf \
+    --traffic "$traffic" \
+    --seed "$seed" \
+    --time "$duration" \
+    --horse \
+    --bgp \
+    --flowsPerHost "$flowsPerHost"
 
 # dir=$rootdir/random
 # mn -c

@@ -18,8 +18,8 @@
 #define MAX_ACTION_SET 14
 
 /* TTL fields do not make sense now but
-*  are included for possible future usage.
-*/
+ *  are included for possible future usage.
+ */
 enum action_set_order {
     ACT_METER = 0,
     ACT_COPY_TTL_INWARDS = 1,
@@ -81,13 +81,13 @@ struct meter {
     uint32_t meter_id;
 };
 
-struct output{
+struct output {
     uint32_t port;
-    //uint16_t max_len; /* Max size to send to controller.*/                  
+    // uint16_t max_len; /* Max size to send to controller.*/
 };
 
-struct set_mpls_ttl{
-   uint8_t new_ttl;    
+struct set_mpls_ttl {
+    uint8_t new_ttl;
 };
 
 struct push {
@@ -109,8 +109,8 @@ struct set_field {
         uint16_t u16_field;
         uint32_t u32_field;
         uint64_t u64_field;
-        uint8_t  eth_addr[ETH_LEN];  
-        uint8_t  ipv6_addr[IPV6_LEN];
+        uint8_t eth_addr[ETH_LEN];
+        uint8_t ipv6_addr[IPV6_LEN];
     };
 };
 

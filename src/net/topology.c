@@ -8,26 +8,24 @@
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
 
-
 #include "topology.h"
 #include "lib/json_topology.h"
 
 /* Represents the network topology */
 struct topology {
-    struct node *nodes;             /* Hash table of all network nodes. */
-    struct link *links;             /* Hash table of links */
-    struct dp_node *dps;            /* Access datapath nodes by dpid */
-    struct router_node *routers;    /* Access routers by the router_id */
-    struct host_node *hosts;        /* Direct access to hosts by uuid */
-    uint32_t degree[MAX_DPS];       /* number of links connected to dps. */ 
-    uint32_t n_dps;                 /* Number of datapaths. */
-    uint32_t n_routers;             /* Number of routers. */
-    uint32_t n_hosts;               /* Number of hosts. */
-    uint32_t n_links;               /* Number of links. */
+    struct node *nodes;          /* Hash table of all network nodes. */
+    struct link *links;          /* Hash table of links */
+    struct dp_node *dps;         /* Access datapath nodes by dpid */
+    struct router_node *routers; /* Access routers by the router_id */
+    struct host_node *hosts;     /* Direct access to hosts by uuid */
+    uint32_t degree[MAX_DPS];    /* number of links connected to dps. */
+    uint32_t n_dps;              /* Number of datapaths. */
+    uint32_t n_routers;          /* Number of routers. */
+    uint32_t n_hosts;            /* Number of hosts. */
+    uint32_t n_links;            /* Number of links. */
 };
 
-static void
-topology_init(struct topology* topo)
+static void topology_init(struct topology *topo)
 {
     topo->nodes = NULL;
     topo->dps = NULL;
@@ -40,7 +38,7 @@ topology_init(struct topology* topo)
     topo->links = NULL;
 }
 
-struct topology* topology_new(void)
+struct topology *topology_new(void)
 {
     struct topology *topo = xmalloc(sizeof(struct topology));
     topology_init(topo);
@@ -48,60 +46,68 @@ struct topology* topology_new(void)
 }
 
 /* One function for each type is necessary because of the Python binding */
-void 
-topology_add_router(struct topology *topo, struct router *r)
+void topology_add_router(struct topology *topo, struct router *r)
 {
-    struct router_node *rn = xmalloc(sizeof (struct router_node));
+    struct router_node *rn = xmalloc(sizeof(struct router_node));
     rn->router_id = router_id(r);
     rn->rt = r;
-    HASH_ADD(hh, topo->routers, router_id, sizeof(uint32_t), rn); 
-    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) r);
-    topo->n_routers++;  
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
+    HASH_ADD(hh, topo->routers, router_id, sizeof(uint32_t), rn);
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
+    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node *)r);
+    topo->n_routers++;
 }
 
-void 
-topology_add_datapath(struct topology *topo, struct datapath* dp)
+void topology_add_datapath(struct topology *topo, struct datapath *dp)
 {
-    struct dp_node *dn = xmalloc(sizeof (struct dp_node));
+    struct dp_node *dn = xmalloc(sizeof(struct dp_node));
     dn->dp_id = dp_id(dp);
     dn->dp = dp;
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
     HASH_ADD(hh, topo->dps, dp_id, sizeof(uint64_t), dn);
-    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) dp);
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
+    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node *)dp);
     topo->n_dps++;
 }
 
-void 
-topology_add_host(struct topology *topo, struct host *h)
+void topology_add_host(struct topology *topo, struct host *h)
 {
-    struct host_node *hnode = xmalloc(sizeof (struct dp_node));
+    struct host_node *hnode = xmalloc(sizeof(struct dp_node));
     hnode->uuid = host_uuid(h);
     hnode->h = h;
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
     HASH_ADD(hh, topo->hosts, uuid, sizeof(uint64_t), hnode);
-    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node*) h);
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
+    HASH_ADD(hh, topo->nodes, uuid, sizeof(uint64_t), (struct node *)h);
     topo->n_hosts++;
 }
 
-void 
-topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB,
-                  uint32_t portA, uint32_t portB, uint32_t bw, 
-                  uint32_t latency, bool directed)
+void topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB,
+                       uint32_t portA, uint32_t portB, uint32_t bw, uint32_t latency,
+                       bool directed)
 {
     struct node *dpA, *dpB;
     struct link *l;
     dpA = dpB = NULL;
     /* Check if A and B exist. */
     HASH_FIND(hh, t->nodes, &uuidA, sizeof(uint64_t), dpA);
-    if (dpA == NULL){
+    if (dpA == NULL) {
         /* TODO: return error message. */
         return;
     }
     HASH_FIND(hh, t->nodes, &uuidB, sizeof(uint64_t), dpB);
-    if (dpB == NULL){
+    if (dpB == NULL) {
         /* TODO: return error message. */
         return;
     }
     /* Fill link configuration. */
-    l = (struct link*) xmalloc(sizeof(struct link));
+    l = (struct link *)xmalloc(sizeof(struct link));
     memset(l, 0x0, sizeof(struct link));
 
     l->node1.port = portA;
@@ -110,20 +116,20 @@ topology_add_link(struct topology *t, uint64_t uuidA, uint64_t uuidB,
     l->node2.uuid = dpB->uuid;
     l->latency = latency;
     l->bandwidth = bw;
+    // Vendor container invariants are not modeled by the analyzer.
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
     HASH_ADD(hh, t->links, node1, sizeof(struct node_port_pair), l);
     /* Insert backwards. */
-    if (directed == false){
+    if (directed == false) {
         topology_add_link(t, uuidB, uuidA, portB, portA, bw, latency, true);
-    }
-    else {
+    } else {
         t->n_links++;
     }
 }
 
-bool
-topology_next_hop(const struct topology *topo, const uint64_t orig_uuid,
-                  const uint32_t orig_port, uint64_t *dst_uuid, 
-                  uint32_t *dst_port, uint32_t *latency)
+bool topology_next_hop(const struct topology *topo, const uint64_t orig_uuid,
+                       const uint32_t orig_port, uint64_t *dst_uuid, uint32_t *dst_port,
+                       uint32_t *latency)
 {
     struct link *l;
     struct node_port_pair np;
@@ -131,7 +137,7 @@ topology_next_hop(const struct topology *topo, const uint64_t orig_uuid,
     np.uuid = orig_uuid;
     np.port = orig_port;
     HASH_FIND(hh, topo->links, &np, sizeof(struct node_port_pair), l);
-    if (l != NULL){
+    if (l != NULL) {
         *dst_uuid = l->node2.uuid;
         *dst_port = l->node2.port;
         *latency = l->latency;
@@ -140,13 +146,12 @@ topology_next_hop(const struct topology *topo, const uint64_t orig_uuid,
     return false;
 }
 
-/* Clean the dynamically allocated members of a topology 
-*  As there should be a single instance of topology allocated 
-*  in the stack it is not necessary to free topo.
-*/
+/* Clean the dynamically allocated members of a topology
+ *  As there should be a single instance of topology allocated
+ *  in the stack it is not necessary to free topo.
+ */
 
-void 
-topology_destroy(struct topology *topo)
+void topology_destroy(struct topology *topo)
 {
     struct node *cur_node, *tmp;
     struct link *ltmp, *lcurr;
@@ -155,89 +160,97 @@ topology_destroy(struct topology *topo)
 
     struct router_node *rncur, *rntmp;
     /* Clean links */
-    HASH_ITER(hh, topo->links, lcurr, ltmp) {
-        HASH_DEL(topo->links, lcurr);  
+    HASH_ITER(hh, topo->links, lcurr, ltmp)
+    {
+        // Vendor container invariants are not modeled by the analyzer.
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        HASH_DEL(topo->links, lcurr);
         free(lcurr);
     }
     /* Clean Nodes */
-    HASH_ITER(hh, topo->nodes, cur_node, tmp) {
-        HASH_DEL(topo->nodes, cur_node);  
-        if (cur_node->type == DATAPATH){
-            dp_destroy((struct datapath*) cur_node);    
-        }
-        else if (cur_node->type == HOST){
-            host_destroy((struct host*) cur_node);    
-        }
-        else if (cur_node->type == ROUTER){
-            router_destroy((struct router*) cur_node);    
+    HASH_ITER(hh, topo->nodes, cur_node, tmp)
+    {
+        // Vendor container invariants are not modeled by the analyzer.
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        HASH_DEL(topo->nodes, cur_node);
+        if (cur_node->type == DATAPATH) {
+            dp_destroy((struct datapath *)cur_node);
+        } else if (cur_node->type == HOST) {
+            host_destroy((struct host *)cur_node);
+        } else if (cur_node->type == ROUTER) {
+            router_destroy((struct router *)cur_node);
         }
     }
     /* Clean datapath map */
-    HASH_ITER(hh, topo->dps, dncur, dntmp) {
-        HASH_DEL(topo->dps, dncur);  
+    HASH_ITER(hh, topo->dps, dncur, dntmp)
+    {
+        // Vendor container invariants are not modeled by the analyzer.
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        HASH_DEL(topo->dps, dncur);
         free(dncur);
     }
-    HASH_ITER(hh, topo->routers, rncur, rntmp) {
-        HASH_DEL(topo->routers, rncur);  
+    HASH_ITER(hh, topo->routers, rncur, rntmp)
+    {
+        // Vendor container invariants are not modeled by the analyzer.
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        HASH_DEL(topo->routers, rncur);
         free(rncur);
     }
-    HASH_ITER(hh, topo->hosts, hcur, htmp) {
-        HASH_DEL(topo->hosts, hcur);  
+    HASH_ITER(hh, topo->hosts, hcur, htmp)
+    {
+        // Vendor container invariants are not modeled by the analyzer.
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        HASH_DEL(topo->hosts, hcur);
         free(hcur);
     }
     free(topo);
 }
 
-struct node* 
-topology_node(const struct topology *topo, uint64_t uuid)
+struct node *topology_node(const struct topology *topo, uint64_t uuid)
 {
     struct node *n = NULL;
     HASH_FIND(hh, topo->nodes, &uuid, sizeof(uint64_t), n);
     return n;
 }
 
-struct datapath* 
-topology_datapath_by_dpid(const struct topology *topo, uint64_t dp_id)
+struct datapath *topology_datapath_by_dpid(const struct topology *topo, uint64_t dp_id)
 {
     struct dp_node *dn;
     HASH_FIND(hh, topo->dps, &dp_id, sizeof(uint64_t), dn);
-    return dn == NULL? NULL: dn->dp;
+    return dn == NULL ? NULL : dn->dp;
 }
 
-struct router*
-topology_router_by_id(const struct topology *topo, uint32_t router_id)
+struct router *topology_router_by_id(const struct topology *topo, uint32_t router_id)
 {
     struct router_node *rn;
     HASH_FIND(hh, topo->routers, &router_id, sizeof(uint32_t), rn);
-    return rn == NULL? NULL : rn->rt;
+    return rn == NULL ? NULL : rn->rt;
 }
 
-static
-void topology_from_ptopo(struct topology* topo, struct parsed_topology* ptopo)
+static void topology_from_ptopo(struct topology *topo, struct parsed_topology *ptopo)
 {
     size_t i;
     /* Create Datapaths */
-    for (i = 0; i < ptopo->ndps; ++i){
+    for (i = 0; i < ptopo->ndps; ++i) {
         struct datapath *dp = dp_new(ptopo->dps[i], "127.0.0.1", 6653);
-        uint8_t mac[6] = {0,0,0,0,0,1};
+        uint8_t mac[6] = {0, 0, 0, 0, 0, 1};
         dp_add_port(dp, 1, mac, 1000000, 1000000);
         dp_add_port(dp, 2, mac, 1000000, 1000000);
         topology_add_datapath(topo, dp);
     }
     /* Create links */
-    for (i = 0; i < ptopo->nlinks; ++i){
-        topology_add_link(topo, ptopo->links[i].switchX,
-                          ptopo->links[i].switchY, ptopo->links[i].portX, 
-                          ptopo->links[i].portY, ptopo->links[i].delay, 
-                          ptopo->links[i].bw, false);
+    for (i = 0; i < ptopo->nlinks; ++i) {
+        topology_add_link(topo, ptopo->links[i].switchX, ptopo->links[i].switchY,
+                          ptopo->links[i].portX, ptopo->links[i].portY,
+                          ptopo->links[i].delay, ptopo->links[i].bw, false);
     }
 }
 
-struct topology* from_json(char *json_file)
+struct topology *from_json(char *json_file)
 {
     size_t s;
     struct parsed_topology ptopo;
-    struct topology* topo = topology_new();
+    struct topology *topo = topology_new();
     char *json = file_to_string(json_file, &s);
     if (json != NULL) {
         parse_topology(json, s, &ptopo);
@@ -247,48 +260,21 @@ struct topology* from_json(char *json_file)
 }
 
 /* Get struct members */
-uint32_t 
-topology_dps_num(const struct topology *topo)
-{
-    return topo->n_dps;
-}
+uint32_t topology_dps_num(const struct topology *topo) { return topo->n_dps; }
 
-uint32_t 
-topology_routers_num(const struct topology *topo)
-{
-    return topo->n_routers;
-}
+uint32_t topology_routers_num(const struct topology *topo) { return topo->n_routers; }
 
-uint32_t topology_links_num(const struct topology *topo)
-{
-    return topo->n_links;
-}
+uint32_t topology_links_num(const struct topology *topo) { return topo->n_links; }
 
-struct node* topology_nodes(const struct topology *topo)
-{
-    return topo->nodes;
-}
+struct node *topology_nodes(const struct topology *topo) { return topo->nodes; }
 
-struct dp_node *
-topology_datapaths(const struct topology *topo) 
-{
-    return topo->dps;
-}
+struct dp_node *topology_datapaths(const struct topology *topo) { return topo->dps; }
 
-struct router_node *
-topology_routers(const struct topology *topo)
+struct router_node *topology_routers(const struct topology *topo)
 {
     return topo->routers;
 }
 
-struct host_node *
-topology_hosts(const struct topology *topo)
-{
-    return topo->hosts;
-}
+struct host_node *topology_hosts(const struct topology *topo) { return topo->hosts; }
 
-struct link * 
-topology_links(const struct topology *topo)
-{
-    return topo->links;
-}
+struct link *topology_links(const struct topology *topo) { return topo->links; }

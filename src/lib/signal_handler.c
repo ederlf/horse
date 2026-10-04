@@ -1,16 +1,17 @@
 #include "signal_handler.h"
-#include <signal.h> 
-#include <stdio.h> 
-#include <stdlib.h> 
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/wait.h>
 #include <errno.h>
 
-static void handle_sigchld(int sig) 
+static void handle_sigchld(int sig)
 {
-  (void) sig;
-  int saved_errno = errno;
-  while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
-  errno = saved_errno;
+    (void)sig;
+    int saved_errno = errno;
+    while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {
+    }
+    errno = saved_errno;
 }
 
 void register_handle_sigchild(void)

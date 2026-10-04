@@ -6,11 +6,11 @@ maxy=$3
 km1=$((k - 1))
 kdiv2=$((km1 / 2))
 python util/plot_rate.py \
-       -f $dir/hedera/bwm.txt $dir/ecmp/bwm.txt $dir/random/bwm.txt $dir/st/bwm.txt \
-       --legend Hedera ECMP Random ST \
-       --maxy $maxy \
-       --xlabel 'Time (s)' \
-       --ylabel 'Rate (Mbps)' \
-       --total \
-       -i "(([0-$km1]_[0-$kdiv2]_1-eth\d*[24680])|(s1-eth.*))" \
-       -o $dir/summary.png
+    -f "$dir"/hedera/bwm.txt "$dir"/ecmp/bwm.txt "$dir"/random/bwm.txt "$dir"/st/bwm.txt \
+    --legend Hedera ECMP Random ST \
+    --maxy "$maxy" \
+    --xlabel 'Time (s)' \
+    --ylabel 'Rate (Mbps)' \
+    --total \
+    -i "(([0-$km1]_[0-$kdiv2]_1-eth\d*[24680])|(s1-eth.*))" \
+    -o "$dir"/summary.png

@@ -18,7 +18,6 @@
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
 
-
 #ifndef FLOW_H
 #define FLOW_H 1
 
@@ -39,13 +38,13 @@ struct flow {
     uint8_t table_id;
     uint16_t flags;
     uint16_t priority;
-    uint64_t cookie;       /* Flow identification. */
+    uint64_t cookie; /* Flow identification. */
     uint64_t pkt_cnt;
     uint64_t byte_cnt;
-    uint64_t created; 
+    uint64_t created;
     uint64_t hard_timeout;
     uint64_t idle_timeout;
-    uint64_t remove_at; /* instruction time + hard timeout */ 
+    uint64_t remove_at; /* instruction time + hard timeout */
     uint64_t last_used; /* last match, remove if time > last used + idle_timeout */
     struct instruction_set insts;
     UT_hash_handle hh;
@@ -57,10 +56,10 @@ bool flow_key_cmp(struct ofl_flow_key *a, struct ofl_flow_key *b);
 void flow_add_instructions(struct flow *f, struct instruction_set is);
 void flow_printer(struct flow *f);
 
-void flow_push_vlan(struct flow* f);
-void flow_pop_vlan(struct flow* f);
-void flow_push_mpls(struct flow* f);
-void flow_pop_mpls(struct flow* f);
+void flow_push_vlan(struct flow *f);
+void flow_pop_vlan(struct flow *f);
+void flow_push_mpls(struct flow *f);
+void flow_pop_mpls(struct flow *f);
 
 /* Set field functions */
 void set_in_port(struct flow *f, uint32_t in_port);
@@ -116,7 +115,8 @@ void set_masked_arp_sha(struct flow *f, uint8_t arp_sha[6], uint8_t mask[6]);
 void set_masked_arp_tha(struct flow *f, uint8_t arp_tha[6], uint8_t mask[6]);
 void set_masked_ipv6_dst(struct flow *f, uint8_t ipv6_dst[16], uint8_t mask[16]);
 void set_masked_ipv6_src(struct flow *f, uint8_t ipv6_src[16], uint8_t mask[16]);
-void set_masked_ipv6_nd_target(struct flow *f, uint8_t ipv6_nd_target[16], uint8_t mask[16]);
+void set_masked_ipv6_nd_target(struct flow *f, uint8_t ipv6_nd_target[16],
+                               uint8_t mask[16]);
 void set_masked_ipv6_nd_sll(struct flow *f, uint8_t ipv6_nd_sll[6], uint8_t mask[6]);
 void set_masked_ipv6_nd_tll(struct flow *f, uint8_t ipv6_nd_tll[6], uint8_t mask[6]);
 

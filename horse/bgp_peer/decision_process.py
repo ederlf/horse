@@ -3,11 +3,13 @@
 #  Muhammad Shahbaz (muhammad.shahbaz@gatech.edu)
 #  Sean Donovan
 
-import socket, struct
+import socket
+import struct
 
-''' BGP decision process '''
+""" BGP decision process """
+
+
 def best_path_selection(routes):
-
     # Priority of rules to make decision:
     # ---- 0. [Vendor Specific - Cisco has a "Weight"]
     # ---- 1. Highest Local Preference
@@ -20,18 +22,18 @@ def best_path_selection(routes):
     #
     # I believe that steps 0, 1, 3, 5, and 6 are out
 
-    # Return False if routes are decided before 7. 
+    # Return False if routes are decided before 7.
     # This helps to decide if routes are equal for max-path and relaxed configurations.
 
-    ''' 1. Lowest AS Path Length '''
+    """1. Lowest AS Path Length"""
 
     best_routes = []
     for route in routes:
-        #print route
+        # print route
 
-        #find ones with smallest AS Path Length
+        # find ones with smallest AS Path Length
         if not best_routes:
-            #prime the pump
+            # prime the pump
             min_route_length = aspath_length(route.as_path)
             best_routes.append(route)
         elif min_route_length == aspath_length(route.as_path):
@@ -44,10 +46,10 @@ def best_path_selection(routes):
     # If there's only 1, it's the best route
 
     if len(best_routes) == 1:
-        #print "Shortest A"
+        # print "Shortest A"
         return best_routes, False
 
-    ''' 2. Lowest MED '''
+    """ 2. Lowest MED """
 
     # Compare the MED only among routes that have been advertised by the same AS.
     # Put it differently, you should skip this step if two routes are advertised by two different ASes.
@@ -64,11 +66,11 @@ def best_path_selection(routes):
 
     i = 0
     while i < len(as_list):
-
         if as_list.count(as_list[i]) > 1:
-
             # get all that match the particular AS
-            from_as_list = [x for x in best_routes if get_advertised_as(x.as_path)==as_list[i]]
+            from_as_list = [
+                x for x in best_routes if get_advertised_as(x.as_path) == as_list[i]
+            ]
 
             # MED comparison here
             j = 0
@@ -81,21 +83,23 @@ def best_path_selection(routes):
                 j += 1
 
             # add to post-MED list - this could be more than one if MEDs match
-            temp_routes = [x for x in from_as_list if x.med==lowest_med]
+            temp_routes = [x for x in from_as_list if x.med == lowest_med]
             for el in temp_routes:
                 post_med_best_routes.append(el)
 
-            i = i+as_list.count(as_list[i])
+            i = i + as_list.count(as_list[i])
 
         else:
-            temp_routes = [x for x in best_routes if get_advertised_as(x.as_path)==as_list[i]]
+            temp_routes = [
+                x for x in best_routes if get_advertised_as(x.as_path) == as_list[i]
+            ]
             for el in temp_routes:
                 post_med_best_routes.append(el)
             i += 1
 
     # If there's only 1, it's the best route
     if len(post_med_best_routes) == 1:
-        #print "M"
+        # print "M"
         return post_med_best_routes, False
 
     return post_med_best_routes, True
@@ -127,40 +131,49 @@ def lowest_router_id(post_med_best_routes):
             lowest_ip_as_long = ip_to_long(post_med_best_routes[i].next_hop)
         i += 1
 
-    #print "R"
-    return post_med_best_routes[get_index(post_med_best_routes,'next_hop',long_to_ip(lowest_ip_as_long))]
+    # print "R"
+    return post_med_best_routes[
+        get_index(post_med_best_routes, "next_hop", long_to_ip(lowest_ip_as_long))
+    ]
 
-''' Helper functions '''
+
+""" Helper functions """
+
+
 def aspath_length(as_path):
     return len(as_path)
+
 
 def get_advertised_as(as_path):
     return as_path[0]
 
+
 def ip_to_long(ip):
-    return struct.unpack('!L', socket.inet_aton(ip))[0]
+    return struct.unpack("!L", socket.inet_aton(ip))[0]
+
 
 def long_to_ip(ip):
-    return socket.inet_ntoa(struct.pack('!L', ip))
+    return socket.inet_ntoa(struct.pack("!L", ip))
+
 
 def get_index(seq, attr, value):
     return next(index for (index, d) in enumerate(seq) if getattr(d, attr) == value)
 
 
-''' main '''
-if __name__ == '__main__':
+""" main """
+if __name__ == "__main__":
     from .rib import rib
 
     passed_tests = 0
     failed_tests = 0
     # AS tests
     aspath = "1 2 3 4 5"
-    if (5 != aspath_length(aspath)):
+    if 5 != aspath_length(aspath):
         print("aspath_length() failed")
         failed_tests += 1
     else:
         passed_tests += 1
-    if ("1" != get_advertised_as(aspath)):
+    if "1" != get_advertised_as(aspath):
         print("get_advertised_as() failed")
         failed_tests += 1
     else:
@@ -169,12 +182,12 @@ if __name__ == '__main__':
     # IP conversions
     ip = "128.64.32.16"
     ip_as_long = 0x80402010
-    if (ip_as_long != ip_to_long(ip)):
+    if ip_as_long != ip_to_long(ip):
         print("ip_to_long() failed")
         failed_tests += 1
     else:
         passed_tests += 1
-    if (ip != long_to_ip(ip_as_long)):
+    if ip != long_to_ip(ip_as_long):
         print("long_to_ip() failed")
         failed_tests += 1
     else:
@@ -182,18 +195,18 @@ if __name__ == '__main__':
 
     # BPS
     # Starting part is from the RIB module
-    myrib = rib('172.0.0.1',"testing")
+    myrib = rib("172.0.0.1", "testing")
 
-    myrib['100.0.0.1/16'] = ('172.0.0.2', 'igp', '100, 200, 300', '0', 'false')
-    #myrib['100.0.0.1/16'] = ['172.0.0.2', 'igp', '100, 200, 300', '0', 'false']
-    #myrib['100.0.0.1/16'] = {'next_hop':'172.0.0.2', 'origin':'igp', 'as_path':'100, 200, 300',
+    myrib["100.0.0.1/16"] = ("172.0.0.2", "igp", "100, 200, 300", "0", "false")
+    # myrib['100.0.0.1/16'] = ['172.0.0.2', 'igp', '100, 200, 300', '0', 'false']
+    # myrib['100.0.0.1/16'] = {'next_hop':'172.0.0.2', 'origin':'igp', 'as_path':'100, 200, 300',
     #                          'med':'0', 'atomic_aggregate':'false'}
     myrib.commit()
 
-    myrib.update('100.0.0.1/16', 'next_hop', '190.0.0.2')
+    myrib.update("100.0.0.1/16", "next_hop", "190.0.0.2")
     myrib.commit()
 
-    print(decision_process(myrib,"100.0.0.1/16"))
+    print(best_path_selection(myrib.get_all("100.0.0.1/16")))
 
     print("Passed:", passed_tests)
     print("Failed:", failed_tests)

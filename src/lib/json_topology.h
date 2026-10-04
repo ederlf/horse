@@ -9,10 +9,10 @@
 #define LINKS_KEY "links"
 #define SWITCHX "switchX"
 #define SWITCHY "switchY"
-#define PORTX "portX" 
+#define PORTX "portX"
 #define PORTY "portY"
 #define DELAY "delay"
-#define BW    "bw"
+#define BW "bw"
 
 #define DP_LIMIT UINT16_MAX
 #define LINK_LIMIT 10000
@@ -33,10 +33,6 @@ struct parsed_topology {
     size_t nlinks;
 };
 
-enum json_error {
-    INVALID_JSON = 1,
-    INVALID_KEYWORD = 2,
-    INVALID_LINK_DP = 3
-};
+enum json_error { INVALID_JSON = 1, INVALID_KEYWORD = 2, INVALID_LINK_DP = 3 };
 
 void parse_topology(char *json, size_t s, struct parsed_topology *ptopo);

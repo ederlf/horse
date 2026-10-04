@@ -1,5 +1,6 @@
+#include <limits.h>
 /* Copyright (c) 2011, TrafficLab, Ericsson Research, Hungary
- * Copyright (c) 2012, CPqD, Brazil 
+ * Copyright (c) 2012, CPqD, Brazil
  * Copyright (c) 2017, Eder Leao Fernandes
  * All rights reserved.
  *
@@ -34,54 +35,52 @@
 #include <loci/loci.h>
 
 /* Dispatches control messages to appropriate handler functions. */
-of_object_t *
-dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
-                              struct netflow *nf, size_t len, uint64_t time) {
-    
-    of_object_t *obj = of_object_new_from_message(msg, len);
-    of_object_t* ret = NULL;
+of_object_t *dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
+                                           struct netflow *nf, size_t len,
+                                           uint64_t time)
+{
+
+    if (len > INT_MAX) {
+        return NULL;
+    }
+    of_object_t *obj = of_object_new_from_message(msg, (int)len);
+    of_object_t *ret = NULL;
     if (obj != NULL) {
         switch (obj->object_id) {
-            case OF_PACKET_OUT: {
-                ret = dp_handle_pkt_out(dp, obj, nf, time);
-                break;
-            }
-            case OF_FLOW_ADD: 
-            case OF_FLOW_MODIFY:
-            case OF_FLOW_MODIFY_STRICT: 
-            case OF_FLOW_DELETE:
-            case OF_FLOW_DELETE_STRICT: { 
-                ret = dp_handle_flow_mod(dp, obj, time);
-                break;
-            }
-            case OF_PORT_STATS_REQUEST: {
-                ret = dp_handle_port_stats_req(dp, obj);
-                break;
-            }
-            case OF_FLOW_STATS_REQUEST: {
-                ret = dp_handle_flow_stats_req(dp, obj, time);
-                break;
-            }
-            case OF_AGGREGATE_STATS_REQUEST: {
-                ret = dp_handle_aggregate_stats_req(dp, obj, time);
-                break;
-            }
-            case OF_FEATURES_REQUEST: {
-
-            }
-            case OF_PORT_MOD: {
-
-            }
-            case OF_DESC_STATS_REQUEST: {
-
-            }
-            case OF_PORT_DESC_STATS_REQUEST: {
-                ret = dp_handle_port_desc(dp, obj);
-                break;
-            }
-            default: {
-                break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
-            }
+        case OF_PACKET_OUT: {
+            ret = dp_handle_pkt_out(dp, obj, nf, time);
+            break;
+        }
+        case OF_FLOW_ADD:
+        case OF_FLOW_MODIFY:
+        case OF_FLOW_MODIFY_STRICT:
+        case OF_FLOW_DELETE:
+        case OF_FLOW_DELETE_STRICT: {
+            ret = dp_handle_flow_mod(dp, obj, time);
+            break;
+        }
+        case OF_PORT_STATS_REQUEST: {
+            ret = dp_handle_port_stats_req(dp, obj);
+            break;
+        }
+        case OF_FLOW_STATS_REQUEST: {
+            ret = dp_handle_flow_stats_req(dp, obj, time);
+            break;
+        }
+        case OF_AGGREGATE_STATS_REQUEST: {
+            ret = dp_handle_aggregate_stats_req(dp, obj, time);
+            break;
+        }
+        case OF_FEATURES_REQUEST:
+        case OF_PORT_MOD:
+        case OF_DESC_STATS_REQUEST:
+        case OF_PORT_DESC_STATS_REQUEST: {
+            ret = dp_handle_port_desc(dp, obj);
+            break;
+        }
+        default: {
+            break; /*ofl_error(OFPET_BAD_REQUEST, OFPBRC_BAD_TYPE);*/
+        }
         }
         of_object_delete(obj);
     }

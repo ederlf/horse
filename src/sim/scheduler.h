@@ -22,10 +22,10 @@ enum scheduler_mode {
 };
 
 struct scheduler {
-    uint64_t clock;          /* Current time of the simulation. */
+    uint64_t clock; /* Current time of the simulation. */
     // struct heap *ev_queue;   /* Scheduled events. */
     struct sim_event *ev_queue;
-    pthread_mutex_t sch_mutex;                
+    pthread_mutex_t sch_mutex;
     enum scheduler_mode mode;
 };
 
@@ -36,6 +36,5 @@ void scheduler_insert(struct scheduler *sch, struct sim_event *ev);
 void scheduler_delete(struct scheduler *sch, struct sim_event *ev);
 struct sim_event *scheduler_retrieve(struct scheduler *sch);
 struct sim_event *scheduler_dispatch(struct scheduler *sch);
-
 
 #endif

@@ -1,0 +1,5 @@
+# Linux libc has no Annex K APIs. Existing C signatures intentionally accept
+# adjacent values of the same type; changing them would break callers.
+Checks: "-*,clang-analyzer-*,bugprone-*,clang-diagnostic-*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-bugprone-easily-swappable-parameters"
+WarningsAsErrors: "*"
+HeaderFilterRegex: "(^|/)(src|tests)/"

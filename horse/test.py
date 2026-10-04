@@ -1,4 +1,4 @@
-from horse import *
+from horse import Host, SDNSwitch, Sim, Topology
 
 sw1 = SDNSwitch(42)
 # sw2 = SDNSwitch(42)
@@ -10,8 +10,8 @@ h2 = Host()
 sw1.add_port(1, "00:00:00:00:01:00")
 sw1.add_port(2, "00:00:00:00:02:00")
 
-h1.add_port(1, "00:00:00:00:00:01", ip = "10.0.0.1", netmask = "255.255.255.0" )
-h2.add_port(1, "00:00:00:00:00:02", ip = "10.0.0.2", netmask = "255.255.255.0")
+h1.add_port(1, "00:00:00:00:00:01", ip="10.0.0.1", netmask="255.255.255.0")
+h2.add_port(1, "00:00:00:00:00:02", ip="10.0.0.2", netmask="255.255.255.0")
 
 start_time = 1000000
 
@@ -25,4 +25,4 @@ topo.add_link(sw1, h1, 1, 1)
 topo.add_link(sw1, h2, 2, 1)
 
 sim = Sim(topo)
-#sim.start()
+# sim.start()

@@ -1,23 +1,18 @@
-from horse import *
-from random import randint
 import sys
+from random import randint
 
 from ixp_config import Config
 
+from horse import Host, SDNSwitch, Topology
+
+
 def rand_mac():
-    return "%02x:%02x:%02x:%02x:%02x:%02x" % (
-        randint(0, 255),
-        randint(0, 255),
-        randint(0, 255),
-        randint(0, 255),
-        randint(0, 255),
-        randint(0, 255)
-)
+    return f"{randint(0, 255):02x}:{randint(0, 255):02x}:{randint(0, 255):02x}:{randint(0, 255):02x}:{randint(0, 255):02x}:{randint(0, 255):02x}"
+
 
 class SDXTopo(Topology):
-
     def hosts(self):
-        hosts =  [h for h in self.nodes if isinstance(self.nodes[h], Host)]
+        hosts = [h for h in self.nodes if isinstance(self.nodes[h], Host)]
         return hosts
 
     def __init__(self, config, *args, **kwargs):
@@ -31,17 +26,17 @@ class SDXTopo(Topology):
         # edge switches
         edge_switches = []
 
-        for i in range(1, len([s for s in config.dpids if 'edge' in str(s)])+1):
-            dpid = format(config.dpids['edge-%s' % i], '016x')
+        for i in range(1, len([s for s in config.dpids if "edge" in str(s)]) + 1):
+            dpid = format(config.dpids[f"edge-{i}"], "016x")
             sw = SDNSwitch(int(dpid, 16))
-            self.add_node(sw, name = 'edge-%s' % i)
+            self.add_node(sw, name=f"edge-{i}")
             edge_switches.append(sw)
         # core switches
         core_switches = []
-        for i in range(1, len([s for s in config.dpids if 'core' in str(s)])+1):
-            dpid = format(config.dpids['core-%s' % i], '016x')
+        for i in range(1, len([s for s in config.dpids if "core" in str(s)]) + 1):
+            dpid = format(config.dpids[f"core-{i}"], "016x")
             sw = SDNSwitch(int(dpid, 16))
-            self.add_node(sw, name = 'core-%s' % i)
+            self.add_node(sw, name=f"core-{i}")
             edge_switches.append(sw)
 
         # connect edge to core links
@@ -49,24 +44,28 @@ class SDXTopo(Topology):
         for edge_switch in edge_switches:
             edge_port = 1
             for core_switch in core_switches:
-                edge_switch.add_port(port = edge_port, eth_addr = rand_mac())
-                core_switch.add_port(port = core_port, eth_addr = rand_mac())
+                edge_switch.add_port(port=edge_port, eth_addr=rand_mac())
+                core_switch.add_port(port=core_port, eth_addr=rand_mac())
                 self.add_link(edge_switch, core_switch, edge_port, core_port)
                 edge_port += 1
             core_port += 1
 
-
         # Add Participants to the IXP
-        # They will actually be just simple hosts 
+        # They will actually be just simple hosts
         # enough for the load balancing experiment
         host_num = 1
         while host_num <= 800:
             for i, edge in enumerate(edge_switches):
-                hname = "h%s" % host_num
-                host = Host(name = hname)
-                self.add_node(host, name = hname)
-                host.add_port(port = 0, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i), netmask = "255.255.255.0")
-                edge.add_port(port=edge_port, eth_addr = rand_mac())
+                hname = f"h{host_num}"
+                host = Host(name=hname)
+                self.add_node(host, name=hname)
+                host.add_port(
+                    port=0,
+                    eth_addr=rand_mac(),
+                    ip=f"10.0.0.{i}",
+                    netmask="255.255.255.0",
+                )
+                edge.add_port(port=edge_port, eth_addr=rand_mac())
                 self.add_link(edge, host, edge_port, 0)
                 host_num += 1
             edge_port += 1
@@ -81,6 +80,7 @@ def main(argv):
     else:
         print("Missing config file")
 
+
 if __name__ == "__main__":
     main(sys.argv)
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 # for i in range(1, k):
 #     sw = SDNSwitch(i)
 #     h = Host("h%s" % i)
-#     h.add_port(port = 1, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i), 
+#     h.add_port(port = 1, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i),
 #                netmask = "255.255.255.0")
 #     sw.add_port(port = 1, eth_addr = "00:00:00:00:01:00")
 #     sw.add_port(port = 2, eth_addr = "00:00:00:00:02:00")
@@ -109,6 +109,6 @@ if __name__ == "__main__":
 #       if z != i + 1:
 #         h.ping("10.0.0.%s" % (z), time)
 #         time += 1000000
-# end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000  
+# end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000
 # sim = Sim(topo, ctrl_interval = 100000, end_time = end_time)
 # sim.start()

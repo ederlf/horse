@@ -41,9 +41,8 @@
  ****************************************************************************/
 
 /* Dispatches or handles the incoming OpenFlow messages. */
-of_object_t *
-dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
-                              struct netflow *nf, size_t len, uint64_t time);
-
+of_object_t *dp_control_handle_control_msg(struct datapath *dp, uint8_t *msg,
+                                           struct netflow *nf, size_t len,
+                                           uint64_t time);
 
 #endif /* DP_CONTROL_H */

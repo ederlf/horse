@@ -1,18 +1,19 @@
 """Exercise native bindings, message encoding, and existing topology generators."""
+
 import os
-from pathlib import Path
 import sys
 import tempfile
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from horse import Host, SDNSwitch, SimConfig, Topology
-from horse.msg import BGPFIBMsg, BGPStateMsg, ip2int, int2ip
-from horse.bgp_peer.rib import RibTuple
 from horse.router import BGP, BGPNeighbor
-from horse import Router
-from experiments.fat_tree_dc.ripl.horsedctopo import FatTreeTopo
+
 from experiments.fat_tree_dc.ripl.horsebgptopo import HorseBGPFatTreeTopo
+from experiments.fat_tree_dc.ripl.horsedctopo import FatTreeTopo
+from horse import Host, Router, SDNSwitch, SimConfig, Topology
+from horse.bgp_peer.rib import RibTuple
+from horse.msg import BGPFIBMsg, BGPStateMsg, int2ip, ip2int
 
 
 def main():
@@ -36,7 +37,9 @@ def main():
     decoded = BGPStateMsg(msg=message.pack())
     assert decoded.router_id == 1 and decoded.peer_id == 2
     assert decoded.state == BGPStateMsg.BGP_STATE_UP
-    route = RibTuple("10.0.0.0/24", "10.0.0.2", 200, "10.0.0.2", "igp", [], [], 0, False)
+    route = RibTuple(
+        "10.0.0.0/24", "10.0.0.2", 200, "10.0.0.2", "igp", [], [], 0, False
+    )
     assert len(BGPFIBMsg(local_id=1, routes=[route]).pack()) == 24
     for k, hosts, switches, links in ((2, 2, 5, 6), (4, 16, 20, 48)):
         tree = FatTreeTopo(k=k)
@@ -46,11 +49,16 @@ def main():
     with tempfile.TemporaryDirectory(prefix="horse-bindings-") as directory:
         try:
             os.chdir(directory)
-            bgp = BGP(asn=100, router_id="10.0.0.1",
-                      neighbors=[BGPNeighbor(200, "10.0.0.2", local_ip="10.0.0.1")],
-                      networks=["140.0.0.0/16"])
+            bgp = BGP(
+                asn=100,
+                router_id="10.0.0.1",
+                neighbors=[BGPNeighbor(200, "10.0.0.2", local_ip="10.0.0.1")],
+                networks=["140.0.0.0/16"],
+            )
             router = Router("r1", bgp, runDir=directory)
-            router.add_port(1, "00:00:00:00:00:03", ip="10.0.0.1", netmask="255.255.255.0")
+            router.add_port(
+                1, "00:00:00:00:00:03", ip="10.0.0.1", netmask="255.255.255.0"
+            )
             assert router.name == "r1"
             assert "router bgp 100" in Path(directory, "bgpdr1.conf").read_text()
             tree = HorseBGPFatTreeTopo(k=4)

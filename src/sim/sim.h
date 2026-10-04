@@ -18,7 +18,7 @@
 
 struct sim {
     struct ev_handler evh;
-    struct timer cont;          /* Timer for continuous mode   */
+    struct timer cont; /* Timer for continuous mode   */
     pthread_t dataplane;
     struct sim_config *config;
 };

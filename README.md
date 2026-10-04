@@ -1,7 +1,5 @@
 # Horse: A hybrid tool for network reproduction
 
-[![Build Status](https://travis-ci.org/ederlf/horse.svg?branch=master)](https://travis-ci.org/ederlf/horse)
-
 Horse is a hybrid simulation tool to reproduce network experiments. 
 It employs emulation for the control plane and simulation for the data plane.
 
@@ -37,10 +35,15 @@ fork and cmockery at pinned commits. No manually installed libfluid or
 precompiled LOCI library is required.
 
 ```bash
-$ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-$ cmake --build build --parallel 2
-$ ctest --test-dir build --output-on-failure
+cmake --preset release
+cmake --build --preset release --parallel 2
+ctest --preset release
 ```
+
+For native installation, run `cmake --install build/release --prefix /path/to/install`.
+The `dev` preset enables warnings as errors, and `sanitize` enables AddressSanitizer and
+UndefinedBehaviorSanitizer. See `CMakePresets.json` for the shared configure, build and
+test presets.
 
 Build the Python bindings in a virtual environment:
 
@@ -50,15 +53,23 @@ $ . .venv/bin/activate
 $ python -m pip install -e .
 ```
 
-The Python build uses the pinned tools in `pyproject.toml` and bundles
-`libhorse.so` beside the extensions, so `LD_LIBRARY_PATH` is unnecessary.
+Python packaging uses scikit-build-core to build both Cython extensions through CMake
+and bundles `libhorse.so` beside them, so `LD_LIBRARY_PATH` is unnecessary. The
+editable install uses the same CMake build.
 For offline builds, supply local dependency checkouts using
 `-DFETCHCONTENT_SOURCE_DIR_CFLUID=/path/to/libcfluid_base` and
 `-DFETCHCONTENT_SOURCE_DIR_CMOCKERY=/path/to/cmockery` when configuring CMake.
-The Python build accepts `FETCHCONTENT_SOURCE_DIR_CFLUID` as an environment
-variable. Optional native installation uses
-`cmake --install build --prefix /path/to/install`; Quagga finds `horse_daemon`
-on PATH or through `HORSE_ROUTING_HELPER`.
+Set `FETCHCONTENT_SOURCE_DIR_CFLUID` and `FETCHCONTENT_SOURCE_DIR_CMOCKERY` to local
+checkouts for offline CMake and Python builds. Quagga finds `horse_daemon` on PATH or
+through `HORSE_ROUTING_HELPER`.
+
+### Code quality
+
+Install pinned development tools with `python -m pip install -r requirements-dev.txt`.
+Run `python tools/check.py --build-dir build/release` after configuring the release
+preset. The checks cover Python, Cython, native formatting and static analysis, CMake,
+shell scripts, and GitHub Actions. `pre-commit install` enables the local Python and
+Cython hooks.
 
 # Creating a Topology
 
@@ -69,6 +80,7 @@ from horse import *
 from random import randint
 import sys
 
+
 def rand_mac():
     return "%02x:%02x:%02x:%02x:%02x:%02x" % (
         randint(0, 255),
@@ -76,8 +88,9 @@ def rand_mac():
         randint(0, 255),
         randint(0, 255),
         randint(0, 255),
-        randint(0, 255)
-)
+        randint(0, 255),
+    )
+
 
 k = int(sys.argv[1]) + 1
 hosts = []
@@ -85,17 +98,18 @@ hosts = []
 topo = Topology()
 last_switch = None
 for i in range(1, k):
-    sw = SDNSwitch("s%s" %i, i)
+    sw = SDNSwitch("s%s" % i, i)
     h = Host("h%s" % i)
-    h.add_port(port = 1, eth_addr = rand_mac(), ip = "10.0.0.%s" % (i), 
-               netmask = "255.255.255.0")
-    sw.add_port(port = 1, eth_addr = "00:00:00:00:01:00")
-    sw.add_port(port = 2, eth_addr = "00:00:00:00:02:00")
-    sw.add_port(port = 3, eth_addr = "00:00:00:00:03:00")
+    h.add_port(
+        port=1, eth_addr=rand_mac(), ip="10.0.0.%s" % (i), netmask="255.255.255.0"
+    )
+    sw.add_port(port=1, eth_addr="00:00:00:00:01:00")
+    sw.add_port(port=2, eth_addr="00:00:00:00:02:00")
+    sw.add_port(port=3, eth_addr="00:00:00:00:03:00")
     hosts.append(h)
     topo.add_node(h)
     topo.add_node(sw)
-    topo.add_link(sw, h, 1, 1, latency = 0) #latency=randint(0,9))
+    topo.add_link(sw, h, 1, 1, latency=0)  # latency=randint(0,9))
     if last_switch:
         topo.add_link(last_switch, sw, 2, 3)
     last_switch = sw
@@ -104,12 +118,12 @@ for i in range(1, k):
 time = 5000000
 for i, h in enumerate(hosts):
     for z in range(1, k):
-      if z != i + 1:
-        # print "10.0.0.%s" % (z)
-        h.ping("10.0.0.%s" % (z), time)
-        time += 1000000
-end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000  
-sim = Sim(topo, ctrl_interval = 100000, end_time = end_time, log_level = LogLevels.LOG_INFO)
+        if z != i + 1:
+            # print "10.0.0.%s" % (z)
+            h.ping("10.0.0.%s" % (z), time)
+            time += 1000000
+end_time = 5000000 + (len(hosts) * len(hosts)) * 1000000
+sim = Sim(topo, ctrl_interval=100000, end_time=end_time, log_level=LogLevels.LOG_INFO)
 sim.start()
 ```
 

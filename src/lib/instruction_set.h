@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 struct instruction_set {
-    uint8_t active;           /* Bitmap of active instructions */
+    uint8_t active; /* Bitmap of active instructions */
     struct apply_actions apply_act;
     struct clear_actions clear_act;
     struct write_actions write_act;

@@ -1,0 +1,11 @@
+format:
+  line_width: 88
+  tab_size: 4
+  dangle_parens: false
+
+lint:
+  disabled_codes: [W0106, C0307]
+  local_var_pattern: '[a-z][A-Za-z0-9_]+'
+  max_statements: 1
+  min_statement_spacing: 1
+  max_statement_spacing: 2

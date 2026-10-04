@@ -1,31 +1,39 @@
-from . cimport router
-import sys
 import re
-from .msg import ip2int, int2ip, netmask2cidr
 import os
 import json
+from .msg import ip2int, int2ip, netmask2cidr
 from .util import namedtuple_with_defaults
+
+# Keep the message conversion helpers available from this historical extension
+# module for callers that imported them there.
+_compat_message_helpers = (ip2int, int2ip, netmask2cidr)
+
 
 def writeLine(configFile, indent, line):
     intentStr = ''
     for _ in range(0, indent):
         intentStr += '  '
     configFile.write('%s%s\n' % (intentStr, line))
-    
+
+
 def getRouterId(interfaces):
     for intfAttributesList in interfaces.values():
         if not isinstance(intfAttributesList, list):
             continue
-        # Try use the first set of attributes, but if using vlans they might not have addresses
-        intfAttributes = intfAttributesList[1] if not intfAttributesList[0]['ipAddrs'] else intfAttributesList[0]
+        # Try use the first set of attributes, but if using vlans they might not have
+        # addresses
+        intfAttributes = (intfAttributesList[1]
+                          if not intfAttributesList[0]['ipAddrs']
+                          else intfAttributesList[0])
         return intfAttributes['ipAddrs'][0].split('/')[0]
+
 
 # Specific configuration to a neighbor
 # Except for the ASN and IP, all the other fields are here for future usage
 cdef class BGPNeighbor:
     cdef asn
     cdef ip
-    cdef local_ip # ExaBGP needs the local IP
+    cdef local_ip  # ExaBGP needs the local IP
     cdef ebgp_multihop
     cdef next_hop_self
     cdef peer_weight
@@ -37,11 +45,11 @@ cdef class BGPNeighbor:
     cdef route_reflector_client
     cdef port
 
-
-    def __cinit__(self, asn, ip, local_ip = None, ebgp_multihop = False, next_hop_self = False,
-                  peer_weight = None, maximum_prefix = None, distribute_list = 
-                  None, prefix_list = None, filter_list = None, 
-                  route_map = None, route_reflector_client = False, port = None):
+    def __cinit__(self, asn, ip, local_ip=None, ebgp_multihop=False,
+                  next_hop_self=False,
+                  peer_weight=None, maximum_prefix=None, distribute_list=None,
+                  prefix_list=None, filter_list=None,
+                  route_map=None, route_reflector_client=False, port=None):
         self.asn = asn
         self.ip = ip
         self.local_ip = local_ip
@@ -93,24 +101,26 @@ cdef class BGP:
     cdef asn
     cdef router_id
     cdef object networks
-    cdef med 
+    cdef med
     cdef cmp_med
     cdef object neighbors
-    cdef redistribute # Bitmap of possible values to redistribute
-    cdef multiple_instances # Complex as it contains neighbors per view
-    cdef maximum_paths # Maximum number of allowed paths. All attributes should be equal.
-    cdef relax   # Allows load balancing among different ASes. Only AS path needs to match.
+    cdef redistribute  # Bitmap of possible values to redistribute
+    cdef multiple_instances  # Complex as it contains neighbors per view
+    # Maximum number of allowed paths. All attributes should be equal.
+    cdef maximum_paths
+    # Allows load balancing among different ASes. Only AS path needs to match.
+    cdef relax
     cdef allowas_in
 
-    def __cinit__(self, asn = None, router_id = None, neighbors = None,
-                  networks=None, med = None, always_compare_med = False, 
-                  redistribute = None, multiple_instances = None, 
-                  maximum_paths = None, relax = False, allowas_in = False):
+    def __cinit__(self, asn=None, router_id=None, neighbors=None,
+                  networks=None, med=None, always_compare_med=False,
+                  redistribute=None, multiple_instances=None,
+                  maximum_paths=None, relax=False, allowas_in=False):
         self.asn = asn
         self.router_id = router_id
-        self.networks = networks
+        self.networks = [] if networks is None else networks
         self.neighbors = neighbors
-        self.med = med 
+        self.med = med
         self.cmp_med = always_compare_med
         self.redistribute = redistribute
         self.multiple_instances = multiple_instances
@@ -132,26 +142,27 @@ cdef class BGP:
     def set_allowas_in(self, value):
         self.allowas_in = value
 
-    def add_advertised_prefix(self, prefix, 
-                              as_path = None, communities = None):
+    def add_advertised_prefix(self, prefix,
+                              as_path=None, communities=None):
         self.networks[prefix] = {}
         if communities:
             self.networks[prefix]["COMM"] = communities
         if as_path:
             self.networks[prefix]["AS-PATH"] = as_path
-    
-    def add_advertised_prefixes(self, prefixes, as_path = None,
-                                communities = None):
+
+    def add_advertised_prefixes(self, prefixes, as_path=None,
+                                communities=None):
         for prefix in prefixes:
             self.add_advertised_prefix(prefix, as_path, communities)
 
     def set_maximum_paths(self, value):
         self.maximum_paths = value
 
-    def set_relaxed_maximum_paths(self, value = True):
-        self.relax = value 
+    def set_relaxed_maximum_paths(self, value=True):
+        self.relax = value
 
-    def add_advertised_prefix_list(self, prefixes, next_hop= None, as_path = None, communities = None):
+    def add_advertised_prefix_list(self, prefixes, next_hop=None, as_path=None,
+                                   communities=None):
         for prefix in prefixes:
             self.add_advertised_prefix(prefix, next_hop, as_path, communities)
 
@@ -204,13 +215,14 @@ cdef class OSPF:
     cdef networks
     cdef hello_interval
     cdef debug
-    # @networks: list of announced networks 
+    # @networks: list of announced networks
     # @interfaces: list of OSPFInterface"
-    def __cinit__(self, router_id = None, networks = [], interfaces = [],
-                  debug= False):
+
+    def __cinit__(self, router_id=None, networks=None, interfaces=None,
+                  debug=False):
         self.router_id = router_id
-        self.networks = networks
-        self.interfaces = interfaces
+        self.networks = [] if networks is None else networks
+        self.interfaces = [] if interfaces is None else interfaces
         self.debug = debug
 
     property router_id:
@@ -225,14 +237,14 @@ cdef class OSPF:
             return self.interfaces
 
         def __set__(self, interfaces):
-            self.interfaces = interfaces
+            self.interfaces = [] if interfaces is None else interfaces
 
     property networks:
         def __get__(self):
             return self.networks
 
         def __set__(self, networks):
-            self.networks = networks
+            self.networks = [] if networks is None else networks
 
     property debug:
         def __get__(self):
@@ -258,7 +270,7 @@ cdef class Daemon:
 
     def check_ecmp(self, proto):
         if proto.maximum_paths is not None and proto.maximum_paths > 1:
-            self.ecmp_enabled =  True 
+            self.ecmp_enabled = True
 
     def get_ecmp_enabled(self):
         return self.ecmp_enabled
@@ -278,10 +290,10 @@ cdef class QuaggaDaemon(Daemon):
 
     # Can receive either a configuration file or a protocol object
     def __cinit__(self, namespace, runDir, protocols, kwargs):
-        
+
         super(QuaggaDaemon, self).__init__(namespace, runDir)
         self._qd_ptr = quagga_daemon_new(namespace.encode("utf-8"))
-        if not "zebra_conf" in kwargs:
+        if "zebra_conf" not in kwargs:
             # Generate Basic zebra file.
             self.zebraConfFile = runDir + "/zebra%s.conf" % namespace
             self.generateZebra()
@@ -298,31 +310,35 @@ cdef class QuaggaDaemon(Daemon):
             set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf.encode("utf-8"))
         if "ospf6d_conf" in kwargs:
             self.ospf6d_conf = kwargs["ospf6d_conf"]
-            set_quagga_daemon_ospf6d_file(self._qd_ptr, self.ospf6d_conf.encode("utf-8"))
+            set_quagga_daemon_ospf6d_file(
+                self._qd_ptr, self.ospf6d_conf.encode("utf-8"))
         if "ripd_conf" in kwargs:
             self.ripd_conf = kwargs["ripd_conf"]
             set_quagga_daemon_ripd_file(self._qd_ptr, self.ripd_conf.encode("utf-8"))
-        if "ripngd_conf"  in kwargs:
+        if "ripngd_conf" in kwargs:
             self.ripngd_conf = kwargs["ripngd_conf"]
-            set_quagga_daemon_ripngd_file(self._qd_ptr, self.ripngd_conf.encode("utf-8"))
+            set_quagga_daemon_ripngd_file(
+                self._qd_ptr, self.ripngd_conf.encode("utf-8"))
         for p in protocols:
             if isinstance(p, BGP):
-                bgp = <BGP> p
+                bgp = <BGP > p
                 self.bgpd_conf = "%s/bgpd%s.conf" % (runDir, self.namespace)
                 self.generateBgpd(bgp)
-                set_quagga_daemon_bgpd_file(self._qd_ptr, self.bgpd_conf.encode("utf-8"))
+                set_quagga_daemon_bgpd_file(
+                    self._qd_ptr, self.bgpd_conf.encode("utf-8"))
                 self.check_ecmp(bgp)
                 if bgp.router_id:
                     self.router_id = bgp.router_id
             elif isinstance(p, OSPF):
-                ospf = <OSPF> p
+                ospf = <OSPF > p
                 self.ospfd_conf = "%s/ospfd%s.conf" % (runDir, self.namespace)
                 self.generateOspfd(ospf)
-                set_quagga_daemon_ospfd_file(self._qd_ptr, self.ospfd_conf.encode("utf-8"))
+                set_quagga_daemon_ospfd_file(
+                    self._qd_ptr, self.ospfd_conf.encode("utf-8"))
                 if ospf.router_id:
                     self.router_id = ospf.router_id
 
-    cdef quagga_daemon* get_quagga_ptr(self):
+    cdef quagga_daemon * get_quagga_ptr(self):
         return self._qd_ptr
 
     def generateZebra(self):
@@ -335,7 +351,7 @@ cdef class QuaggaDaemon(Daemon):
 
     def generateBgpd(self, BGP bgp):
         configFile = open(self.bgpd_conf, 'w+')
-        writeLine(configFile, 0, 'hostname %s' % self.namespace);
+        writeLine(configFile, 0, 'hostname %s' % self.namespace)
         writeLine(configFile, 0, 'password %s' % 'horse')
         writeLine(configFile, 0, 'log file %s/qbgp_%s' % (self.runDir, self.namespace))
         writeLine(configFile, 0, 'debug bgp')
@@ -344,22 +360,26 @@ cdef class QuaggaDaemon(Daemon):
         if bgp.router_id:
             writeLine(configFile, 1, 'bgp router-id %s' % bgp.router_id)
         if bgp.relax:
-            writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')    
-        
+            writeLine(configFile, 1, 'bgp bestpath as-path multipath-relax')
+
         # writeLine(1, 'timers bgp %s' % '3 9')
         if bgp.maximum_paths:
             writeLine(configFile, 1, 'maximum-paths %s' % bgp.maximum_paths)
         writeLine(configFile, 1, '!')
-        
+
         for neighbor in bgp.neighbors:
-            writeLine(configFile, 1, 'neighbor %s remote-as %s' % (neighbor.ip, neighbor.asn))
+            writeLine(configFile, 1, 'neighbor %s remote-as %s' %
+                      (neighbor.ip, neighbor.asn))
             writeLine(configFile, 1, 'neighbor %s ebgp-multihop' % neighbor.ip)
-            writeLine(configFile, 1, 'neighbor %s timers connect %s' % (neighbor.ip, '5'))
-            writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' % (neighbor.ip, '1'))
+            writeLine(configFile, 1, 'neighbor %s timers connect %s' %
+                      (neighbor.ip, '5'))
+            writeLine(configFile, 1, 'neighbor %s advertisement-interval %s' %
+                      (neighbor.ip, '1'))
             if neighbor.port:
-                writeLine(configFile, 1, 'neighbor %s port %s' % (neighbor.ip, neighbor.port))
+                writeLine(configFile, 1, 'neighbor %s port %s' %
+                          (neighbor.ip, neighbor.port))
             writeLine(configFile, 1, '!')
-            
+
         for route in bgp.networks:
             writeLine(configFile, 1, 'network %s' % route)
         configFile.close()
@@ -368,29 +388,30 @@ cdef class QuaggaDaemon(Daemon):
         bgp = BGP()
         with open(self.config_file, "r") as f:
             conf = f.read()
-            router_id = re.findall( r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf )
+            router_id = re.findall(r'bgp router-id [0-9]+(?:\.[0-9]+){3}', conf)
             if router_id:
                 bgp.router_id = router_id.split()[2]
-            asn =  re.findall( r'router bgp [0-9]*', conf)
+            asn = re.findall(r'router bgp [0-9]*', conf)
             if asn:
                 bgp.asn = asn.split()[2]
-            neighbors = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf )
+            neighbors = re.findall(
+                r'neighbor [0-9]+(?:\.[0-9]+){3} remote-as [0-9]*', conf)
             if neighbors:
                 # TODO parse other neighbor fields
                 for n in neighbors:
                     nfields = n.split()
                     bgp.add_neighbor(BGPNeighbor(nfields[1], nfields[3]))
-            relax =  re.findall( r' bgp bestpath as-path multipath-relax', conf)
+            relax = re.findall(r' bgp bestpath as-path multipath-relax', conf)
             if relax:
-                bgp.relax =  True
-            maximum_paths = re.findall( r'maximum-paths [0-9]*', conf)
+                bgp.relax = True
+            maximum_paths = re.findall(r'maximum-paths [0-9]*', conf)
             if maximum_paths:
                 bgp.maximum_paths = maximum_paths.split()[1]
         return bgp
 
     def generateOspfd(self, OSPF ospf):
         configFile = open(self.ospfd_conf, 'w+')
-        writeLine(configFile, 0, 'hostname %s' % self.namespace);
+        writeLine(configFile, 0, 'hostname %s' % self.namespace)
         writeLine(configFile, 0, 'password %s' % 'horse')
         writeLine(configFile, 0, 'log file %s/qospf_%s' % (self.runDir,
                                                            self.namespace))
@@ -418,7 +439,6 @@ cdef class QuaggaDaemon(Daemon):
                                                              net.area))
         writeLine(configFile, 0, '!')
 
-
         configFile.close()
 
 cdef class ExaBGPDaemon(Daemon):
@@ -430,10 +450,11 @@ cdef class ExaBGPDaemon(Daemon):
         super(ExaBGPDaemon, self).__init__(namespace, runDir)
         self._exa_ptr = exabgp_daemon_new(namespace.encode("utf-8"))
         self.local_ips = []
-        if "exabgp_conf" in config_files: 
+        if "exabgp_conf" in config_files:
             self.config_file = config_files["exabgp_conf"]
             if os.path.isfile(self.config_file):
-                set_exabgp_daemon_config_file(self._exa_ptr, self.config_file.encode("utf-8"))
+                set_exabgp_daemon_config_file(
+                    self._exa_ptr, self.config_file.encode("utf-8"))
                 bgp = self.parse_config_file()
                 bgp.write_auxiliary_config_file(runDir, self.namespace)
                 if bgp.router_id:
@@ -441,21 +462,22 @@ cdef class ExaBGPDaemon(Daemon):
                 self.check_ecmp(bgp)
         for p in protocols:
             if isinstance(p, BGP):
-                bgp = <BGP> p
+                bgp = <BGP > p
                 self.config_file = "%s/exabgp%s.conf" % (runDir, namespace)
                 if bgp.router_id:
                     self.router_id = bgp.router_id
                 self.check_ecmp(bgp)
-                for i in range(0, len(bgp.neighbors)): 
+                for i in range(0, len(bgp.neighbors)):
                     neigh = bgp.neighbors[i]
                     self.local_ips.append(neigh.local_ip)
                     self.add_ip(neigh.local_ip)
                 self.router_id = bgp.router_id = max(self.local_ips)
                 self.generateExaBGPconfig(bgp)
-                set_exabgp_daemon_config_file(self._exa_ptr, self.config_file.encode("utf-8"))
+                set_exabgp_daemon_config_file(
+                    self._exa_ptr, self.config_file.encode("utf-8"))
                 bgp.write_auxiliary_config_file(runDir, self.namespace)
 
-    cdef exabgp_daemon* get_exabgp_ptr(self):
+    cdef exabgp_daemon * get_exabgp_ptr(self):
         return self._exa_ptr
 
     def parse_config_file(self):
@@ -463,14 +485,14 @@ cdef class ExaBGPDaemon(Daemon):
         with open(self.config_file, "r") as f:
             conf = f.read()
             # neighbor = []
-            router_id = re.findall( r'router-id [0-9]+(?:\.[0-9]+){3}', conf )
-            asn =  re.findall( r'local-as [0-9]*', conf)
-            ips = re.findall( r'neighbor [0-9]+(?:\.[0-9]+){3}', conf )
-            asys = re.findall( r'peer-as [0-9]*', conf)
-            local_ips = re.findall( r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
+            router_id = re.findall(r'router-id [0-9]+(?:\.[0-9]+){3}', conf)
+            asn = re.findall(r'local-as [0-9]*', conf)
+            ips = re.findall(r'neighbor [0-9]+(?:\.[0-9]+){3}', conf)
+            asys = re.findall(r'peer-as [0-9]*', conf)
+            local_ips = re.findall(r'local-address [0-9]+(?:\.[0-9]+){3}', conf)
             self.local_ips = [x[14:] for x in local_ips]
             # Router id is in the configuration
-            if router_id and bgp.router_id == None:
+            if router_id and bgp.router_id is None:
                 bgp.router_id = router_id[0][10:]
             for ip in self.local_ips:
                 self.add_ip(ip)
@@ -478,15 +500,17 @@ cdef class ExaBGPDaemon(Daemon):
                 bgp.asn = asn[0][9:]
             for neigh_ip, asn, local_ip in zip(ips, asys, local_ips):
                 bgp.add_neighbor(BGPNeighbor(neigh_ip[9:], asn[8:],
-                                             local_ip = local_ip))
+                                             local_ip=local_ip))
         return bgp
-
 
     def generateExaBGPconfig(self, BGP bgp):
         configFile = open(self.config_file, 'w+')
 
         writeLine(configFile, 0, 'process client{')
-        writeLine(configFile, 2, 'run /usr/bin/python /home/vagrant/horse/horse/router_client.py %s;' % self.namespace)
+        writeLine(
+            configFile, 2,
+            'run /usr/bin/python /home/vagrant/horse/horse/router_client.py %s;'
+            % self.namespace)
         writeLine(configFile, 2, 'encoder json;\n}\n')
 
         writeLine(configFile, 0, 'template {')
@@ -520,4 +544,3 @@ cdef class ExaBGPDaemon(Daemon):
 
     def add_ip(self, ip):
         exabgp_daemon_add_port_ip(self._exa_ptr, ip.encode("utf-8"))
-    

@@ -5,6 +5,7 @@
 
 void apply_actions(void **state)
 {
+    (void)state;
     struct flow *fl = flow_new();
     struct instruction_set is;
     instruction_set_init(&is);
@@ -30,6 +31,7 @@ void apply_actions(void **state)
 
 void write_actions(void **state)
 {
+    (void)state;
     struct flow *fl = flow_new();
     struct instruction_set is;
     instruction_set_init(&is);
@@ -52,6 +54,7 @@ void write_actions(void **state)
 
 void merge_action_set(void **state)
 {
+    (void)state;
     struct action_set as1;
     struct action_set as2;
     struct action gen_act;
@@ -88,11 +91,26 @@ void merge_action_set(void **state)
     // action_set_clean(&as2);
 }
 
-int main(int argc, char* argv[]) {
+void clear_actions_instruction(void **state)
+{
+    (void)state;
+    struct instruction_set instructions;
+    struct clear_actions expected;
+    instruction_set_init(&instructions);
+    inst_clear_actions(&expected);
+    add_clear_actions(&instructions, expected);
+    assert_int_equal(instructions.active, INSTRUCTION_CLEAR_ACTIONS);
+    assert_int_equal(instructions.clear_act.hdr.type, expected.hdr.type);
+    instruction_set_clean(&instructions);
+}
+
+int main(void)
+{
     const UnitTest tests[] = {
         unit_test(apply_actions),
         unit_test(write_actions),
         unit_test(merge_action_set),
+        unit_test(clear_actions_instruction),
     };
     return run_tests(tests);
 }

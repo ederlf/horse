@@ -5,53 +5,61 @@
 
 #define MAX_EVENTS_TEST 10
 
-int cmpfunc (const void * a, const void * b)
+int cmpfunc(const void *a, const void *b)
 {
-   return ( *(uint64_t*)a - *(uint64_t*)b );
+    return (*(const uint64_t *)a > *(const uint64_t *)b) -
+           (*(const uint64_t *)a < *(const uint64_t *)b);
 }
 
 /* Tests if the event order is correct */
-void add_flow_event(void **state){
-    struct scheduler* sch = scheduler_new();
+void add_flow_event(void **state)
+{
+    (void)state;
+    struct scheduler *sch = scheduler_new();
     struct sim_event *ev_ret;
     uint64_t times[10] = {50, 80, 70, 60, 40, 90, 10, 30, 100, 20};
     int i;
-    for (i = 0; i < 10; ++i){
+    for (i = 0; i < 10; ++i) {
         struct sim_event *ev = sim_event_new(times[i]);
         scheduler_insert(sch, ev);
-    } 
+    }
     qsort(times, 10, sizeof(uint64_t), cmpfunc);
-    for (i = 0; i < 10; ++i){
+    for (i = 0; i < 10; ++i) {
         ev_ret = scheduler_dispatch(sch);
         assert_int_equal(ev_ret->time, times[i]);
-        sim_event_free(ev_ret);       
-    } 
+        sim_event_free(ev_ret);
+    }
     scheduler_destroy(sch);
 }
 
 /* Generates random times and checks if the order is correct */
-void random_add_flow_event(void **state){
-    struct scheduler* sch = scheduler_new();
+void random_add_flow_event(void **state)
+{
+    (void)state;
+    struct scheduler *sch = scheduler_new();
     struct sim_event *ev_ret;
-    uint64_t* times = malloc(sizeof(uint64_t) * MAX_EVENTS_TEST);
+    uint64_t *times = malloc(sizeof(uint64_t) * MAX_EVENTS_TEST);
     int i;
-    srand(time(NULL));
-    for (i = 0; i < MAX_EVENTS_TEST; ++i){
-        times[i] =  rand(); 
+    // Deterministic simulation test, not a security RNG.
+    // NOLINTNEXTLINE(bugprone-random-generator-seed)
+    srand(1);
+    for (i = 0; i < MAX_EVENTS_TEST; ++i) {
+        times[i] = rand();
         struct sim_event *ev = sim_event_new(times[i]);
         scheduler_insert(sch, ev);
-    } 
+    }
     qsort(times, MAX_EVENTS_TEST, sizeof(uint64_t), cmpfunc);
-    for (i = 0; i < MAX_EVENTS_TEST; ++i){
+    for (i = 0; i < MAX_EVENTS_TEST; ++i) {
         ev_ret = scheduler_dispatch(sch);
         assert_int_equal(ev_ret->time, times[i]);
-        sim_event_free(ev_ret);        
-    } 
+        sim_event_free(ev_ret);
+    }
     scheduler_destroy(sch);
     free(times);
 }
 
-int main(int argc, char* argv[]) {
+int main(void)
+{
     const UnitTest tests[] = {
         unit_test(add_flow_event),
         unit_test(random_add_flow_event),

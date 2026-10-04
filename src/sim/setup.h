@@ -5,7 +5,6 @@
 #include "scheduler.h"
 #include "conn_manager.h"
 
-void setup(struct topology *topo, struct scheduler *sch,
-           struct conn_manager *cm);
+void setup(struct topology *topo, struct scheduler *sch, struct conn_manager *cm);
 
 #endif

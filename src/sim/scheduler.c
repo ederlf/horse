@@ -7,24 +7,22 @@
  *
  * Author: Eder Leao Fernandes <e.leao@qmul.ac.uk>
  */
- 
+
 #include "scheduler.h"
 
-static 
-int priocmp(struct sim_event *a, struct sim_event *b) {
+static int priocmp(struct sim_event *a, struct sim_event *b)
+{
     if (a->time < b->time)
-        return -1;  // Return -1 if you want ascending, 1 if you want descending order. 
+        return -1; // Return -1 if you want ascending, 1 if you want descending order.
     else if (a->time > b->time)
-        return 1;   // Return 1 if you want ascending, -1 if you want descending order. 
+        return 1; // Return 1 if you want ascending, -1 if you want descending order.
     return 0;
 }
 
-
-struct scheduler* 
-scheduler_new()
+struct scheduler *scheduler_new(void)
 {
     struct scheduler *sch = xmalloc(sizeof(struct scheduler));
-    sch->clock = 0; /* Use time == now()? */
+    sch->clock = 0;  /* Use time == now()? */
     sch->mode = FTI; /* Scheduler always starts with Fixed Time Increment */
     // sch->ev_queue = xmalloc(sizeof(struct heap));
     // heap_init(sch->ev_queue);
@@ -34,23 +32,20 @@ scheduler_new()
 }
 
 /* If size == 0, scheduler is empty */
-bool 
-scheduler_is_empty(struct scheduler *sch)
+bool scheduler_is_empty(struct scheduler *sch)
 {
     // return sch->ev_queue->size? false: true;
-    return sch->ev_queue == NULL? true:false;
+    return sch->ev_queue == NULL ? true : false;
 }
 
-void 
-scheduler_destroy(struct scheduler *sch)
+void scheduler_destroy(struct scheduler *sch)
 {
     // heap_destroy(sch->ev_queue);
     // free(sch->ev_queue);
     free(sch);
 };
 
-void 
-scheduler_insert(struct scheduler *sch, struct sim_event *ev)
+void scheduler_insert(struct scheduler *sch, struct sim_event *ev)
 {
     pthread_mutex_lock(&sch->sch_mutex);
     // heap_insert(sch->ev_queue, (struct heap_node*) ev, ev->time);
@@ -61,8 +56,7 @@ scheduler_insert(struct scheduler *sch, struct sim_event *ev)
 }
 
 /* Just delete the event on top without returning it */
-void
-scheduler_delete(struct scheduler *sch, struct sim_event *ev)
+void scheduler_delete(struct scheduler *sch, struct sim_event *ev)
 {
     pthread_mutex_lock(&sch->sch_mutex);
     // heap_delete(sch->ev_queue);
@@ -71,16 +65,14 @@ scheduler_delete(struct scheduler *sch, struct sim_event *ev)
 }
 
 /* Get the first event in the queue */
-struct sim_event *
-scheduler_retrieve(struct scheduler *sch)
-{   
+struct sim_event *scheduler_retrieve(struct scheduler *sch)
+{
     struct sim_event *ev = sch->ev_queue;
     // ev = (struct sim_event*) heap_retrieve(sch->ev_queue);
     return ev;
 }
 
-struct sim_event*
-scheduler_dispatch(struct scheduler *sch)
+struct sim_event *scheduler_dispatch(struct scheduler *sch)
 {
     pthread_mutex_lock(&sch->sch_mutex);
     // struct sim_event *ev = (struct sim_event*) heap_delete(sch->ev_queue);

@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: cython-lint
+        name: cython-lint
+        entry: cython-lint horse
+        language: system
+        pass_filenames: false
+      - id: cmake-format
+        name: cmake-format
+        entry: cmake-format -i CMakeLists.txt cmake/Python.cmake cmake/Sources.cmake
+        language: system
+        pass_filenames: false

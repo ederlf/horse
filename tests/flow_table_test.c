@@ -4,8 +4,8 @@
 
 void lookup(void **state)
 {
+    (void)state;
     struct flow *ret;
-    struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
@@ -26,8 +26,8 @@ void lookup(void **state)
 
 void lookup_expired(void **state)
 {
+    (void)state;
     struct flow *ret;
-    struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
@@ -47,8 +47,8 @@ void lookup_expired(void **state)
 
 void stress_lookup_expired(void **state)
 {
+    (void)state;
     struct flow *ret;
-    struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     int i;
     for (i = 0; i < 1000000; ++i) {
@@ -71,8 +71,8 @@ void stress_lookup_expired(void **state)
 /* Must return the flow with highest priority */
 void lookup_priority(void **state)
 {
+    (void)state;
     struct flow *ret;
-    struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
@@ -97,13 +97,15 @@ void lookup_priority(void **state)
 /* Test succeed if flow can be found in the table */
 void add_single_flow(void **state)
 {
+    (void)state;
     struct flow *ret;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
     set_eth_type(fl, 0x800);
     add_flow(ft, fl, 0);
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 1);
@@ -119,7 +121,7 @@ void add_single_flow(void **state)
 /* Test succeeds if there is ONE mini flow table and TWO flows */
 void add_flows_same_field_type(void **state)
 {
-    struct flow *ret;
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
@@ -131,7 +133,8 @@ void add_flows_same_field_type(void **state)
     int count;
     DL_COUNT(ft->flows, elt, count);
     assert_int_equal(count, 1);
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 2);
@@ -140,11 +143,11 @@ void add_flows_same_field_type(void **state)
 }
 
 /*  Test succeeds if there are TWO mini flow tables
-*   and ONE flow in each mini table.
-*/
+ *   and ONE flow in each mini table.
+ */
 void add_flows_diff_field_type(void **state)
 {
-    struct flow *ret;
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
@@ -157,7 +160,8 @@ void add_flows_diff_field_type(void **state)
     int count;
     DL_COUNT(ft->flows, elt, count);
     assert_int_equal(count, 2);
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
         unsigned int num_flows = HASH_COUNT(hash);
         assert_int_equal(num_flows, 1);
@@ -168,6 +172,7 @@ void add_flows_diff_field_type(void **state)
 /* Succeed if instruction for a single flow is modified */
 void modify_strict(void **state)
 {
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
@@ -202,9 +207,10 @@ void modify_strict(void **state)
     flow_add_instructions(fl3, is2);
     modify_flow(ft, fl3, true, 0);
     /* Check if only the first flow is modified*/
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
-        struct flow* ret;
+        struct flow *ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
         if (ret) {
             assert_int_equal(ret->insts.active, is2.active);
@@ -221,6 +227,7 @@ void modify_strict(void **state)
 /* The flow should not be found */
 void modify_strict_expired(void **state)
 {
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
@@ -238,6 +245,7 @@ void modify_strict_expired(void **state)
     set_eth_type(fl, 0x800);
     flow_add_instructions(fl, is);
     add_flow(ft, fl, 0);
+    struct ofl_flow_key expired_key = fl->key;
     struct flow *fl2 = flow_new();
     set_ipv4_dst(fl2, 21);
     set_eth_type(fl2, 0x800);
@@ -256,10 +264,11 @@ void modify_strict_expired(void **state)
     flow_add_instructions(fl3, is2);
     modify_flow(ft, fl3, true, 10000000);
     /* Check if only the first flow is deleted because of expiration*/
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
-        struct flow* ret;
-        HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
+        struct flow *ret;
+        HASH_FIND(hh, hash, &expired_key, sizeof(expired_key), ret);
         assert_int_equal(ret, NULL);
         HASH_FIND(hh, hash, &fl2->key, sizeof(struct ofl_flow_key), ret);
         if (ret) {
@@ -273,6 +282,7 @@ void modify_strict_expired(void **state)
 /* Succeed if instruction for two flows is modified */
 void modify_non_strict(void **state)
 {
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
@@ -307,9 +317,10 @@ void modify_non_strict(void **state)
     flow_add_instructions(fl3, is2);
     modify_flow(ft, fl3, false, 0);
     /* Check if the two flows were modified.*/
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
-        struct flow* ret;
+        struct flow *ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
         /* Check if the instruction active fields are equal to the flow mod */
         if (ret) {
@@ -326,6 +337,7 @@ void modify_non_strict(void **state)
 
 void stress_modify_non_strict(void **state)
 {
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct ofl_flow_key *keys = malloc(sizeof(struct ofl_flow_key) * 1000000);
@@ -364,9 +376,10 @@ void stress_modify_non_strict(void **state)
     modify_flow(ft, fl3, false, 0);
     /* Check if all flows were modified*/
     i = 0;
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
-        struct flow* ret;
+        struct flow *ret;
         HASH_FIND(hh, hash, &keys[i], sizeof(struct ofl_flow_key), ret);
         if (ret) {
             assert_int_equal(ret->insts.active, is2.active);
@@ -381,6 +394,7 @@ void stress_modify_non_strict(void **state)
 /* Succeed if instruction two flows are gone */
 void delete_non_strict(void **state)
 {
+    (void)state;
     struct mini_flow_table *elt;
     struct flow_table *ft = flow_table_new(0);
     struct flow *fl = flow_new();
@@ -405,9 +419,10 @@ void delete_non_strict(void **state)
     set_eth_type(fl3, 0x800);
     delete_flow(ft, fl3, 0, false);
     /* Check if both flows were modified*/
-    DL_FOREACH(ft->flows, elt) {
+    DL_FOREACH(ft->flows, elt)
+    {
         struct flow *hash = elt->flows;
-        struct flow* ret;
+        struct flow *ret;
         HASH_FIND(hh, hash, &fl->key, sizeof(struct ofl_flow_key), ret);
         assert_int_equal(ret, NULL);
         HASH_FIND(hh, hash, &fl2->key, sizeof(struct ofl_flow_key), ret);
@@ -417,7 +432,8 @@ void delete_non_strict(void **state)
     flow_table_destroy(ft);
 }
 
-int main(int argc, char* argv[]) {
+int main(void)
+{
     const UnitTest tests[] = {
         unit_test(lookup),
         unit_test(lookup_expired),

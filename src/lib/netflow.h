@@ -4,7 +4,7 @@
 #include "flow.h"
 #include "packets.h"
 
-#define STACK_EMPTY -1
+#define STACK_EMPTY (-1)
 
 enum tcp_flags {
     SYN = 1 << 0,
@@ -32,32 +32,31 @@ struct out_port {
     struct out_port *next;
 };
 
-
 /* Metadata of a netflow from the datapath */
 struct dp_meta {
-    uint32_t buffer_id;     /* ID assigned by datapath. */
-    uint8_t reason;         /* Reason packet is being sent (one of OFPR_*) */
-    uint8_t table_id;       /* ID of the table that was looked up */
-    uint64_t cookie;        /* Cookie of the flow entry that was looked up. */
+    uint32_t buffer_id; /* ID assigned by datapath. */
+    uint8_t reason;     /* Reason packet is being sent (one of OFPR_*) */
+    uint8_t table_id;   /* ID of the table that was looked up */
+    uint64_t cookie;    /* Cookie of the flow entry that was looked up. */
 };
 
 /* Description of a network flow */
 struct netflow {
-    uint64_t pkt_cnt;           /* Number of packets in the flow.           */
-    uint64_t byte_cnt;          /* Total number of packets in the flow.     */
+    uint64_t pkt_cnt;  /* Number of packets in the flow.           */
+    uint64_t byte_cnt; /* Total number of packets in the flow.     */
     uint64_t start_time;
-    uint64_t exec_id;           /* Tracks the app that triggered it*/
-    uint32_t rate;              /* Current rate of the flow                 */
-    struct ofl_flow_key match;      /* The fields belonging to a flow.      */
+    uint64_t exec_id;          /* Tracks the app that triggered it*/
+    uint32_t rate;             /* Current rate of the flow                 */
+    struct ofl_flow_key match; /* The fields belonging to a flow.      */
     struct tag_stack tags;
-    
-    union { 
-        uint16_t tcp_flags;          /* Bitmap of TCP flags present 
-                                       in the flow  */
+
+    union {
+        uint16_t tcp_flags; /* Bitmap of TCP flags present
+                              in the flow  */
         struct icmp_echo_reply icmp_info;
-    }; 
-    uint8_t *payload;            /* Possible payload */ 
-    uint16_t payload_len;        /* Size of the payload */
+    };
+    uint8_t *payload;           /* Possible payload */
+    uint16_t payload_len;       /* Size of the payload */
     struct dp_meta metadata;    /* Any additional information. e.g: pkt out */
     struct out_port *out_ports; /* List of ports the flow may be sent       */
 };

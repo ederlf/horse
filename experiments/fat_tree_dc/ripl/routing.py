@@ -1,24 +1,22 @@
 #!/usr/bin/env python
-'''@package routing
+"""@package routing
 
 Routing engine base class.
 
 @author Brandon Heller (brandonh@stanford.edu)
 @author Eder Leao Fernandes (e.leao@qmul.ac.uk)
-'''
+"""
+
+import logging
 from copy import copy
+from functools import reduce
 from random import choice
 from struct import pack
 from zlib import crc32
-from hashlib import md5
-from ryu.lib.packet import ipv4
-from ryu.lib.packet import tcp
-from ryu.lib.packet import udp
-from .dctopo import FatTreeTopo
 
-import logging
-from functools import reduce
-lg = logging.getLogger('ripl.routing')
+from ryu.lib.packet import ipv4, tcp, udp
+
+lg = logging.getLogger("ripl.routing")
 
 DEBUG = False
 
@@ -29,37 +27,42 @@ if DEBUG:
 
 # parameter -> pkt = packet.Packet(array.array('B', ev.msg.data))
 
-def ipv4_from_string(ipv4_str):
-  "Convert dotted IPv4 address to integer."
-  return reduce(lambda a,b: a<<8 | b, list(map(int, ipv4_str.split(".")))) & 0xffffffff
 
-class Routing(object):
-    '''Base class for data center network routing.
+def ipv4_from_string(ipv4_str):
+    "Convert dotted IPv4 address to integer."
+    return (
+        reduce(lambda a, b: a << 8 | b, list(map(int, ipv4_str.split("."))))
+        & 0xFFFFFFFF
+    )
+
+
+class Routing:
+    """Base class for data center network routing.
 
     Routing engines must implement the get_route() method.
-    '''
+    """
 
     def __init__(self, topo):
-        '''Create Routing object.
+        """Create Routing object.
 
         @param topo Topo object from Net parent
-        '''
+        """
         self.topo = topo
 
     def get_route(self, src, dst, pkt):
-        '''Return flow path.
+        """Return flow path.
 
-        @param src source host
-        @param dst destination host
-    @param pkt parsed packet object, like one from POX
+            @param src source host
+            @param dst destination host
+        @param pkt parsed packet object, like one from POX
 
-        @return flow_path list of DPIDs to traverse (including hosts)
-        '''
+            @return flow_path list of DPIDs to traverse (including hosts)
+        """
         raise NotImplementedError
 
 
 class StructuredRouting(Routing):
-    '''Route flow through a StructuredTopo and return one path.
+    """Route flow through a StructuredTopo and return one path.
 
     Optionally accepts a function to choose among the set of valid paths.  For
     example, this could be based on a random choice, hash value, or
@@ -80,14 +83,14 @@ class StructuredRouting(Routing):
     (src or dst) to the key.
 
     Invariant: the last element in each route must be equal to the key.
-    '''
+    """
 
     def __init__(self, topo, path_choice):
-        '''Create Routing object.
+        """Create Routing object.
 
-        @param topo Topo object
-    @param path_choice path choice function (see examples below)
-        '''
+            @param topo Topo object
+        @param path_choice path choice function (see examples below)
+        """
         self.topo = topo
         self.path_choice = path_choice
         self.src_paths = None
@@ -96,7 +99,7 @@ class StructuredRouting(Routing):
         self.dst_path_layer = None
 
     def _extend_reachable(self, frontier_layer):
-        '''Extend reachability up, closer to core.
+        """Extend reachability up, closer to core.
 
         @param frontier_layer layer we're extending TO, for filtering paths
 
@@ -110,9 +113,9 @@ class StructuredRouting(Routing):
         exponential path explosion.
 
         Modifies most internal data structures as a side effect.
-        '''
+        """
 
-        complete_paths = [] # List of complete dpid routes
+        complete_paths = []  # List of complete dpid routes
 
         # expand src frontier if it's below the dst
         if self.src_path_layer > frontier_layer:
@@ -120,11 +123,10 @@ class StructuredRouting(Routing):
             # expand src frontier up
             for node in sorted(self.src_paths):
                 src_path_list = self.src_paths[node]
-                lg.info("src path list for node %s is %s" %
-                        (node, src_path_list))
+                lg.info(f"src path list for node {node} is {src_path_list}")
                 if not src_path_list or len(src_path_list) == 0:
                     continue
-                last = src_path_list[0][-1] # Last element on first list
+                last = src_path_list[0][-1]  # Last element on first list
                 up_edges = self.topo.up_edges(last)
                 if not up_edges:
                     continue
@@ -142,14 +144,15 @@ class StructuredRouting(Routing):
                     # add path if it connects the src and dst
                     if frontier_node in self.dst_paths:
                         dst_path_list = self.dst_paths[frontier_node]
-                        lg.info('self.dst_paths[frontier_node] = %s' %
-                                self.dst_paths[frontier_node])
+                        lg.info(
+                            f"self.dst_paths[frontier_node] = {self.dst_paths[frontier_node]}"
+                        )
                         for dst_path in dst_path_list:
                             dst_path_rev = copy(dst_path)
                             dst_path_rev.reverse()
                             for src_path in src_path_list:
                                 new_path = src_path + dst_path_rev
-                                lg.info('adding path: %s' % new_path)
+                                lg.info(f"adding path: {new_path}")
                                 complete_paths.append(new_path)
                     else:
                         if frontier_node not in src_paths_next:
@@ -157,11 +160,12 @@ class StructuredRouting(Routing):
                         for src_path in src_path_list:
                             extended_path = src_path + [frontier_node]
                             src_paths_next[frontier_node].append(extended_path)
-                            lg.info("adding to self.paths[%s] %s: " % \
-                                      (frontier_node, extended_path))
+                            lg.info(
+                                f"adding to self.paths[{frontier_node}] {extended_path}: "
+                            )
 
             # filter paths to only those in the most recently seen layer
-            lg.info("src_paths_next: %s" % src_paths_next)
+            lg.info(f"src_paths_next: {src_paths_next}")
             self.src_paths = src_paths_next
             self.src_path_layer -= 1
 
@@ -171,9 +175,8 @@ class StructuredRouting(Routing):
             # expand src frontier up
             for node in self.dst_paths:
                 dst_path_list = self.dst_paths[node]
-                lg.info("dst path list for node %s is %s" %
-                        (node, dst_path_list))
-                last = dst_path_list[0][-1] # last element on first list
+                lg.info(f"dst path list for node {node} is {dst_path_list}")
+                last = dst_path_list[0][-1]  # last element on first list
                 up_edges = self.topo.up_edges(last)
                 if not up_edges:
                     continue
@@ -182,7 +185,7 @@ class StructuredRouting(Routing):
                 if not up_nodes:
                     continue
                 assert up_nodes
-                lg.info("up_edges = %s" % sorted(up_edges))
+                lg.info(f"up_edges = {sorted(up_edges)}")
                 for edge in sorted(up_edges):
                     a, b = edge
                     assert a == last
@@ -191,14 +194,15 @@ class StructuredRouting(Routing):
                     # add path if it connects the src and dst
                     if frontier_node in self.src_paths:
                         src_path_list = self.src_paths[frontier_node]
-                        lg.info('self.src_paths[frontier_node] = %s' %
-                                self.src_paths[frontier_node])
+                        lg.info(
+                            f"self.src_paths[frontier_node] = {self.src_paths[frontier_node]}"
+                        )
                         for src_path in src_path_list:
                             for dst_path in dst_path_list:
                                 dst_path_rev = copy(dst_path)
                                 dst_path_rev.reverse()
                                 new_path = src_path + dst_path_rev
-                                lg.info('adding path: %s' % new_path)
+                                lg.info(f"adding path: {new_path}")
                                 complete_paths.append(new_path)
 
                     else:
@@ -207,44 +211,45 @@ class StructuredRouting(Routing):
                         for dst_path in dst_path_list:
                             extended_path = dst_path + [frontier_node]
                             dst_paths_next[frontier_node].append(extended_path)
-                            lg.info("adding to self.paths[%s] %s: " % \
-                                      (frontier_node, extended_path))
+                            lg.info(
+                                f"adding to self.paths[{frontier_node}] {extended_path}: "
+                            )
 
             # filter paths to only those in the most recently seen layer
-            lg.info("dst_paths_next: %s" % dst_paths_next)
+            lg.info(f"dst_paths_next: {dst_paths_next}")
             self.dst_paths = dst_paths_next
             self.dst_path_layer -= 1
 
-        lg.info("complete paths = %s" % complete_paths)
+        lg.info(f"complete paths = {complete_paths}")
         return complete_paths
 
     def get_route(self, src, dst, pkt):
-        '''Return flow path.
+        """Return flow path.
 
         @param src source dpid (for host or switch)
         @param dst destination dpid (for host or switch)
         @param pkt parsed packet object, like one from RYU
 
         @return flow_path list of DPIDs to traverse (including inputs), or None
-        '''
+        """
 
         if src == dst:
-          return [src]
+            return [src]
 
         paths_found = self.get_all_route(src, dst)
         if paths_found:
-          return self.path_choice(paths_found, src, dst, pkt)
+            return self.path_choice(paths_found, src, dst, pkt)
         else:
-          return None
-    
+            return None
+
     def get_all_route(self, src, dst):
-        '''Return all flow paths from src -> dst.
+        """Return all flow paths from src -> dst.
 
         @param src source dpid (for host or switch)
         @param dst destination dpid (for host or switch)
 
         @return flow_path list of DPIDs to traverse (including inputs), or None
-        '''
+        """
 
         if src == dst:
             return [[src]]
@@ -264,81 +269,82 @@ class StructuredRouting(Routing):
         if dst_layer > src_layer:
             lowest_starting_layer = dst_layer
         for depth in range(lowest_starting_layer - 1, -1, -1):
-            lg.info('-------------------------------------------')
+            lg.info("-------------------------------------------")
             paths_found = self._extend_reachable(depth)
             if paths_found:
                 return paths_found
         return None
-    
+
+
 # Disable unused argument warnings in the classes below
 # pylint: disable-msg=W0613
 
 
 class STStructuredRouting(StructuredRouting):
-    '''Spanning Tree Structured Routing.'''
+    """Spanning Tree Structured Routing."""
 
     def __init__(self, topo):
-        '''Create StructuredRouting object.
+        """Create StructuredRouting object.
 
         @param topo Topo object
-        '''
+        """
 
         def choose_leftmost(paths, src, dst, pkt):
-            '''Choose leftmost path
+            """Choose leftmost path
 
             @param path paths of dpids generated by a routing engine
             @param src src dpid (unused)
             @param dst dst dpid (unused)
             @param pkt parsed packet object, like one from RYU (unused)
-        '''
+            """
             return paths[0]
 
-        super(STStructuredRouting, self).__init__(topo, choose_leftmost)
+        super().__init__(topo, choose_leftmost)
 
 
 class RandomStructuredRouting(StructuredRouting):
-    '''Random Structured Routing.'''
+    """Random Structured Routing."""
 
     def __init__(self, topo):
-        '''Create StructuredRouting object.
+        """Create StructuredRouting object.
 
         @param topo Topo object
-        '''
+        """
 
         def choose_random(paths, src, dst, pkt):
-            '''Choose random path
+            """Choose random path
 
-            @param path paths of dpids generated by a routing engine
-            @param src src dpid (unused)
-            @param dst dst dpid (unused)
-        @param pkt parsed packet object, like one from RYU (unused)
-            '''
+                @param path paths of dpids generated by a routing engine
+                @param src src dpid (unused)
+                @param dst dst dpid (unused)
+            @param pkt parsed packet object, like one from RYU (unused)
+            """
             return choice(paths)
 
-        super(RandomStructuredRouting, self).__init__(topo, choose_random)
+        super().__init__(topo, choose_random)
 
 
 class HashedStructuredRouting(StructuredRouting):
-    '''Hashed Structured Routing.'''
+    """Hashed Structured Routing."""
 
     def __init__(self, topo):
-        '''Create StructuredRouting object.
+        """Create StructuredRouting object.
 
         @param topo Topo object
-        '''
+        """
 
         def choose_hashed(paths, src, dst, pkt):
-            '''Choose consistent hashed path
+            """Choose consistent hashed path
 
             @param path paths of dpids generated by a routing engine
             @param src src dpid (unused)
             @param dst dst dpid (unused)
             @param pkt parsed packet object, like one from RYU
-            '''
+            """
             hash_input = [0] * 5
             ip = pkt.get_protocol(ipv4.ipv4)
             if ip:
-                hash_input[0] = ipv4_from_string(ip.src)    
+                hash_input[0] = ipv4_from_string(ip.src)
                 hash_input[1] = ipv4_from_string(ip.dst)
                 hash_input[2] = ip.proto
                 ptcp = pkt.get_protocol(tcp.tcp)
@@ -350,10 +356,10 @@ class HashedStructuredRouting(StructuredRouting):
                     if pudp:
                         hash_input[3] = pudp.src_port
                         hash_input[4] = pudp.dst_port
-       
-            hash_ = crc32(pack('LLHHH', *hash_input))
+
+            hash_ = crc32(pack("LLHHH", *hash_input))
             choice = hash_ % len(paths)
             path = sorted(paths)[choice]
             return path
 
-        super(HashedStructuredRouting, self).__init__(topo, choose_hashed)
+        super().__init__(topo, choose_hashed)

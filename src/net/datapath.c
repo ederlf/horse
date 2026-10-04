@@ -26,12 +26,11 @@ struct datapath {
 };
 
 /* Creates a new datapath.
-*
-*  A datapath starts without any port assigned.
-*  @ip is not the ip of the switch but of the controller it may connect.
-*/
-struct datapath*
-dp_new(uint64_t dp_id, char *ip, int port)
+ *
+ *  A datapath starts without any port assigned.
+ *  @ip is not the ip of the switch but of the controller it may connect.
+ */
+struct datapath *dp_new(uint64_t dp_id, char *ip, int port)
 {
     struct datapath *dp = xmalloc(sizeof(struct datapath));
     int i;
@@ -61,31 +60,27 @@ void dp_destroy(struct datapath *dp)
     free(dp);
 }
 
-void
-dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN], uint32_t speed, uint32_t curr_speed)
+void dp_add_port(struct datapath *dp, uint32_t port_id, uint8_t eth_addr[ETH_LEN],
+                 uint32_t speed, uint32_t curr_speed)
 {
     node_add_port(&dp->base, port_id, eth_addr, speed, curr_speed);
 }
 
 /* Retrieve a datapath port */
-struct port*
-dp_port(const struct datapath *dp, uint32_t port_id)
+struct port *dp_port(const struct datapath *dp, uint32_t port_id)
 {
     struct port *p = node_port(&dp->base, port_id);
     return p;
 }
 
-static void
-execute_action_list(struct action_list *al, struct netflow *flow)
+static void execute_action_list(struct action_list *al, struct netflow *flow)
 {
     struct action_list_elem *act_elem;
-    LL_FOREACH(al->actions, act_elem) {
-        execute_action(&act_elem->act, flow);
-    }
+    LL_FOREACH(al->actions, act_elem) { execute_action(&act_elem->act, flow); }
 }
 
-static void
-execute_action_set(struct action_set *as, struct netflow *flow) {
+static void execute_action_set(struct action_set *as, struct netflow *flow)
+{
 
     enum action_set_order type;
     /* Loop through the enum */
@@ -97,8 +92,9 @@ execute_action_set(struct action_set *as, struct netflow *flow) {
     }
 }
 
-static void
-execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netflow *flow, struct action_set *as) {
+static void execute_instructions(struct instruction_set *is, uint8_t *table_id,
+                                 struct netflow *flow, struct action_set *as)
+{
 
     if (instruction_is_active(is, INSTRUCTION_APPLY_ACTIONS)) {
         execute_action_list(&is->apply_act.actions, flow);
@@ -123,14 +119,13 @@ execute_instructions(struct instruction_set *is, uint8_t *table_id, struct netfl
 
 /* The match can be modified by an action */
 /* Return is a list of ports or NULL in case it is dropped*/
-struct netflow*
-dp_recv_netflow(struct node *n, struct netflow *nf)
+struct netflow *dp_recv_netflow(struct node *n, struct netflow *nf)
 {
     /* Get the input port and update rx counters*/
     uint8_t table_id;
     struct flow *f;
     /* Buffering to be implemented */
-    struct datapath *dp = (struct datapath*) n;
+    struct datapath *dp = (struct datapath *)n;
     nf->metadata.buffer_id = OFP_NO_BUFFER;
     uint32_t in_port = nf->match.in_port;
     struct port *p = dp_port(dp, in_port);
@@ -150,7 +145,8 @@ dp_recv_netflow(struct node *n, struct netflow *nf)
             table = NULL;
             if (f != NULL) {
                 uint8_t next_table_id = 0;
-                /* TODO: Cut the packet and byte count if flow lasts longer than remotion by hard timeout */
+                /* TODO: Cut the packet and byte count if flow lasts longer than
+                 * remotion by hard timeout */
                 /* Increase the flow counters */
                 f->pkt_cnt += nf->pkt_cnt;
                 f->byte_cnt += nf->byte_cnt;
@@ -160,15 +156,14 @@ dp_recv_netflow(struct node *n, struct netflow *nf)
                 if (next_table_id > table_id) {
                     table_id = nf->metadata.table_id = next_table_id;
                     table = dp->tables[table_id];
-                }
-                else {
+                } else {
                     /* Execute action and clean */
                     execute_action_set(&acts, nf);
                     action_set_clean(&acts);
-                    /* It only makes sense to continue later if it 
+                    /* It only makes sense to continue later if it
                        will be forwarded.
                     */
-                    if (nf->out_ports){
+                    if (nf->out_ports) {
                         return nf;
                     }
                 }
@@ -178,26 +173,24 @@ dp_recv_netflow(struct node *n, struct netflow *nf)
     return NULL;
 }
 
-void
-dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port)
+void dp_send_netflow(struct node *n, struct netflow *flow, uint32_t out_port)
 {
     node_update_port_stats(n, flow, out_port);
 }
 
-void 
-dp_create_flood(struct datapath *dp, struct netflow *nf)
+void dp_create_flood(struct datapath *dp, struct netflow *nf)
 {
     struct port *p, *tmp_port;
-    HASH_ITER(hh, dp_ports(dp), p, tmp_port) {
+    HASH_ITER(hh, dp_ports(dp), p, tmp_port)
+    {
         if (p->port_id != nf->match.in_port) {
             netflow_add_out_port(nf, p->port_id);
         }
     }
 }
 
-of_object_t*
-dp_handle_flow_mod(const struct datapath *dp,
-                   of_object_t *obj, uint64_t time)
+of_object_t *dp_handle_flow_mod(const struct datapath *dp, of_object_t *obj,
+                                uint64_t time)
 {
     struct flow_table *ft;
     struct flow *f = flow_new();
@@ -206,7 +199,7 @@ dp_handle_flow_mod(const struct datapath *dp,
      *  but it is better than repeat code to handle the different
      *  objects that loci has for the flow mod.
      *  If there is a performance need, it is something to be revisited.
-    */
+     */
     ft = dp->tables[f->table_id];
     switch (obj->object_id) {
     case OF_FLOW_ADD: {
@@ -215,17 +208,18 @@ dp_handle_flow_mod(const struct datapath *dp,
     }
     case OF_FLOW_MODIFY: {
         modify_flow(ft, f, false, time);
+        break;
     }
     case OF_FLOW_MODIFY_STRICT: {
         modify_flow(ft, f, true, time);
         break;
     }
     case OF_FLOW_DELETE: {
-        delete_flow(ft, f, false, time);
+        delete_flow(ft, f, time, false);
         break;
     }
     case OF_FLOW_DELETE_STRICT: {
-        delete_flow(ft, f, true, time);
+        delete_flow(ft, f, time, true);
         break;
     }
     default: {
@@ -235,18 +229,17 @@ dp_handle_flow_mod(const struct datapath *dp,
     return NULL;
 }
 
-of_object_t*
-dp_handle_port_stats_req(const struct datapath *dp,
-                         of_object_t *obj)
+of_object_t *dp_handle_port_stats_req(const struct datapath *dp, of_object_t *obj)
 {
     uint32_t xid;
     of_port_no_t port_id;
     of_port_stats_reply_t *reply;
-    of_port_stats_request_t *req = (of_port_stats_request_t*) obj;
+    of_port_stats_request_t *req = (of_port_stats_request_t *)obj;
     of_port_stats_entry_t *port_entry = NULL;
     of_list_port_stats_entry_t *port_list = NULL;
 
-    if ((reply = of_port_stats_reply_new(obj->version)) == NULL) {
+    reply = of_port_stats_reply_new(obj->version);
+    if (reply == NULL) {
         fprintf(stderr, "%s\n", "Failed to create port stats reply object");
         return NULL;
     }
@@ -272,7 +265,8 @@ dp_handle_port_stats_req(const struct datapath *dp,
     /* Return all interfaces */
     if (port_id == OFPP_ANY) {
         struct port *cur_port, *tmp;
-        HASH_ITER(hh, dp->base.ports, cur_port, tmp) {
+        HASH_ITER(hh, dp->base.ports, cur_port, tmp)
+        {
             /* TODO: Put it in a function */
             of_port_stats_entry_port_no_set(port_entry, cur_port->port_id);
             of_port_stats_entry_duration_sec_set(port_entry, 0);
@@ -291,8 +285,7 @@ dp_handle_port_stats_req(const struct datapath *dp,
             of_port_stats_entry_collisions_set(port_entry, 0);
             of_list_port_stats_entry_append(port_list, port_entry);
         }
-    }
-    else {
+    } else {
         struct port *p = dp_port(dp, port_id);
         of_port_stats_entry_port_no_set(port_entry, p->port_id);
         of_port_stats_entry_duration_sec_set(port_entry, 0);
@@ -313,7 +306,7 @@ dp_handle_port_stats_req(const struct datapath *dp,
     }
 
     if (of_port_stats_reply_entries_set(reply, port_list) < 0) {
-        fprintf(stderr, "%s\n", "Failure to add list of ports to stats reply" );
+        fprintf(stderr, "%s\n", "Failure to add list of ports to stats reply");
         return NULL;
     }
 
@@ -322,9 +315,9 @@ dp_handle_port_stats_req(const struct datapath *dp,
     return reply;
 }
 
-static void dp_get_stats_flows(const struct datapath *dp, 
-                               struct ofl_flow_stats_req *req, struct flow ***flows, size_t *flow_count, 
-                               uint64_t time)
+static void dp_get_stats_flows(const struct datapath *dp,
+                               struct ofl_flow_stats_req *req, struct flow ***flows,
+                               size_t *flow_count, uint64_t time)
 {
     if (req->table_id == OFPTT_ALL) {
         size_t i;
@@ -332,14 +325,12 @@ static void dp_get_stats_flows(const struct datapath *dp,
             flow_table_stats(dp->tables[i], req, flows, flow_count, time);
         }
     } else {
-        flow_table_stats(dp->tables[req->table_id], req, flows,
-                         flow_count, time);
-    }  
+        flow_table_stats(dp->tables[req->table_id], req, flows, flow_count, time);
+    }
 }
 
-of_object_t *
-dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj,
-                         uint64_t time)
+of_object_t *dp_handle_flow_stats_req(const struct datapath *dp, of_object_t *obj,
+                                      uint64_t time)
 {
     uint32_t xid;
     size_t flow_count = 0;
@@ -348,20 +339,19 @@ dp_handle_flow_stats_req(const struct datapath *dp, of_object_t* obj,
     unpack_flow_stats_request(obj, &req);
     of_flow_stats_request_xid_get(obj, &xid);
 
-    struct flow **flows = xmalloc(sizeof(struct flow*));
+    struct flow **flows = (struct flow **)xmalloc(sizeof(struct flow *));
     memset(&req, 0x0, sizeof(struct ofl_flow_stats_req));
     dp_get_stats_flows(dp, &req, &flows, &flow_count, time);
     /* Pack and return */
     if (flow_count > 0) {
-       reply = pack_flow_stats_reply(flows, xid, flow_count);
+        reply = pack_flow_stats_reply(flows, xid, flow_count);
     }
-    free(flows);
+    free((void *)flows);
     return reply;
 }
 
-of_object_t* 
-dp_handle_aggregate_stats_req(const struct datapath *dp,
-                              of_object_t* obj, uint64_t time)
+of_object_t *dp_handle_aggregate_stats_req(const struct datapath *dp, of_object_t *obj,
+                                           uint64_t time)
 {
     uint32_t xid;
     size_t flow_count = 0;
@@ -370,22 +360,20 @@ dp_handle_aggregate_stats_req(const struct datapath *dp,
     unpack_aggregate_stats_request(obj, &req);
     of_aggregate_stats_request_xid_get(obj, &xid);
 
-    struct flow **flows = xmalloc(sizeof(struct flow*));
+    struct flow **flows = (struct flow **)xmalloc(sizeof(struct flow *));
     memset(&req, 0x0, sizeof(struct ofl_flow_stats_req));
 
     dp_get_stats_flows(dp, &req, &flows, &flow_count, time);
 
     /* Pack and return */
     if (flow_count > 0) {
-       reply = pack_aggregate_stats_reply(flows, xid, flow_count);
+        reply = pack_aggregate_stats_reply(flows, xid, flow_count);
     }
-    free(flows);
+    free((void *)flows);
     return reply;
-
 }
 
-of_object_t*
-dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
+of_object_t *dp_handle_port_desc(const struct datapath *dp, of_object_t *obj)
 {
     uint32_t xid;
     of_port_desc_t *of_port_desc = NULL;
@@ -393,10 +381,11 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
     of_mac_addr_t mac;
     struct port *cur_port, *tmp;
 
-    of_port_desc_stats_request_t *req = (of_port_desc_stats_request_t*) obj;
+    of_port_desc_stats_request_t *req = (of_port_desc_stats_request_t *)obj;
     of_port_desc_stats_reply_t *reply;
 
-    if ((reply = of_port_desc_stats_reply_new(obj->version)) == NULL) {
+    reply = of_port_desc_stats_reply_new(obj->version);
+    if (reply == NULL) {
         fprintf(stderr, "%s\n", "Failed to create port desc reply object");
         return NULL;
     }
@@ -413,14 +402,14 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
 
     /* Allocates memory for of_list_port_desc */
     of_list_port_desc = of_list_port_desc_new(obj->version);
-    if (of_list_port_desc == NULL)
-    {
+    if (of_list_port_desc == NULL) {
         fprintf(stderr, "%s\n", "Failed to create a list port desc object");
         of_port_desc_delete(of_port_desc);
         return NULL;
     }
 
-    HASH_ITER(hh, dp->base.ports, cur_port, tmp) {
+    HASH_ITER(hh, dp->base.ports, cur_port, tmp)
+    {
         of_port_desc_port_no_set(of_port_desc, cur_port->port_id);
         memcpy(&mac, cur_port->eth_address, ETH_LEN);
         of_port_desc_hw_addr_set(of_port_desc, mac);
@@ -441,7 +430,7 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
     }
 
     if (of_port_desc_stats_reply_entries_set(reply, of_list_port_desc) < 0) {
-        fprintf(stderr, "%s\n", "Failure to add list of ports to desc stats reply" );
+        fprintf(stderr, "%s\n", "Failure to add list of ports to desc stats reply");
         return NULL;
     }
 
@@ -451,8 +440,8 @@ dp_handle_port_desc(const struct datapath *dp, of_object_t* obj)
     return reply;
 }
 
-of_object_t*
-dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uint64_t time)
+of_object_t *dp_handle_pkt_out(struct datapath *dp, of_object_t *obj,
+                               struct netflow *nf, uint64_t time)
 {
     struct action_list al;
     nf->start_time = time;
@@ -465,43 +454,22 @@ dp_handle_pkt_out(struct datapath *dp, of_object_t *obj, struct netflow *nf, uin
     return NULL;
 }
 
-void 
-dp_set_name(struct datapath* dp, char *name) {
+void dp_set_name(struct datapath *dp, char *name)
+{
     memcpy(dp->base.name, name, MAX_NODE_NAME);
 }
 
-char *
-dp_name(struct datapath *dp)
-{
-    return dp->base.name;
-}
+char *dp_name(struct datapath *dp) { return dp->base.name; }
 
-uint64_t
-dp_uuid(const struct datapath* dp)
-{
-    return dp->base.uuid;
-}
+uint64_t dp_uuid(const struct datapath *dp) { return dp->base.uuid; }
 
-uint64_t
-dp_id(const struct datapath* dp)
-{
-    return dp->dp_id;
-}
+uint64_t dp_id(const struct datapath *dp) { return dp->dp_id; }
 
-struct flow_table*
-dp_flow_table(const struct datapath *dp, uint8_t table_id)
+struct flow_table *dp_flow_table(const struct datapath *dp, uint8_t table_id)
 {
     return dp->tables[table_id];
 }
 
-struct of_settings*
-dp_settings(const struct datapath *dp)
-{
-    return dp->dp_settings;
-}
+struct of_settings *dp_settings(const struct datapath *dp) { return dp->dp_settings; }
 
-struct port* 
-dp_ports(const struct datapath *dp)
-{
-    return dp->base.ports;
-}
+struct port *dp_ports(const struct datapath *dp) { return dp->base.ports; }

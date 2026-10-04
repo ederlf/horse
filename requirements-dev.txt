@@ -1,0 +1,12 @@
+scikit-build-core==1.1.1
+Cython==3.3.0
+build==1.6.1
+ruff==0.16.10
+clang-format==23.1.2
+clang-tidy==22.1.8
+cmakelang==0.6.13
+cython-lint==0.21.1
+pre-commit==4.6.2
+shellcheck-py==0.11.0.1
+shfmt-py==4.2.0
+actionlint-py==1.7.12.25

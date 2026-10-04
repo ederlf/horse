@@ -17,7 +17,6 @@ ctrlc() {
 
 trap ctrlc SIGINT
 
-
 #For new kernel To disable DCTCP:
 #sysctl -w net.ipv4.tcp_dctcp_enable=0
 #sysctl -w net.ipv4.tcp_ecn=1
@@ -32,7 +31,7 @@ seed=$4
 trial=$5
 duration=$6
 rootdir=results-horse/expt-$k-$traffic-$flowsPerHost-$seed-$trial
-mkdir -p $rootdir
+mkdir -p "$rootdir"
 bw=100
 numhosts=$((k * k * k / 4))
 maxbw=$((numhosts * bw))
@@ -62,17 +61,17 @@ iperf=/usr/bin/iperf
 dir=$rootdir/ecmp
 #valgrind --tool=callgrind -v --dump-instr=yes --trace-jump=yes --callgrind-out-file=callgrind_new.log  python3 -m experiments.fat_tree_dc.hedera --bw $bw
 python3 -m experiments.fat_tree_dc.hedera --bw $bw \
-        --dir $dir \
-        -k $k \
-        --iperf $iperf \
-        --traffic $traffic \
-        --seed $seed \
-        --time $duration \
-        --controller "./riplryu.sh $k hashed" \
-        --flowsPerHost $flowsPerHost \
-        --horse
+    --dir "$dir" \
+    -k "$k" \
+    --iperf $iperf \
+    --traffic "$traffic" \
+    --seed "$seed" \
+    --time "$duration" \
+    --controller "./riplryu.sh $k hashed" \
+    --flowsPerHost "$flowsPerHost" \
+    --horse
 
-mv bwm.txt $dir/bwm.txt
+mv bwm.txt "$dir"/bwm.txt
 
 # dir=$rootdir/random
 # python3 -m experiments.fat_tree_dc.hedera --bw $bw \
