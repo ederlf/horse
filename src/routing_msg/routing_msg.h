@@ -5,6 +5,12 @@
 
 #define HEADER_LEN 8
 
+/* Wire contract: all integers use network byte order. The header size includes
+ * the header and payload, excluding trailing padding to an 8-byte boundary.
+ * FIB payloads contain 12-byte (IPv4 prefix, netmask, next hop) triples.
+ * See docs/routing-wire.md and tests/fixtures/routing_wire.txt.
+ */
+
 enum routing_msg_type {
     ROUTER_ACTIVITY = 0,
     ROUTER_FIB = 1,

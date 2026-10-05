@@ -32,6 +32,7 @@ jobs:
           python -m pip install -e .
           python tests/bindings_smoke.py
           python tests/node_names.py
+          python tests/routing_wire_test.py
           python -m compileall -q horse experiments
       - uses: actions/setup-python@v5
         id: controller

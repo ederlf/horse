@@ -1,12 +1,22 @@
-# import ipaddress
+"""Routing messages using the native daemon's network-byte-order wire contract."""
+
 import os
 import socket
 import struct
 import sys
+from enum import IntEnum
+from typing import NamedTuple
 
-HEADER_LEN = 8
-BGP_STATE_LEN = HEADER_LEN + 8
-BGP_ANNOUNCE_LEN = HEADER_LEN + 8
+HEADER = struct.Struct("!HHI")
+STATE_BODY = struct.Struct("!IB3x")
+ANNOUNCE_BODY = struct.Struct("!I4x")
+FIB_ENTRY_STRUCT = struct.Struct("!III")
+HEADER_LEN = HEADER.size
+BGP_STATE_LEN = HEADER_LEN + STATE_BODY.size
+BGP_ANNOUNCE_LEN = HEADER_LEN + ANNOUNCE_BODY.size
+WIRE_ALIGNMENT = 8
+MAX_MESSAGE_SIZE = 0xFFFF
+MAX_FIB_ENTRIES = (MAX_MESSAGE_SIZE - HEADER_LEN) // FIB_ENTRY_STRUCT.size
 
 path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if path not in sys.path:
@@ -27,75 +37,106 @@ def netmask2cidr(netmask):
 
 def cidr_to_netmask(cidr):
     cidr = int(cidr)
-    mask = (0xFFFFFFFF >> (32 - cidr)) << (32 - cidr)
-    return mask
-    # return (str( (0xff000000 & mask) >> 24)   + '.' +
-    #       str( (0x00ff0000 & mask) >> 16)   + '.' +
-    #       str( (0x0000ff00 & mask) >> 8)    + '.' +
-    #       str( (0x000000ff & mask)))
+    if not 0 <= cidr <= 32:
+        raise ValueError("IPv4 prefix length must be between 0 and 32")
+    return (0xFFFFFFFF >> (32 - cidr)) << (32 - cidr)
 
 
-class MsgType:
-    BGP_STATE = 0
-    BGP_ANNOUNCE = 1
-    BGP_FIB = 2
-    BGP_ACTIVITY = 3
+class MsgType(IntEnum):
+    BGP_ACTIVITY = 0
+    BGP_FIB = 1
+    BGP_STATE = 2
+    BGP_ANNOUNCE = 3
+
+
+class BGPState(IntEnum):
+    DOWN = 0
+    CONNECTED = 1
+    UP = 2
+
+
+class FIBRoute(NamedTuple):
+    """The prefix and next hop carried on the wire; BGP attributes are absent."""
+
+    prefix: str
+    next_hop: str
+
+
+def wire_size(size):
+    """Round a logical message length up to the native 8-byte wire alignment."""
+    if not HEADER_LEN <= size <= MAX_MESSAGE_SIZE:
+        raise ValueError("Routing message length must be between 8 and 65535 bytes")
+    return (size + WIRE_ALIGNMENT - 1) // WIRE_ALIGNMENT * WIRE_ALIGNMENT
 
 
 class RouterMsg:
-    HEADER_FMT = "!HHI"
+    HEADER_FMT = HEADER.format
 
-    def __init__(self, msg_type=0, size=0, router_id=0, msg=None):
-        if msg:
+    def __init__(
+        self, msg_type=MsgType.BGP_ACTIVITY, size=HEADER_LEN, router_id=0, msg=None
+    ):
+        if msg is not None:
             self.unpack(msg)
         else:
-            self.type = msg_type
+            self.type = MsgType(msg_type)
+            wire_size(size)
             self.size = size
             self.router_id = router_id
 
     def pack(self):
-        msg = struct.pack(RouterMsg.HEADER_FMT, self.type, self.size, self.router_id)
-        return msg
+        wire_size(self.size)
+        return HEADER.pack(self.type, self.size, self.router_id)
 
     def unpack(self, msg):
-        self.type, self.size, self.router_id = struct.unpack(
-            RouterMsg.HEADER_FMT, msg[:HEADER_LEN]
-        )
+        # Header-only parsing remains useful for stream readers.
+        if len(msg) < HEADER_LEN:
+            raise ValueError("Truncated routing message header")
+        msg_type, self.size, self.router_id = HEADER.unpack_from(msg)
+        self.type = MsgType(msg_type)
+        wire_size(self.size)
+
+    def _unpack_frame(self, msg, expected_type, expected_size=None):
+        RouterMsg.unpack(self, msg)
+        if self.type != expected_type:
+            raise ValueError(f"Expected {expected_type.name}, got {self.type.name}")
+        if expected_size is not None and self.size != expected_size:
+            raise ValueError("Invalid logical length for routing message type")
+        if len(msg) != wire_size(self.size):
+            raise ValueError(
+                "Routing frame must include exactly its padded wire length"
+            )
 
 
 class BGPStateMsg(RouterMsg):
-    BGPSTATE_FMT = "!IB3x"
-    BGP_STATE_DOWN = 0
-    BGP_STATE_CONNECTED = 1
-    BGP_STATE_UP = 2
+    BGPSTATE_FMT = STATE_BODY.format
+    BGP_STATE_DOWN = BGPState.DOWN
+    BGP_STATE_CONNECTED = BGPState.CONNECTED
+    BGP_STATE_UP = BGPState.UP
 
     def __init__(self, local_id=0, peer_id=0, state=0, msg=None):
-        if msg:
+        if msg is not None:
             self.unpack(msg)
         else:
             super().__init__(
                 msg_type=MsgType.BGP_STATE, size=BGP_STATE_LEN, router_id=local_id
             )
             self.peer_id = peer_id
-            self.state = state
+            self.state = BGPState(state)
 
     def pack(self):
-        msg = super().pack()
-        msg += struct.pack(BGPStateMsg.BGPSTATE_FMT, self.peer_id, self.state)
-        return msg
+        return super().pack() + STATE_BODY.pack(self.peer_id, BGPState(self.state))
 
     def unpack(self, msg):
-        super().unpack(msg)
-        self.peer_id, self.state = struct.unpack(
-            BGPStateMsg.BGPSTATE_FMT, msg[HEADER_LEN:]
-        )
+        self._unpack_frame(msg, MsgType.BGP_STATE, BGP_STATE_LEN)
+        self.peer_id, state = STATE_BODY.unpack_from(msg, HEADER_LEN)
+        self.state = BGPState(state)
 
 
 class BGPAnnounce(RouterMsg):
-    BGPANNOUNCE_FMT = "!I4x"
+    BGPANNOUNCE_FMT = ANNOUNCE_BODY.format
 
     def __init__(self, local_id=0, peer_id=0, state=0, msg=None):
-        if msg:
+        if msg is not None:
             self.unpack(msg)
         else:
             super().__init__(
@@ -104,80 +145,67 @@ class BGPAnnounce(RouterMsg):
             self.peer_id = peer_id
 
     def pack(self):
-        msg = super().pack()
-        msg += struct.pack(BGPAnnounce.BGPANNOUNCE_FMT, self.peer_id)
-        return msg
+        return super().pack() + ANNOUNCE_BODY.pack(self.peer_id)
 
     def unpack(self, msg):
-        super().unpack(msg)
-        peer_id = struct.unpack(BGPAnnounce.BGPANNOUNCE_FMT, msg[HEADER_LEN:])
-        self.peer_id = peer_id[0]
+        self._unpack_frame(msg, MsgType.BGP_ANNOUNCE, BGP_ANNOUNCE_LEN)
+        (self.peer_id,) = ANNOUNCE_BODY.unpack_from(msg, HEADER_LEN)
 
 
 class BGPFIBMsg(RouterMsg):
-    FIB_ENTRY = "!III"
-    FIB_ENTRY_LEN = 12
+    FIB_ENTRY = FIB_ENTRY_STRUCT.format
+    FIB_ENTRY_LEN = FIB_ENTRY_STRUCT.size
 
     def __init__(self, local_id=0, routes=None, msg=None):
-        if msg:
+        if msg is not None:
             self.unpack(msg)
         else:
-            super().__init__(
-                msg_type=MsgType.BGP_FIB, size=HEADER_LEN, router_id=local_id
-            )
             self.routes = [] if routes is None else routes
-            self.size += len(routes) * 12
+            super().__init__(
+                msg_type=MsgType.BGP_FIB,
+                size=HEADER_LEN + len(self.routes) * self.FIB_ENTRY_LEN,
+                router_id=local_id,
+            )
 
     def unpack(self, msg):
-        pass
+        self._unpack_frame(msg, MsgType.BGP_FIB)
+        if (self.size - HEADER_LEN) % self.FIB_ENTRY_LEN:
+            raise ValueError("FIB payload must contain complete 12-byte entries")
+        self.routes = []
+        for ip, mask, next_hop in FIB_ENTRY_STRUCT.iter_unpack(
+            msg[HEADER_LEN : self.size]
+        ):
+            cidr = mask.bit_count()
+            if mask != cidr_to_netmask(cidr):
+                raise ValueError("FIB netmask must be a contiguous IPv4 prefix mask")
+            self.routes.append(FIBRoute(f"{int2ip(ip)}/{cidr}", int2ip(next_hop)))
 
     def pack(self):
-        msg = super().pack()
+        # Routes are public and may have changed since construction.
+        self.size = HEADER_LEN + len(self.routes) * self.FIB_ENTRY_LEN
+        padded_size = wire_size(self.size)
+        parts = [super().pack()]
         for route in self.routes:
             ip, mask = route.prefix.split("/")
-            next_hop = route.next_hop
-            msg += struct.pack(
-                BGPFIBMsg.FIB_ENTRY, ip2int(ip), cidr_to_netmask(mask), ip2int(next_hop)
+            parts.append(
+                FIB_ENTRY_STRUCT.pack(
+                    ip2int(ip), cidr_to_netmask(mask), ip2int(route.next_hop)
+                )
             )
-        rest = self.size % 8
-        if rest:
-            msg += struct.pack(f"!{rest}x")
-        return msg
+        parts.append(bytes(padded_size - self.size))
+        return b"".join(parts)
 
 
-# This message is basically to inform the simulator that there is BGP activity
-# keeping the simulation mode in the FTI mode.
 class BGPActivity(RouterMsg):
+    """Inform the simulator of routing activity, keeping it in FTI mode."""
+
     def __init__(self, local_id=0, msg=None):
-        if msg:
+        if msg is not None:
             self.unpack(msg)
         else:
             super().__init__(
                 msg_type=MsgType.BGP_ACTIVITY, size=HEADER_LEN, router_id=local_id
             )
 
-    def pack(self):
-        msg = super().pack()
-        return msg
-
     def unpack(self, msg):
-        super().unpack(msg)
-
-
-# routes = []
-
-# for i in range(0, 1):
-#     route =  RibTuple('10.0.0.1/24', '172.0.0.2', 10, '172.0.0.2', 'igp', '100, 200, 300', '0', 0,'false')
-#     routes.append(route)
-
-# msg = BGPFIBMsg(local_id=1000, routes = routes)
-# print msg.size
-# data = msg.pack()
-
-# msg = BGPStateMsg(local_id = 1000, peer_id = 2000,
-#                   state = BGPStateMsg.BGP_STATE_UP)
-# packed = msg.pack()
-# msg2 = BGPStateMsg(msg=packed)
-# print msg2.router_id, msg2.state
-
-# 255.255.255.255
+        self._unpack_frame(msg, MsgType.BGP_ACTIVITY, HEADER_LEN)

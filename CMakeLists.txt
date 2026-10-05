@@ -110,10 +110,15 @@ if(BUILD_TESTING)
         PUBLIC ${cmockery_SOURCE_DIR}/src
         PRIVATE ${cmockery_SOURCE_DIR}/src/google)
     foreach(test_name flow_table_test scheduler_test instruction_test netflow_test
-                      node_name_test)
+                      node_name_test routing_wire_test)
         add_executable(${test_name} tests/${test_name}.c)
         target_compile_definitions(${test_name} PRIVATE UNIT_TESTING=1)
         target_link_libraries(${test_name} PRIVATE horse cmockery horse_options)
         add_test(NAME ${test_name} COMMAND ${test_name})
     endforeach()
+    target_compile_definitions(
+        routing_wire_test
+        PRIVATE
+            ROUTING_WIRE_FIXTURES="${PROJECT_SOURCE_DIR}/tests/fixtures/routing_wire.txt"
+    )
 endif()
